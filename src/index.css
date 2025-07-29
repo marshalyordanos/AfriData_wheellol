@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+input {
+  /* border: 1px solid lightgray !important; */
+}
+
+* {
+  font-family: "DM Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: normal;
+  font-style: normal;
+}
+
+.ant-select-selector {
+  border: 1px solid rgb(161, 161, 161) !important;
+  padding: 19px !important;
+  min-width: 200px;
+}
+
+.horizontal-dots {
+  transform: rotate(90deg);
+  color: #000;
+  font-size: 24px !important;
+}
+
+/* .ant-switch-inner-unchecked,.ant-switch-inner-checked{
+    background-color: gray !important;
+}
+
+&.ant-switch-checked .ant-switch-handle {
+    background-color: red !important;
+  } */
+
+.card-content {
+  font-weight: bold !important;
+}
+
+.ant-select-selector > *,
+.ant-select-selector {
+  /* border: 2px solid red !important; */
+  min-width: 130px !important;
+  padding: 5px !important;
+  margin: 0 !important;
+}
