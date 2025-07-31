@@ -15,15 +15,13 @@ const AppRoute = () => {
   return (
     <div>
       <Routes>
-        {!user && (
+        {user && (
           <Route element={<ProtectedRoute />}>
-            <Route element={<Navigate to="/login" />} path="/" />
-
             <Route path="/dash/*" element={<LayoutRouting />} />
           </Route>
         )}
 
-        {user && (
+        {!user && (
           <>
             <Route element={<Navigate to="/login" />} path="/" />
 
