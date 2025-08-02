@@ -6,7 +6,7 @@ import { store } from "./redux/stor.js";
 import { Provider } from "react-redux";
 import { setup } from "./api/api.js";
 import { BrowserRouter } from "react-router-dom";
-import "react-quill/dist/quill.snow.css";
+// import "react-quill/dist/quill.snow.css";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
     <BrowserRouter>
