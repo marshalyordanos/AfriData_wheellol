@@ -6,7 +6,7 @@ export const login = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       console.log(data);
-      const res = await authService.login(data?.username, data?.password);
+      const res = await authService.login(data?.email, data?.password);
 
       // localStorage.setItem("user", JSON.stringify(res.data));
 
@@ -22,13 +22,15 @@ export const authSlice = createSlice({
   initialState: {
     status: "false",
     user: null,
+    err: null
   },
   reducers: {
     setCredential: (state, action) => {
       const { user } = action.payload;
       state.user = user;
     },
-    logout: (state, action) => {
+    logout: (state) => {
+      authService.logout();
       state.user = null;
       state.token = null;
     },
@@ -36,19 +38,22 @@ export const authSlice = createSlice({
       state.value += action.payload;
     },
   },
-  extraReducers: {
-    [login.pending]: (state, action) => {
+ extraReducers: (builder) => {
+  builder
+    .addCase(login.pending, (state) => {
       state.status = "loading";
-    },
-    [login.fulfilled]: (state, action) => {
+      state.err = null;
+    })
+    .addCase(login.fulfilled, (state, action) => {
       state.status = "success";
       state.user = action.payload;
-    },
-    [login.rejected]: (state, action) => {
+    })
+    .addCase(login.rejected, (state, action) => {
       state.status = "failed";
-      state.err = action.payload?.message;
-    },
-  },
+      state.user = null;
+      state.err = action.payload?.message || 'An unknown error occurred';
+    });
+},
 });
 
 // Action creators are generated for each case reducer function

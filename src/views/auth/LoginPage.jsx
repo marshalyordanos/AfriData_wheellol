@@ -11,14 +11,26 @@ const LoginPage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
 
   const onFinish = async (values) => {
+    setLoading(true);
     console.log("Success:", values);
     try {
-      // const res = await dispatch(login(values));
+      const actionResult = await dispatch(login(values));
       navigate("/dash");
+
+      if (login.fulfilled.match(actionResult)) {
+      message.success("Login Successful!");
+    } else {
+      const errorMessage = actionResult.payload?.message || "Login failed. Please check your credentials.";
+      message.error(errorMessage);
+    }
     } catch (err) {
-      console.log("err", err);
+    console.error("Failed to login:", err);
+    message.error("An unexpected error occurred.");
+    } finally {
+    setLoading(false); 
     }
   };
 
@@ -89,14 +101,18 @@ const LoginPage = () => {
           >
             <div className="flex flex-col items-center">
               <Form.Item
-                label="Username"
-                name="username"
+                label="Email"
+                name="email"
                 className="flex-1 w-full"
                 rules={[
                   {
                     required: true,
-                    message: "Please input your username!",
+                    message: "Please input your email!",
                   },
+                  {
+                    type: 'email',
+                    message: 'Please enter a valid email address!',
+                    }
                 ]}
               >
                 <Input />
@@ -120,6 +136,7 @@ const LoginPage = () => {
                   className="bg-black text-white"
                   type="primary"
                   htmlType="submit"
+                  loading={loading}
                 >
                   Submit
                 </Button>
