@@ -10,13 +10,15 @@ import { Button, Result } from "antd";
 import ChangePassword from "./views/auth/ChangePassword";
 
 const AppRoute = () => {
-  const user = useSelector(selectCurrentUser);
+  // const user = useSelector(selectCurrentUser);
+  const user = "lkkkkkkkkk";
   console.log(user);
   return (
     <div>
       <Routes>
         {user && (
-          <Route element={<ProtectedRoute />}>
+          // <Route element={<ProtectedRoute />}>
+          <Route>
             <Route path="/dash/*" element={<LayoutRouting />} />
           </Route>
         )}
