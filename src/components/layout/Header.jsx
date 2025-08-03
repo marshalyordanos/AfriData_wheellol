@@ -163,8 +163,10 @@ const LayoutHeader = ({
             onClick={() => {
               navigate(-1);
               const y = JSON.parse(localStorage.getItem("keyPath"));
-              y.pop();
-              localStorage.setItem("keyPath", JSON.stringify(y));
+              if (Array.isArray(y)) {
+                y.pop();
+                localStorage.setItem("keyPath", JSON.stringify(y));
+              }
             }}
             style={{
               fontSize: "16px",
