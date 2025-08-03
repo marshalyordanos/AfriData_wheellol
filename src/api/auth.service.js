@@ -21,6 +21,15 @@ class AuthService {
     TokenService.removeUser();
   }
 
+  forgotPassword(email) {
+    return api.post("/user/forgot-password", { email });
+  }
+  
+   resetPassword(newPassword, tokenFromEmail) {
+    return api.post(`/user/reset-password/${tokenFromEmail}`, { newPassword });
+  }
+
+
   register(username, email, password) {
     return api.post("/auth/signup", {
       username,

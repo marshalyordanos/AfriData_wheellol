@@ -1,15 +1,15 @@
-import { Route, Navigate, Outlet } from "react-router-dom";
-
 import React from "react";
+import { Navigate, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { token } from "../redux/auth/authSlice";
+import { selectCurrentUser } from "../redux/auth/authSlice";
 
 const ProtectedRoute = () => {
-  const tokens = useSelector(token);
-  const t = JSON.parse(localStorage.getItem("user"))?.accessToken;
-  console.log("wwwwwwwwwwwwwwwww", t, tokens);
-  // return tokens || t ? <Outlet /> : <Navigate to="/login" />;
-  return true ? <Outlet /> : <Navigate to="/login" />;
+  const user = useSelector(selectCurrentUser);
+  const userInLocalStorage = !!localStorage.getItem("user");
+  if (user || userInLocalStorage) {
+    return <Outlet />;
+  }
+  return <Navigate to="/login" replace />;
 };
 
 export default ProtectedRoute;
