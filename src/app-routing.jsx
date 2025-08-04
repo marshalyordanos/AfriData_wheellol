@@ -11,8 +11,8 @@ import SignUpPage from "./views/auth/SignUpPage";
 // import ChangePassword from "./views/auth/ChangePassword";
 
 const AppRoute = () => {
-  const user = useSelector(selectCurrentUser);
-  // const user = "lkkkkkkkkk";
+  // const user = useSelector(selectCurrentUser);
+  const user = "lkkkkkkkkk";
   console.log(user);
   return (
     <div>
@@ -20,18 +20,13 @@ const AppRoute = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
 
-
         <Route element={<ProtectedRoute />}>
-            <Route path="/dash/*" element={<LayoutRouting />} />
+          <Route path="/dash/*" element={<LayoutRouting />} />
         </Route>
-    
-        <Route
-        path="/"
-        element={<Navigate to={user ? "/dash" : "/login"} />}
-      />
-        
 
-       <Route path="*" element={<PageNotFound/>} />
+        <Route path="/" element={<Navigate to={user ? "/dash" : "/login"} />} />
+
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </div>
   );

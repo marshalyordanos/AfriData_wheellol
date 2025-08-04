@@ -55,7 +55,7 @@ const LayoutApp = () => {
 
         <Content
           style={{
-            padding: "0 0 2px 0",
+            padding: "10px 0 2px 0",
             background: " #F9F9F9",
             overflowY: "auto",
             height: "max-content",

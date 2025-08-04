@@ -252,7 +252,8 @@ const HeaderStyle = styled.div`
   justify-content: space-between;
   /* border: 1px solid; */
   height: 70px;
-
+  background-color: white;
+  border-bottom: 1px solid lightgray;
   .header_right_con {
     display: flex;
     align-items: center;

@@ -74,7 +74,7 @@ const Sidebar = ({ collapsed }) => {
   const getItems = async () => {
     const items2 = [
       getItem(
-        <p className="text-gray-500">{t("OVERVIEW")}</p>,
+        <p className="text-gray-400">{t("OVERVIEW")}</p>,
         "dashboard",
         null,
         null,
@@ -97,11 +97,11 @@ const Sidebar = ({ collapsed }) => {
       style={{
         height: "100vh",
         // border: "1px solid gray",
-        borderRadius: "0px 40px 40px 0",
+        // borderRadius: "0px 40px 40px 0",
         position: "fixed",
 
         display: collapsed && "none",
-        backgroundColor: "white",
+        backgroundColor: "#0c0a09",
         zIndex: 110,
       }}
       trigger={null}
@@ -114,7 +114,7 @@ const Sidebar = ({ collapsed }) => {
         style={{
           width: 249,
           height: 100,
-          background: "white",
+          background: "#0c0a09",
           borderRadius: "0px 40px 0 0",
         }}
       >
@@ -128,7 +128,7 @@ const Sidebar = ({ collapsed }) => {
             className=" h-16    text-black border-red-800"
             alt="MK Logo"
           />
-          <p className="text-2xl font-bold tracking-wide text-blue-600">Logo</p>{" "}
+          <p className="text-2xl font-bold tracking-wide text-white">Logo</p>{" "}
         </NavLink>
       </div>
       <div className="sidebar__menus">
@@ -180,13 +180,13 @@ const SidebarStyle = styled(Sider)`
   }
 
   .sidebar__menus::-webkit-scrollbar-thumb {
-    background-color: #999;
+    background-color: #c4c4c4;
     border-radius: 4px;
     /* border: 2px solid #f1f1f1; */
   }
 
   .sidebar__menus::-webkit-scrollbar-thumb:hover {
-    background-color: #777;
+    background-color: #d8d8d8;
   }
   /* ************************************ scroller bar *********************************** */
 
@@ -200,7 +200,7 @@ const SidebarStyle = styled(Sider)`
   }
   span {
     font-size: 13px !important;
-    color: black !important;
+    color: white !important;
   }
   .ant-menu-item-selected span {
     color: white !important;

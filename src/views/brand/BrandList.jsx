@@ -262,8 +262,8 @@ const BrandList = () => {
           </button>
 
           <button
-            className="px-4  py-2 border border-[#1D9BF0] 
-            text-white bg-[#1D9BF0] rounded"
+            className="px-4  py-2 border border-[#3BB66E] 
+            text-white bg-[#3BB66E] rounded"
             onClick={() => {
               setIsModalOpen(true);
               setModeID("");
