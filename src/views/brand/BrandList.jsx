@@ -231,8 +231,8 @@ const BrandList = () => {
               placeholder="Search"
               value={searchText}
               allowClear
-              style={{ borderRadius: "0px 0px 0px 0px" }}
-              className=" drop-shadow-sm rounded-r py-[0.15rem]"
+              style={{ borderRadius: "10px " }}
+              className=" drop-shadow-sm rounded-r  py-2"
             />
             {/* <div className="hover:border-[#4096FF] transition-all delay-75 ease-in hover:border border-y-[0.5px] py-[0.15rem] border-r-[0.5px] rounded-r-[8px] border-[#CCCCCC] searchSelect">
               <Select
