@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import authService from "../../api/auth.service";
 
+// Real THUNK for login
 // export const login = createAsyncThunk(
 //   "auth/login",
 //   async (data, { rejectWithValue }) => {
@@ -49,10 +50,50 @@ export const login = createAsyncThunk(
   }
 );
 
+// FAKE REGISTER THUNK 
+export const register = createAsyncThunk(
+  "auth/register",
+  async (formData, { rejectWithValue }) => {
+    console.log("REGISTER with FormData:");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+    await sleep(1500); 
+
+    const email = formData.get('email');
+    if (email === "admin1@gmail.com") {
+      console.log("Failed registration email exists");
+      return rejectWithValue({ message: "This email address is already registered." });
+    } else {
+      console.log("Successful registration for:", email);
+      // On success, the backend returns the same data as a login
+      const fakeSuccessResponse = {
+        user: { id: 2, name: `${formData.get('first_name')} ${formData.get('last_name')}`, email: email, role: formData.get('role') },
+        accessToken: "fake-access-token-for-new-user-456",
+        refreshToken: "fake-refresh-token-for-new-user-def",
+      };
+      localStorage.setItem("user", JSON.stringify(fakeSuccessResponse));
+      return fakeSuccessResponse;
+    }
+  }
+);
+// Real THUNK for registration
+// export const register = createAsyncThunk(
+//   "auth/register",
+//   async (formData, { rejectWithValue }) => {
+//     try {
+//       const responseData = await authService.register(formData);
+//       return responseData; 
+//     } catch (err) {
+//       return rejectWithValue(err.response.data);
+//     }
+//   }
+// );
+
 export const authSlice = createSlice({
   name: "auth",
   initialState: {
-    status: "false",
+    status: "idle",
     user: null,
     err: null
   },
@@ -64,14 +105,13 @@ export const authSlice = createSlice({
     logout: (state) => {
       authService.logout();
       state.user = null;
-      state.token = null;
-    },
-    incrementByAmount: (state, action) => {
-      state.value += action.payload;
+      state.status = 'idle';
+      state.err = null;
     },
   },
  extraReducers: (builder) => {
   builder
+   // Cases for LOGIN
     .addCase(login.pending, (state) => {
       state.status = "loading";
       state.err = null;
@@ -84,13 +124,25 @@ export const authSlice = createSlice({
       state.status = "failed";
       state.user = null;
       state.err = action.payload?.message || 'An unknown error occurred';
-    });
+    })
+    // Cases for REGISTER
+    .addCase(register.pending, (state) => {
+        state.status = "loading";
+        state.err = null;
+      })
+    .addCase(register.fulfilled, (state, action) => {   state.status = "success";
+        state.user = action.payload; 
+    })
+    .addCase(register.rejected, (state, action) => {
+        state.status = "failed";
+        state.user = null;
+        state.err = action.payload?.message;
+      });
 },
 });
 
 // Action creators are generated for each case reducer function
-export const { setCredential, logout, incrementByAmount } = authSlice.actions;
+export const { setCredential, logout} = authSlice.actions;
 
 export default authSlice.reducer;
 export const selectCurrentUser = (state) => state.auth.user;
-export const token = (state) => state.auth.user?.accessToken;

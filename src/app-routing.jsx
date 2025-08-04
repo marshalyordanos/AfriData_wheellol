@@ -6,6 +6,7 @@ import LayoutRouting from "./LayoutRouting";
 import LoginPage from "./views/auth/LoginPage";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "./redux/auth/authSlice";
+import SignUpPage from "./views/auth/SignUpPage";
 // import { Button, Result } from "antd";
 // import ChangePassword from "./views/auth/ChangePassword";
 
@@ -17,7 +18,7 @@ const AppRoute = () => {
     <div>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<div>Signup</div>} />
+        <Route path="/signup" element={<SignUpPage />} />
 
 
         <Route element={<ProtectedRoute />}>

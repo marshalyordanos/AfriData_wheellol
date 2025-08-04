@@ -30,12 +30,8 @@ class AuthService {
   }
 
 
-  register(username, email, password) {
-    return api.post("/auth/signup", {
-      username,
-      email,
-      password
-    });
+  register(formData) {
+    return api.post("/user/register", formData);
   }
 
   getCurrentUser() {
