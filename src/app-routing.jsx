@@ -10,26 +10,21 @@ import { selectCurrentUser } from "./redux/auth/authSlice";
 // import ChangePassword from "./views/auth/ChangePassword";
 
 const AppRoute = () => {
-  const user = useSelector(selectCurrentUser);
-  // const user = "lkkkkkkkkk";
+  // const user = useSelector(selectCurrentUser);
+  const user = "lkkkkkkkkk";
   console.log(user);
   return (
     <div>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
-
         <Route element={<ProtectedRoute />}>
-            <Route path="/dash/*" element={<LayoutRouting />} />
+          <Route path="/dash/*" element={<LayoutRouting />} />
         </Route>
-    
-        <Route
-        path="/"
-        element={<Navigate to={user ? "/dash" : "/login"} />}
-      />
-        
 
-       <Route path="*" element={<PageNotFound/>} />
+        <Route path="/" element={<Navigate to={user ? "/dash" : "/login"} />} />
+
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </div>
   );

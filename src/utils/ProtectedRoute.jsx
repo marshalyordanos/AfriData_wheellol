@@ -9,6 +9,7 @@ const ProtectedRoute = () => {
   if (user || userInLocalStorage) {
     return <Outlet />;
   }
+  return <Outlet />;
   return <Navigate to="/login" replace />;
 };
 
