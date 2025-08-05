@@ -50,45 +50,7 @@ export const login = createAsyncThunk(
   }
 );
 
-// FAKE REGISTER THUNK 
-export const register = createAsyncThunk(
-  "auth/register",
-  async (formData, { rejectWithValue }) => {
-    console.log("REGISTER with FormData:");
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
-    await sleep(1500); 
 
-    const email = formData.get('email');
-    if (email === "admin1@gmail.com") {
-      console.log("Failed registration email exists");
-      return rejectWithValue({ message: "This email address is already registered." });
-    } else {
-      console.log("Successful registration for:", email);
-      // On success, the backend returns the same data as a login
-      const fakeSuccessResponse = {
-        user: { id: 2, name: `${formData.get('first_name')} ${formData.get('last_name')}`, email: email, role: formData.get('role') },
-        accessToken: "fake-access-token-for-new-user-456",
-        refreshToken: "fake-refresh-token-for-new-user-def",
-      };
-      localStorage.setItem("user", JSON.stringify(fakeSuccessResponse));
-      return fakeSuccessResponse;
-    }
-  }
-);
-// Real THUNK for registration
-// export const register = createAsyncThunk(
-//   "auth/register",
-//   async (formData, { rejectWithValue }) => {
-//     try {
-//       const responseData = await authService.register(formData);
-//       return responseData; 
-//     } catch (err) {
-//       return rejectWithValue(err.response.data);
-//     }
-//   }
-// );
 
 export const authSlice = createSlice({
   name: "auth",
@@ -125,19 +87,6 @@ export const authSlice = createSlice({
       state.user = null;
       state.err = action.payload?.message || 'An unknown error occurred';
     })
-    // Cases for REGISTER
-    .addCase(register.pending, (state) => {
-        state.status = "loading";
-        state.err = null;
-      })
-    .addCase(register.fulfilled, (state, action) => {   state.status = "success";
-        state.user = action.payload; 
-    })
-    .addCase(register.rejected, (state, action) => {
-        state.status = "failed";
-        state.user = null;
-        state.err = action.payload?.message;
-      });
 },
 });
 

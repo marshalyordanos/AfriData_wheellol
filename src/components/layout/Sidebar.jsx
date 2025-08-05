@@ -82,10 +82,10 @@ const Sidebar = ({ collapsed }) => {
         true
       ),
 
-      getItem(t("Dashboard"), "", <DashboardOutlined />),
+      getItem(t("Dashboard"), "/dash", <DashboardOutlined />),
 
-      getItem(t("Users"), "users", <UserOutlined />),
-      getItem("Brand", "brand", <DashboardOutlined />),
+      getItem(t("Users"), "/dash/users", <UserOutlined />),
+      getItem("Brand", "/dash/brand", <DashboardOutlined />),
     ];
 
     setItems(items2);
