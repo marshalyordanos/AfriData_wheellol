@@ -75,17 +75,17 @@ const Sidebar = ({ collapsed }) => {
     const items2 = [
       getItem(
         <p className="text-gray-500">{t("OVERVIEW")}</p>,
-        "dashboard",
+       "dashboard_header",
         null,
         null,
         null,
         true
       ),
 
-      getItem(t("Dashboard"), "", <DashboardOutlined />),
+      getItem(t("Dashboard"), "/dash", <DashboardOutlined />),
 
-      getItem(t("Users"), "users", <UserOutlined />),
-      getItem("Brand", "brand", <DashboardOutlined />),
+      getItem(t("Users"), "/dash/users", <UserOutlined />),
+      getItem("Brand", "/dash/brand", <DashboardOutlined />),
     ];
 
     setItems(items2);
