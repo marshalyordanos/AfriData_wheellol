@@ -5,6 +5,9 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { DashboardOutlined, UserOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import Logo from "../../assets/logo1.png";
+import { FaCar } from "react-icons/fa";
+import { BiSolidCategory } from "react-icons/bi";
+import { SiBrandfolder } from "react-icons/si";
 
 import { useTranslation } from "react-i18next";
 
@@ -84,8 +87,11 @@ const Sidebar = ({ collapsed }) => {
 
       getItem(t("Dashboard"), "/dash", <DashboardOutlined />),
 
-      getItem(t("Users"), "/dash/users", <UserOutlined />),
-      getItem("Brand", "/dash/brand", <DashboardOutlined />),
+      getItem(t("Users"), "user", <UserOutlined />),
+      getItem("Cars", "cars", <FaCar />),
+
+      getItem("Categories", "categories", <BiSolidCategory />),
+      getItem("Brands", "brands", <SiBrandfolder />),
     ];
 
     setItems(items2);
@@ -196,9 +202,12 @@ const SidebarStyle = styled(Sider)`
     background-color: transparent !important;
   }
 
+  .ant-menu-item {
+    color: black !important;
+  }
   .ant-menu-item-selected {
     background-color: #3bb66e !important;
-    color: white !important;
+    color: wheat !important;
   }
   span {
     font-size: 13px !important;

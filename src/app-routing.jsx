@@ -10,9 +10,9 @@ import { selectCurrentUser } from "./redux/auth/authSlice";
 // import ChangePassword from "./views/auth/ChangePassword";
 
 const AppRoute = () => {
-  // const user = useSelector(selectCurrentUser);
-  const user = "lkkkkkkkkk";
-  console.log(user);
+  const user = useSelector(selectCurrentUser);
+  // const user = "lkkkkkkkkk";
+  // console.log(user);
   return (
     <div>
       <Routes>

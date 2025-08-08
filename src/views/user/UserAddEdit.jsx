@@ -1,161 +1,419 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Form, Input, message, Select, Spin, Upload } from 'antd';
-import { UploadOutlined, ArrowLeftOutlined } from '@ant-design/icons';
-import UserService from './UserService';
 
-const { Option } = Select;
+    
+import React, { useEffect, useState } from 'react'
+import { Button, Divider, Dropdown, Form, Input, InputNumber, Select, Spin, Switch,DatePicker } from 'antd';
+import styled from 'styled-components';
+import { ButtonStyle, FlexStyle, FormStyle } from '../../components/commons/CommonStyles';
+import userService from './UserService';
+import CommonModal from '../../components/commons/CommonModel';
+import UserPick from './UserPick';
+import dayjs from 'dayjs';
+import CommonTable from '../../components/commons/CommonTable';
+import {
+  MoreOutlined,
+  ReloadOutlined
+} from '@ant-design/icons';
 
-const UserAddEdit = () => {
-  const navigate = useNavigate();
-  const { id } = useParams(); 
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const [pageTitle, setPageTitle] = useState('Add New User');
+import { NavLink } from 'react-router-dom';
+    const { Option } = Select;
 
-  useEffect(() => {
-    if (id) {
-      setPageTitle('Edit User');
-      fetchUserData(id);
-    }
-  }, [id, form]);
+    const validateMessages = {
+    required: '${label} is required!',
+    types: {
+        email: '${label} is not a valid email!',
+        number: '${label} is not a valid number!',
+    },
+    number: {
+        range: '${label} must be between ${min} and ${max}',
+    },
+    };
+    
+    
+    
+    const UserEdit = ({setIsModalOpen,isModelOpen,mode,setMode,userData,searchData}) => {
+      const [userData2, setUserData2] = useState([])
 
-  const fetchUserData = async (userId) => {
-    setLoading(true);
-    try {
-      const userData = await UserService.getUser(userId);
-      if (userData) {
-        // placeholder for handling existing files.
-        form.setFieldsValue(userData);
-      }
-    } catch (error) {
-      message.error("Failed to fetch user data.");
-      navigate('/dash/users');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const onFinish = async (values) => {
-    setLoading(true);
-    const formData = new FormData();
-    Object.keys(values).forEach(key => {
-      if (['profile_picture', 'driver_license', 'national_id'].includes(key)) {
-        // append file for new one uploaded only
-        if (values[key] && values[key][0] && values[key][0].originFileObj) {
-          formData.append(key, values[key][0].originFileObj);
+      const [form] = Form.useForm();
+      const [switch2,setSwitch2] = useState("")
+      const [loading,setLoading] = useState("")
+      const [usePick,setUsePick] = useState(false)
+
+
+    
+    useEffect(()=>{
+        const featchData = async()=>{
+        try{
+
+            const data = await userService.getUse(mode);
+            form.setFieldsValue({ use: {...data,updatedAt:dayjs(data.updatedAt)} });
+            
+    
+        }catch(err){
         }
-      } else if (values[key] !== undefined && values[key] !== null) {
-        formData.append(key, values[key]);
-      }
-    });
+        }
+        if (mode==''){
+        
+        } else{
+        
+        featchData()
+        }
+    },[])
 
-    try {
-      if (id) {
-        await UserService.updateUser(id, formData);
-        message.success("User updated successfully!");
-      } else {
-        await UserService.createUser(formData);
-        message.success("User created successfully!");
-      }
-      navigate('/dash/users'); 
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || `Failed to ${id ? 'update' : 'create'} user.`;
-      message.error(errorMessage);
-    } finally {
-      setLoading(false);
+
+    const handleReset = () => {
+        form.resetFields();
+    }; 
+
+    const usePickHandler=(data)=>{
+        console.log('usePickHandler',data)
+        
+        setUsePick(false)
+        
     }
-  };
 
-  const normFile = (e) => {
-    if (Array.isArray(e)) { return e; }
-    return e && e.fileList;
-  };
 
-  return (
-    <div className="p-6">
-      <div className="flex items-center mb-6">
-        <Button
-          icon={<ArrowLeftOutlined />}
-          type="text"
-          onClick={() => navigate('/dash/users')}
+    const onAdd = async(e)=>{
+      e.preventDefault();
+        try{
+
+        setLoading(true);
+
+        const data = await userService.userDo({method:'add_list_to_use',payload:{data:userData2}})
+        setIsModalOpen(false)
+        
+        searchData()
+        setLoading(false);
+
+        }catch(err){
+        setLoading(false);
+        }
+    } 
+
+    const onUpdate = async(datas)=>{
+        
+        try{
+
+        setLoading(true);
+
+        const data = await userService.updateUse(datas.use,mode)
+        searchData()
+        setIsModalOpen(false)
+        setLoading(false);
+
+        }catch(err){
+        setLoading(false);
+        }
+    }
+    
+
+    const onFinish = (values) => {
+      console.log("===========")
+        mode == ''? handleAddToList(values):onUpdate(values)
+    };
+    const handleAddToList = (e)=>{
+      // e.preventDefault()
+      setUserData2([{...form.getFieldsValue()?.use,_id:new Date().getTime()},...userData2])
+      handleReset()
+    }
+    
+    
+    const onClick = ({ key }, record) => {
+      if (key == 'edit') {
+        console.log("========",record)
+
+        form.setFieldsValue({use:record})
+        const data = userData2.filter((use)=>use._id !== record._id)
+        setUserData2(data)
+
+      } else if (key === 'delete') {
+        console.log("========",record)
+          const data = userData2.filter((use)=>use._id !== record._id)
+          setUserData2(data)
+      }
+  };
+    const items = [
+      {
+          key: 'edit',
+          label: (
+              <Button type="text">Edit</Button>
+          ),
+
+
+      },
+      {
+          key: 'delete',
+          label: (
+              <Button type="text"> Delete</Button>
+          ),
+      },
+      {
+          key: '3',
+          label: (
+              <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
+                  3rd menu item
+              </a>
+          ),
+      },
+  ];
+  
+     const columns = [
+         
+    
+     
+            {
+                title: 'first_name',
+                dataIndex: 'first_name',
+
+            },
+             
+            {
+                title: 'last_name',
+                dataIndex: 'last_name',
+
+            },
+             
+            {
+                title: 'email',
+                dataIndex: 'email',
+
+            },
+             
+            {
+                title: 'role',
+                dataIndex: 'role',
+
+            },
+             
+            {
+                title: 'phone_number',
+                dataIndex: 'phone_number',
+
+            },
+             
+            {
+                title: 'driver_license',
+                dataIndex: 'driver_license',
+
+            },
+             
+            {
+                title: 'national_id',
+                dataIndex: 'national_id',
+
+            },
+            
+         
+         ];
+    
+    
+  
+  
+  
+    return (
+    <div>
+      {/*******  picks **********/}
+      {usePick ? <CommonModal
+        width={700}
+        isModalOpen={usePick}
+        setIsModalOpen={setUsePick}
+      >
+        <UserPick
+          setIsModalOpen={setUsePick}
+          selectHandler={usePickHandler}
         />
-        <h1 className="text-2xl font-bold ml-4">{pageTitle}</h1>
+      </CommonModal> : ""}
+
+
+      {loading ? <SpinStyle>
+        <Spin style={{ color: "#fff" }} size="large" />
+      </SpinStyle> : ""}
+      <button onClick={() => setUsePick(true)}>hhhhhh</button>
+      
+      
+      
+    <FormStyle
+        form={form}
+        layout="vertical"
+        name="nest-messages"
+        onFinish={onFinish}
+        onError={() => {} }
+
+        validateMessages={validateMessages}
+      >
+      
+      
+
+        
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'first_name']}
+            label="first_name"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'last_name']}
+            label="last_name"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'email']}
+            label="email"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'role']}
+            label="role"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'phone_number']}
+            label="phone_number"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'driver_license']}
+            label="driver_license"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'national_id']}
+            label="national_id"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+      
+      
+    {userData2.length>0 && <CommonTable
+                    rowSelectionType={"checkbox"}
+                    data={userData2}
+                    columns={columns}
+                    total={userData2.lenght}
+                    loadding={loading}
+                    type={true}
+
+                />}
+
+                <Divider/>
+            
+      
+      <ButtonStyle>
+          <button onClick={() => setIsModalOpen(false)} >
+            cancel
+          </button>
+
+          {mode?<button type='submit'  >
+           Submit
+          </button>:<button type='submit'  >
+            Add List
+          </button>}
+
+          {!mode&&<button disabled={userData2.length==0} onClick={onAdd} className={userData2.length>0?"":'disable'} type='submit'  >
+            Submit
+          </button>}
+        </ButtonStyle>
+      </FormStyle>
+    
+      
+       
       </div>
+  )
+    
+    
+  
+   }  
+   
+   
+  const SpinStyle = styled.div`
+  /* border: 1px solid; */
+  width: 50px;
+  height:  50px;
+  background-color: rgba(0,0,0,0.2);
+  z-index: 100;
+  display: flex;
+  border-radius:  120px;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  left: 40%;
 
-      <Spin spinning={loading}>
-        <Form
-          form={form}
-          layout="vertical"
-          name="user-add-edit-form"
-          onFinish={onFinish}
-          className="max-w-4xl mx-auto"
-        >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0 16px' }}>
-            <Form.Item name="first_name" label="First Name" rules={[{ required: true }]}>
-              <Input />
-            </Form.Item>
-            <Form.Item name="last_name" label="Last Name" rules={[{ required: true }]}>
-              <Input />
-            </Form.Item>
-            <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
-              <Input />
-            </Form.Item>
-            <Form.Item name="phone_number" label="Phone Number" rules={[{ required: true }]}>
-              <Input />
-            </Form.Item>
-            <Form.Item name="password" label="Password" rules={[{ required: !id, message: 'Password is required for new users!' }]}>
-              <Input.Password placeholder={id ? "Leave blank to keep unchanged" : ""} />
-            </Form.Item>
-            <Form.Item name="role" label="Role" rules={[{ required: true }]}>
-              <Select placeholder="Select a role">
-                <Option value="admin">Admin</Option>
-                <Option value="renter">Renter</Option>
-                <Option value="car_owner">Car Owner</Option>
-              </Select>
-            </Form.Item>
-          </div>
-          
-          <h2 className="text-lg font-semibold mt-6 mb-4">Verification Documents</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0 16px' }}>
-            <Form.Item name="profile_picture" label="Profile Picture" valuePropName="fileList" getValueFromEvent={normFile}>
-              <Upload listType="picture" maxCount={1} beforeUpload={() => false}>
-                <Button icon={<UploadOutlined />}>Upload Profile Picture</Button>
-              </Upload>
-            </Form.Item>
-            <Form.Item name="driver_license" label="Driver's License" valuePropName="fileList" getValueFromEvent={normFile}>
-              <Upload listType="picture" maxCount={1} beforeUpload={() => false}>
-                <Button icon={<UploadOutlined />}>Upload Drivers License</Button>
-              </Upload>
-            </Form.Item>
-            <Form.Item name="national_id" label="National ID" valuePropName="fileList" getValueFromEvent={normFile}>
-              <Upload listType="picture" maxCount={1} beforeUpload={() => false}>
-                <Button icon={<UploadOutlined />}>Upload National ID</Button>
-              </Upload>
-            </Form.Item>
-          </div>
+  .ant-spin-dot .ant-spin-dot-spin {
+    background-color: red; 
+  }
+ 
 
-          <Form.Item className="mt-8">
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              size="large"
-            >
-              {id ? 'Update User' : 'Create User'}
-            </Button>
-            <Button
-              size="large"
-              className="ml-4"
-              onClick={() => navigate('/dash/users')}
-            >
-              Cancel
-            </Button>
-          </Form.Item>
-        </Form>
-      </Spin>
-    </div>
-  );
-};
 
-export default UserAddEdit;
+`
+
+
+
+export default UserEdit
+    
+    
