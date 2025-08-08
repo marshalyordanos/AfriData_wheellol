@@ -14,9 +14,11 @@ input {
 }
 
 .ant-select-selector {
-  border: 1px solid rgb(161, 161, 161) !important;
+  /* border: 1px solid rgb(161, 161, 161) !important; */
   padding: 19px !important;
   min-width: 200px;
+  height: 38px !important;
+  background-color: #f4f4f5 !important;
 }
 
 .horizontal-dots {

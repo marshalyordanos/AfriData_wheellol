@@ -1,11 +1,11 @@
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 // import api from "../../api/api";
 import { login } from "../../redux/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 import { Button, Checkbox, Form, Input, message, Modal } from "antd";
-import { selectCurrentUser } from "../../redux/auth/authSlice"; 
-// import authService from "../../api/auth.service"; 
+import { selectCurrentUser } from "../../redux/auth/authSlice";
+// import authService from "../../api/auth.service";
 
 const LoginPage = () => {
   const dispatch = useDispatch();
@@ -30,16 +30,18 @@ const LoginPage = () => {
       const actionResult = await dispatch(login(values));
 
       if (login.fulfilled.match(actionResult)) {
-      message.success("Login Successful!");
-    } else {
-      const errorMessage = actionResult.payload?.message || "Login failed. Please check your credentials.";
-      message.error(errorMessage);
-    }
+        message.success("Login Successful!");
+      } else {
+        const errorMessage =
+          actionResult.payload?.message ||
+          "Login failed. Please check your credentials.";
+        message.error(errorMessage);
+      }
     } catch (err) {
-    console.error("Failed to login:", err);
-    message.error("An unexpected error occurred.");
+      console.error("Failed to login:", err);
+      message.error("An unexpected error occurred.");
     } finally {
-    setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -57,24 +59,26 @@ const LoginPage = () => {
     form.resetFields();
   };
 
-   // Fake FUNCTION
-const handleForgotPassword = async (values) => {
-  setModalLoading(true); 
-  console.log("Requesting password reset for email:", values.email);
-  await new Promise(resolve => setTimeout(resolve, 1000)); 
+  // Fake FUNCTION
+  const handleForgotPassword = async (values) => {
+    setModalLoading(true);
+    console.log("Requesting password reset for email:", values.email);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  if (values.email === "notfound@gmail.com") {
-    console.log("Email not found");
-    message.error("No account found with that email address.");
-  } else {
-    console.log("Password reset email sent");
-    message.success("If an account exists for that email, a reset link has been sent.");
-    handleCancel(); 
-  }
-  setModalLoading(false); 
+    if (values.email === "notfound@gmail.com") {
+      console.log("Email not found");
+      message.error("No account found with that email address.");
+    } else {
+      console.log("Password reset email sent");
+      message.success(
+        "If an account exists for that email, a reset link has been sent."
+      );
+      handleCancel();
+    }
+    setModalLoading(false);
 
-  // --- The REAL function we will use later ---
-  /*
+    // --- The REAL function we will use later ---
+    /*
   const handleForgotPassword_REAL = async (values) => {
     setModalLoading(true);
     try {
@@ -89,7 +93,7 @@ const handleForgotPassword = async (values) => {
     }
   };
   */
-};
+  };
 
   return (
     <div className="w-[100vw] h-[100vh] bg-[#628DBA]  flex flex-col lg:flex-row justify-between ">
@@ -110,18 +114,14 @@ const handleForgotPassword = async (values) => {
           >
             <div className="flex flex-col items-center">
               <Form.Item
-                label="Email"
-                name="email"
+                label="Phone"
+                name="phone"
                 className="flex-1 w-full"
                 rules={[
                   {
                     required: true,
-                    message: "Please input your email!",
+                    message: "Please input your phone!",
                   },
-                  {
-                    type: 'email',
-                    message: 'Please enter a valid email address!',
-                    }
                 ]}
               >
                 <Input />
@@ -164,15 +164,20 @@ const handleForgotPassword = async (values) => {
             destroyOnHidden
           >
             <p className="mb-4 text-gray-500">
-              Enter your email address and we will send you a link to reset your password.
+              Enter your email address and we will send you a link to reset your
+              password.
             </p>
             <Form form={form} onFinish={handleForgotPassword} layout="vertical">
               <Form.Item
                 name="email"
                 label="Email Address"
                 rules={[
-                  { required: true, message: "Please input your email address!" }, 
-                  { type: 'email', message: 'Please enter a valid email!' }]}
+                  {
+                    required: true,
+                    message: "Please input your email address!",
+                  },
+                  { type: "email", message: "Please enter a valid email!" },
+                ]}
               >
                 <Input placeholder="yourname@gmail.com" />
               </Form.Item>
@@ -190,7 +195,7 @@ const handleForgotPassword = async (values) => {
                   style={{ background: "black", color: "white" }}
                   type="primary"
                   htmlType="submit"
-                  loading={modalLoading} 
+                  loading={modalLoading}
                   // block
                 >
                   {/* {isOtpSent ? "Verify OTP" : "Send OTP"} */}

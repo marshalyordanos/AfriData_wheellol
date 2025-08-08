@@ -4,9 +4,9 @@ import React, { useEffect, useState } from 'react'
 import { Button, Divider, Dropdown, Form, Input, InputNumber, Select, Spin, Switch,DatePicker } from 'antd';
 import styled from 'styled-components';
 import { ButtonStyle, FlexStyle, FormStyle } from '../../components/commons/CommonStyles';
-import brandService from './BrandService';
+import brandsService from './BrandsService';
 import CommonModal from '../../components/commons/CommonModel';
-import BrandPick from './BrandPick';
+import BrandsPick from './BrandsPick';
 import dayjs from 'dayjs';
 import CommonTable from '../../components/commons/CommonTable';
 import {
@@ -30,13 +30,13 @@ import { NavLink } from 'react-router-dom';
     
     
     
-    const BrandEdit = ({setIsModalOpen,isModelOpen,mode,setMode,brandData,searchData}) => {
-      const [brandData2, setBrandData2] = useState([])
+    const BrandsEdit = ({setIsModalOpen,isModelOpen,mode,setMode,brandsData,searchData}) => {
+      const [brandsData2, setBrandsData2] = useState([])
 
       const [form] = Form.useForm();
       const [switch2,setSwitch2] = useState("")
       const [loading,setLoading] = useState("")
-      const [branPick,setBranPick] = useState(false)
+      const [brandPick,setBrandPick] = useState(false)
 
 
     
@@ -44,8 +44,8 @@ import { NavLink } from 'react-router-dom';
         const featchData = async()=>{
         try{
 
-            const data = await brandService.getBran(mode);
-            form.setFieldsValue({ bran: {...data,updatedAt:dayjs(data.updatedAt)} });
+            const data = await brandsService.getBrand(mode);
+            form.setFieldsValue({ brand: {...data,updatedAt:dayjs(data.updatedAt)} });
             
     
         }catch(err){
@@ -64,10 +64,10 @@ import { NavLink } from 'react-router-dom';
         form.resetFields();
     }; 
 
-    const branPickHandler=(data)=>{
-        console.log('branPickHandler',data)
+    const brandPickHandler=(data)=>{
+        console.log('brandPickHandler',data)
         
-        setBranPick(false)
+        setBrandPick(false)
         
     }
 
@@ -78,7 +78,7 @@ import { NavLink } from 'react-router-dom';
 
         setLoading(true);
 
-        const data = await brandService.brandDo({method:'add_list_to_bran',payload:{data:brandData2}})
+        const data = await brandsService.brandsDo({method:'add_list_to_brand',payload:{data:brandsData2}})
         setIsModalOpen(false)
         
         searchData()
@@ -95,7 +95,7 @@ import { NavLink } from 'react-router-dom';
 
         setLoading(true);
 
-        const data = await brandService.updateBran(datas.bran,mode)
+        const data = await brandsService.updateBrand(datas.brand,mode)
         searchData()
         setIsModalOpen(false)
         setLoading(false);
@@ -112,7 +112,7 @@ import { NavLink } from 'react-router-dom';
     };
     const handleAddToList = (e)=>{
       // e.preventDefault()
-      setBrandData2([{...form.getFieldsValue()?.bran,_id:new Date().getTime()},...brandData2])
+      setBrandsData2([{...form.getFieldsValue()?.brand,_id:new Date().getTime()},...brandsData2])
       handleReset()
     }
     
@@ -121,14 +121,14 @@ import { NavLink } from 'react-router-dom';
       if (key == 'edit') {
         console.log("========",record)
 
-        form.setFieldsValue({bran:record})
-        const data = brandData2.filter((bran)=>bran._id !== record._id)
-        setBrandData2(data)
+        form.setFieldsValue({brand:record})
+        const data = brandsData2.filter((brand)=>brand._id !== record._id)
+        setBrandsData2(data)
 
       } else if (key === 'delete') {
         console.log("========",record)
-          const data = brandData2.filter((bran)=>bran._id !== record._id)
-          setBrandData2(data)
+          const data = brandsData2.filter((brand)=>brand._id !== record._id)
+          setBrandsData2(data)
       }
   };
     const items = [
@@ -165,6 +165,26 @@ import { NavLink } from 'react-router-dom';
                 dataIndex: 'name',
 
             },
+             
+            {
+                title: 'country',
+                dataIndex: 'country',
+
+            },
+             
+            {
+                title: 'is_featured',
+                dataIndex: 'is_featured',
+                render: (text, recored) => {
+                    return recored.is_featured ? <p>true</p> : <p>false</p>
+                },
+            },
+             
+            {
+                title: 'logo',
+                dataIndex: 'logo',
+
+            },
             
          
          ];
@@ -176,14 +196,14 @@ import { NavLink } from 'react-router-dom';
     return (
     <div>
       {/*******  picks **********/}
-      {branPick ? <CommonModal
+      {brandPick ? <CommonModal
         width={700}
-        isModalOpen={branPick}
-        setIsModalOpen={setBranPick}
+        isModalOpen={brandPick}
+        setIsModalOpen={setBrandPick}
       >
-        <BrandPick
-          setIsModalOpen={setBranPick}
-          selectHandler={branPickHandler}
+        <BrandsPick
+          setIsModalOpen={setBrandPick}
+          selectHandler={brandPickHandler}
         />
       </CommonModal> : ""}
 
@@ -191,7 +211,7 @@ import { NavLink } from 'react-router-dom';
       {loading ? <SpinStyle>
         <Spin style={{ color: "#fff" }} size="large" />
       </SpinStyle> : ""}
-      <button onClick={() => setBranPick(true)}>hhhhhh</button>
+      <button onClick={() => setBrandPick(true)}>hhhhhh</button>
       
       
       
@@ -210,8 +230,42 @@ import { NavLink } from 'react-router-dom';
         
             <Form.Item
             className=' flex-1'
-            name={['bran', 'name']}
+            name={['brand', 'name']}
             label="name"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['brand', 'country']}
+            label="country"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+                <Form.Item name={['brand', 'is_featured']} label="is_featured" >
+                    <Switch checked={switch2} onChange={(value)=>setSwitch2(value)} style={{background:switch2?'blue':'gray'}} />
+                </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['brand', 'logo']}
+            label="logo"
             rules={[
                 {
                 required: true,
@@ -225,11 +279,11 @@ import { NavLink } from 'react-router-dom';
             
       
       
-    {brandData2.length>0 && <CommonTable
+    {brandsData2.length>0 && <CommonTable
                     rowSelectionType={"checkbox"}
-                    data={brandData2}
+                    data={brandsData2}
                     columns={columns}
-                    total={brandData2.lenght}
+                    total={brandsData2.lenght}
                     loadding={loading}
                     type={true}
 
@@ -249,7 +303,7 @@ import { NavLink } from 'react-router-dom';
             Add List
           </button>}
 
-          {!mode&&<button disabled={brandData2.length==0} onClick={onAdd} className={brandData2.length>0?"":'disable'} type='submit'  >
+          {!mode&&<button disabled={brandsData2.length==0} onClick={onAdd} className={brandsData2.length>0?"":'disable'} type='submit'  >
             Submit
           </button>}
         </ButtonStyle>
@@ -288,6 +342,6 @@ import { NavLink } from 'react-router-dom';
 
 
 
-export default BrandEdit
+export default BrandsEdit
     
     

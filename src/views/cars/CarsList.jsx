@@ -1,25 +1,25 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, Select } from "antd";
+import { Button, Dropdown, Image, Input, Select, Tag } from "antd";
 import styled from "styled-components";
 import CommonModal from "../../components/commons/CommonModel";
 
-import brandService from "./BrandService";
-import BrandEdit from "./BrandEdit";
+import carsService from "./CarsService";
+import CarsEdit from "./CarsEdit";
 import { NavLink, useSearchParams } from "react-router-dom";
 //import { HeaderStyle, SearchInputStyle } from '../../components/commons/CommonStyles';
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import { useDispatch, useSelector } from "react-redux";
-import { searchBrand, updateBrandState, brandSearchText } from "./BrandRedux";
+import { searchCars, updateCarsState, carsSearchText } from "./CarsRedux";
 
-const BrandList = () => {
-  const [brandData, setBrandData] = useState([]);
+const CarsList = () => {
+  const [carsData, setCarsData] = useState([]);
   const [total, setTotal] = useState();
 
-  const searchText = useSelector(brandSearchText);
+  const searchText = useSelector(carsSearchText);
   const [loading, setLoading] = useState();
-  const [brandSelection, setBrandSelection] = useState([]);
+  const [carsSelection, setCarsSelection] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -35,7 +35,7 @@ const BrandList = () => {
 
   useEffect(() => {
     const [page, limit] = getPaginationInfo();
-    dispatch(updateBrandState({ page: page, limit: limit }));
+    dispatch(updateCarsState({ page: page, limit: limit }));
     // setSearchParams({ ...Object.fromEntries(searchParams), 'searchText': e.target.value })
     searchData();
   }, []);
@@ -43,8 +43,8 @@ const BrandList = () => {
   async function searchData() {
     try {
       setLoading(true);
-      const { payload } = await dispatch(searchBrand());
-      setBrandData(payload.data);
+      const { payload } = await dispatch(searchCars());
+      setCarsData(payload.data);
       setTotal(payload.total);
       setLoading(false);
     } catch (err) {
@@ -57,7 +57,7 @@ const BrandList = () => {
     const [page, limit] = getPaginationInfo();
 
     // setSearchParams({ page: page, limit: limit })
-    dispatch(updateBrandState({ page: page, limit: limit, searchText: value }));
+    dispatch(updateCarsState({ page: page, limit: limit, searchText: value }));
     clearTimeout(delayTimerRef.current);
     delayTimerRef.current = setTimeout(() => {
       searchData();
@@ -67,19 +67,19 @@ const BrandList = () => {
   const handlePagination = async (page, pageSize) => {
     // permmission exmple
 
-    // if (!(await authService.checkPermmision('brand', 'read'))) {
+    // if (!(await authService.checkPermmision('cars', 'read'))) {
     //     return message.error('You have not a permmission');
     // }
 
     setSearchParams({ page: page, limit: pageSize });
-    dispatch(updateBrandState({ page: page, limit: pageSize }));
+    dispatch(updateCarsState({ page: page, limit: pageSize }));
 
     searchData();
   };
 
   const tableChange = (pagination, filters, sorter) => {
     const { field, order } = sorter;
-    dispatch(updateBrandState({ sort: field, order: order }));
+    dispatch(updateCarsState({ sort: field, order: order }));
 
     searchData();
   };
@@ -89,7 +89,7 @@ const BrandList = () => {
 
     setSearchParams({ page: 1, limit: 5 });
     dispatch(
-      updateBrandState({
+      updateCarsState({
         page: 1,
         limit: 5,
         sort: "",
@@ -103,7 +103,7 @@ const BrandList = () => {
   const handleDelete = async () => {
     try {
       setLoading(true);
-      const data = await brandService.deleteBran(modeID);
+      const data = await carsService.deleteCar(modeID);
       setIsDeleteModalOpen(false);
 
       searchData();
@@ -169,21 +169,117 @@ const BrandList = () => {
         );
       },
     },
-
     {
-      title: "name",
-      dataIndex: "name",
+      title: "Image",
+      dataIndex: "images",
+      sorter: true,
       render: (text, recored) => {
         return (
-          <NavLink
-            style={{ color: "#2f1dca" }}
-            state={recored}
-            to={`${recored._id}`}
-          >
-            {text}
-          </NavLink>
+          <Image
+            // height={50}
+            width={80}
+            style={{ objectFit: "cover", maxHeight: 50 }}
+            src={recored?.images[0]}
+          />
         );
       },
+    },
+    {
+      title: "Name",
+      dataIndex: "title",
+      render: (text, recored) => {
+        return <p>{text}</p>;
+      },
+      // sorter: true,
+    },
+
+    {
+      title: "Brand",
+      dataIndex: "brand",
+      // sorter: true,
+      render: (text, recored) => {
+        return <p>{recored?.brand?.name}</p>;
+      },
+    },
+
+    {
+      title: "Model",
+      dataIndex: "model",
+      // sorter: true,
+    },
+
+    {
+      title: "Year",
+      dataIndex: "year",
+      // sorter: true,
+    },
+
+    {
+      title: "Is Featured",
+      dataIndex: "is_featured",
+      render: (text, recored) => {
+        return recored.is_featured ? (
+          <Tag color="green">Featured</Tag>
+        ) : (
+          <Tag color="blue">Not featured</Tag>
+        );
+      },
+    },
+
+    {
+      title: "Category",
+      dataIndex: "category.name",
+      // sorter: true,
+      render: (text, recored) => {
+        return <p>{recored?.category?.name}</p>;
+      },
+    },
+
+    {
+      title: "Transmission",
+      dataIndex: "transmission",
+      sorter: true,
+    },
+
+    {
+      title: "Fuel type",
+      dataIndex: "fuel_type",
+      sorter: true,
+    },
+
+    {
+      title: "Seating capacity",
+      dataIndex: "seating_capacity",
+      sorter: true,
+    },
+
+    {
+      title: "Rental price / day",
+      dataIndex: "rental_price_per_day",
+      sorter: true,
+    },
+
+    {
+      title: "Location",
+      dataIndex: "location",
+      sorter: true,
+    },
+
+    {
+      title: "Description",
+      dataIndex: "description",
+      sorter: true,
+    },
+
+    {
+      title: "Insurance info",
+      dataIndex: "insurance_info",
+      sorter: true,
+    },
+
+    {
+      title: "rental terms",
+      dataIndex: "rental_terms",
       sorter: true,
     },
   ];
@@ -196,8 +292,8 @@ const BrandList = () => {
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
         >
-          <BrandEdit
-            brandData={brandData}
+          <CarsEdit
+            carsData={carsData}
             searchData={searchData}
             setMode={setModeID}
             mode={modeID}
@@ -224,19 +320,20 @@ const BrandList = () => {
 
       <span className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700">
         <div className="flex flex-col p-6 md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Brands</h1>
+          <h1 className="text-2xl font-bold pb-4">Carss</h1>
           <div className="flex">
             <Input
               onChange={searchHandler}
               placeholder="Search"
               value={searchText}
               allowClear
-              style={{ borderRadius: "10px " }}
-              className=" drop-shadow-sm rounded-r  py-2"
+              //   style={{ borderRadius: "0px 0px 0px 0px" }}
+              className=" drop-shadow-sm rounded-lg  py-2"
             />
             {/* <div className="hover:border-[#4096FF] transition-all delay-75 ease-in hover:border border-y-[0.5px] py-[0.15rem] border-r-[0.5px] rounded-r-[8px] border-[#CCCCCC] searchSelect">
               <Select
                 onChange={(val) => {
+                
                   searchData();
                 }}
                 bordered={false}
@@ -279,9 +376,9 @@ const BrandList = () => {
 
       <CommonTable
         rowSelectionType={"checkbox"}
-        data={brandData}
+        data={carsData}
         columns={columns}
-        setSelection={setBrandSelection}
+        setSelection={setCarsSelection}
         handlePagination={handlePagination}
         total={total}
         loadding={loading}
@@ -291,4 +388,4 @@ const BrandList = () => {
   );
 };
 
-export default BrandList;
+export default CarsList;

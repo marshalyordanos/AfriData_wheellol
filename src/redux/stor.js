@@ -1,13 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./auth/authSlice";
-import brandReducer from "../views/brand/BrandRedux"; 
-import userReducer from "../views/user/UserRedux";
-
+import brandsReducer from "../views/brands/BrandsRedux"; // import the brands
+import userReducer from "../views/user/UserRedux"; // import the user
+import categorysReducer from "../views/categorys/CategorysRedux"; // import the categorys
+import carsReducer from "../views/cars/CarsRedux"; // import the cars
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    brand: brandReducer,
-    user: userReducer,
+    brands: brandsReducer, // add the brands here
+    user: userReducer, // add the user here
+    categorys: categorysReducer, // add the categorys here
+    cars: carsReducer, // add the cars here
   },
 });

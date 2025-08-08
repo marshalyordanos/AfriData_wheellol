@@ -3,9 +3,9 @@
     import { Button, Form, Input, InputNumber, Select, Spin, Switch,DatePicker,Divider } from 'antd';
     import styled from 'styled-components';
     import { ButtonStyle, FlexStyle, FormStyle } from '../../components/commons/CommonStyles';
-    import brandService from './BrandService';
+    import userService from './UserService';
     import CommonModal from '../../components/commons/CommonModel';
-    import BrandPick from './BrandPick';
+    import UserPick from './UserPick';
     import dayjs from 'dayjs';
     
     const { Option } = Select;
@@ -21,11 +21,11 @@
     },
     };
     
-    const BrandEdit = ({setIsModalOpen,isModelOpen,mode,setMode,brandData,searchData}) => {
+    const UserEdit = ({setIsModalOpen,isModelOpen,mode,setMode,userData,searchData}) => {
     const [form] = Form.useForm();
     const [switch2,setSwitch2] = useState("")
     const [loading,setLoading] = useState("")
-    const [branPick,setBranPick] = useState(false)
+    const [usePick,setUsePick] = useState(false)
 
 
     
@@ -33,8 +33,8 @@
         const featchData = async()=>{
         try{
 
-            const data = await brandService.getBran(mode);
-            form.setFieldsValue({ bran: {...data,updatedAt:dayjs(data.updatedAt)} });
+            const data = await userService.getUse(mode);
+            form.setFieldsValue({ use: {...data,updatedAt:dayjs(data.updatedAt)} });
             
     
         }catch(err){
@@ -53,10 +53,10 @@
         form.resetFields(); // Reset form fields
     }; 
 
-    const branPickHandler=(data)=>{
-        console.log('branPickHandler',data)
+    const usePickHandler=(data)=>{
+        console.log('usePickHandler',data)
         
-        setBranPick(false)
+        setUsePick(false)
         
     }
 
@@ -66,7 +66,7 @@
 
         setLoading(true);
 
-        const data = await brandService.createBran(datas.bran)
+        const data = await userService.createUse(datas.use)
         setIsModalOpen(false)
         searchData()
 
@@ -83,7 +83,7 @@
 
         setLoading(true);
 
-        const data = await brandService.updateBran(datas.bran,mode)
+        const data = await userService.updateUse(datas.use,mode)
         searchData()
         setIsModalOpen(false)
         setLoading(false);
@@ -103,14 +103,14 @@
         return (
     <div>
       {/*******  picks **********/}
-      {branPick ? <CommonModal
+      {usePick ? <CommonModal
         width={700}
-        isModalOpen={branPick}
-        setIsModalOpen={setBranPick}
+        isModalOpen={usePick}
+        setIsModalOpen={setUsePick}
       >
-        <BrandPick
-          setIsModalOpen={setBranPick}
-          selectHandler={branPickHandler}
+        <UserPick
+          setIsModalOpen={setUsePick}
+          selectHandler={usePickHandler}
         />
       </CommonModal> : ""}
 
@@ -118,7 +118,7 @@
       {loading ? <SpinStyle>
         <Spin style={{ color: "#fff" }} size="large" />
       </SpinStyle> : ""}
-      <button onClick={() => setBranPick(true)}>hhhhhh</button>
+      <button onClick={() => setUsePick(true)}>hhhhhh</button>
       
       
     <FormStyle
@@ -135,8 +135,98 @@
     
             <Form.Item
             className=' flex-1'
-            name={['bran', 'name']}
-            label="name"
+            name={['use', 'first_name']}
+            label="first_name"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'last_name']}
+            label="last_name"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'email']}
+            label="email"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'role']}
+            label="role"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'phone_number']}
+            label="phone_number"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'driver_license']}
+            label="driver_license"
+            rules={[
+                {
+                required: true,
+                },
+            ]}
+            >
+            <Input  
+            className='border-gray-400 py-2'
+            />
+            </Form.Item>
+            
+            <Form.Item
+            className=' flex-1'
+            name={['use', 'national_id']}
+            label="national_id"
             rules={[
                 {
                 required: true,
@@ -192,5 +282,5 @@
 
 
 
-export default BrandEdit
+export default UserEdit
     

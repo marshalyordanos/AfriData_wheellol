@@ -1,141 +1,88 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { Button, Spin, Tag, Divider, message, Image } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
-import UserService from './UserService';
 
-const UserDetails = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
+    import { Divider } from 'antd'
+    import React from 'react'
+    import { useLocation } from 'react-router-dom'
+    import styled from 'styled-components'
 
-  useEffect(() => {
-    if (id) {
-      fetchUserData(id);
-    }
-  }, [id]);
 
- const fetchUserData = async (userId) => {
-    setLoading(true);
-    try {
-      const userData = await UserService.getUser(userId);
-      setUser(userData);
-    } catch (error) {
-      message.error("Failed to fetch user details.");
-      navigate('/dash/users');
-    } finally {
-      setLoading(false);
-    }
-  };
+    
+    const UserDetail = () => {
+    const {state} = useLocation();
+    return (
+    <DetailStyle>
+        <h1>User Detail</h1>
+        <Divider  style={{margin:'15px 0 25px 0'}} />
 
-   const handleApprove = async () => {
-    try {
-      await UserService.userAction('approve', id);
-      message.success(`User ${user.first_name} has been approved.`);
-      fetchUserData(id);
-    } catch (error) {
-      message.error("Failed to approve user.");
-    }
-  };
-  
-  const handleReject = async () => {
-    try {
-      await UserService.userAction('reject', id);
-      message.warning(`User ${user.first_name} has been rejected.`);
-      fetchUserData(id);
-    } catch (error) {
-      message.error("Failed to reject user.");
-    }
-  };
-  
-  if (loading) {
-    return <div className="p-10 text-center"><Spin size="large" /></div>;
-  }
+    
+    
+    
+                <div className='detail_child'>
+                <p className='detail_key'>first_name:</p>
+                <p className='detail_value'>{state?.first_name}</p>  
+            </div>
+            
+                <div className='detail_child'>
+                <p className='detail_key'>last_name:</p>
+                <p className='detail_value'>{state?.last_name}</p>  
+            </div>
+            
+                <div className='detail_child'>
+                <p className='detail_key'>email:</p>
+                <p className='detail_value'>{state?.email}</p>  
+            </div>
+            
+                <div className='detail_child'>
+                <p className='detail_key'>role:</p>
+                <p className='detail_value'>{state?.role}</p>  
+            </div>
+            
+                <div className='detail_child'>
+                <p className='detail_key'>phone_number:</p>
+                <p className='detail_value'>{state?.phone_number}</p>  
+            </div>
+            
+                <div className='detail_child'>
+                <p className='detail_key'>driver_license:</p>
+                <p className='detail_value'>{state?.driver_license}</p>  
+            </div>
+            
+                <div className='detail_child'>
+                <p className='detail_key'>national_id:</p>
+                <p className='detail_value'>{state?.national_id}</p>  
+            </div>
+            
 
-  if (!user) {
-    return <div className="p-10">User not found.</div>;
-  }
+    </DetailStyle>
+  )
+}
+    
 
-  const renderRoleTag = (role) => {
-    const colors = { admin: 'gold', car_owner: 'blue', renter: 'green' };
-    return <Tag color={colors[role] || 'default'}>{role?.toUpperCase()}</Tag>;
-  };
-  
-  return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-            <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => navigate('/dash/users')} />
-            <h1 className="text-2xl font-bold ml-4">User Details</h1>
-        </div>
-        <div>
-            <Link to={`/dash/users/edit/${user._id}`}>
-                <Button icon={<EditOutlined />} type="primary">Edit User</Button>
-            </Link>
-        </div>
-      </div>
-      
-      <DetailStyle>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Basic Info */}
-          <div className="col-span-1 md:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Account Information</h2>
-            <div className='detail_child'><p className='detail_key'>Full Name:</p><p className='detail_value'>{user.first_name} {user.last_name}</p></div>
-            <div className='detail_child'><p className='detail_key'>Email:</p><p className='detail_value'>{user.email}</p></div>
-            <div className='detail_child'><p className='detail_key'>Phone Number:</p><p className='detail_value'>{user.phone_number}</p></div>
-            <div className='detail_child'><p className='detail_key'>Role:</p><div className='detail_value'>{renderRoleTag(user.role)}</div></div>
-            <div className='detail_child'><p className='detail_key'>Status:</p><div className='detail_value'><Tag>{user.status}</Tag></div></div>
-          </div>
-          {/* Profile Picture */}
-          <div className="col-span-1 flex flex-col items-center">
-             <Image width={150} src={user.profile_picture} alt="Profile" className="rounded-full" />
-             <p className="mt-2 text-gray-500">Profile Picture</p>
-          </div>
-        </div>
-        
-        {/* Verification Section */}
-        {user.role === 'car_owner' && (user.driver_license || user.national_id) && (
-            <>
-                <Divider />
-                <h2 className="text-xl font-semibold mb-4">Verification Documents</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    {user.driver_license && <div><p className="font-semibold mb-2">Drivers License</p><Image width={300} src={user.driver_license} /></div>}
-                    {user.national_id && <div><p className="font-semibold mb-2">National ID</p><Image width={300} src={user.national_id} /></div>}
-                </div>
-                {user.status === 'Pending Verification' && (
-                    <div className="flex gap-4">
-                        <Button icon={<CheckCircleOutlined />} type="primary" onClick={handleApprove}>Approve Verification</Button>
-                        <Button icon={<CloseCircleOutlined />} danger onClick={handleReject}>Reject</Button>
-                    </div>
-                )}
-            </>
-        )}
-      </DetailStyle>
-    </div>
-  );
-};
 
-const DetailStyle = styled.div`
-  padding: 24px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    const DetailStyle = styled.div`
+        border: 1px lightgray;
+        margin: 30px;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        h1{
+            padding: 0;
+            margin: 0;
+            font-size: 16px;
 
-  .detail_child {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 16px;
-  }
-  .detail_key {
-    font-weight: 600;
-    color: #555;
-    width: 150px; 
-  }
-  .detail_value {
-    color: #111;
-  }
-`;
+        }
+        .detail_child{
+            margin-bottom: 15px;
+        }
+        .detail_key{
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .detail_value{
+            color: #106085;
+            font-size: 20px;
+        }
 
-export default UserDetails;
+`
+
+export default UserDetail
+    

@@ -1,67 +1,61 @@
-import api from '../../api/api';
+import api from "../../api/api";
 
 class UserService {
-    createUser(userData) {
-        return api
-            .post("/admin/users", userData)
-            .then(response => {
-                return response.data.data;
-            });
+  createUse(data) {
+    return api.post("/user", data).then((response) => {
+      return response.data.data;
+    });
+  }
+
+  updateUse(data, id) {
+    return api.patch("/user/" + id, data).then((response) => {
+      return response.data.data;
+    });
+  }
+
+  searchUse({ page, limit, searchText = null, sort = null, order, data }) {
+    let url = `/user/all-users?page=${page}&limit=${limit}`;
+    if (sort) {
+      const sortValue =
+        order == "ascend" ? sort : order == "descend" ? "-" + sort : "";
+      url = url + `&sort=${sortValue}`;
+    }
+    if (data) {
+      url = url + `&role=${data}`;
     }
 
-    updateUser(id, userData) {
-        return api
-            .patch("/admin/users/" + id, userData) 
-            .then(response => {
-                return response.data.data;
-            });
+    if (searchText) {
+      url = url + `&searchText=${searchText}`;
     }
 
-    searchUsers({ page, limit, searchText = null, sort = null, order = null }) {
-        let url = `/admin/users?page=${page}&limit=${limit}`;
+    return api.get(url).then((response) => {
+      return { data: response.data.data, total: response.data.total };
+    });
+  }
 
-        if (sort) {
-            const sortValue = order === 'ascend' ? sort : order === 'descend' ? '-' + sort : '';
-            if (sortValue) {
-                url += `&sort=${sortValue}`;
-            }
-        }
+  getUse(id) {
+    return api.get("/user/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
 
-        if (searchText) {
-            url += `&searchText=${searchText}`;
-        }
+  deleteUse(id) {
+    return api.delete("/user/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
 
-        return api
-            .get(url)
-            .then(response => {
-                return { data: response.data.data, total: response.data.total };
-            });
-    }
+  userDo({ method, payload }) {
+    return api.post("/user/do", { method, payload }).then((response) => {
+      return response.data.data;
+    });
+  }
 
-    getUser(id) {
-        return api
-            .get("/admin/users/" + id) 
-            .then(response => {
-                return response.data.data;
-            });
-    }
-
-    deleteUser(id) {
-        return api
-            .delete("/admin/users/" + id)
-            .then(response => {
-                return response.data.data;
-            });
-    }
-
-     userAction(action, userId) {
-        return api
-            .post(`/admin/users/${userId}/action`, { action: action })
-            .then(response => {
-                return response.data.data;
-            });
-    }
-  
+  useDo({ method, payload, id }) {
+    return api.post("/user/do/" + id, { method, payload }).then((response) => {
+      return response.data.data;
+    });
+  }
 }
 
 export default new UserService();
