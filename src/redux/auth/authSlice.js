@@ -1,35 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import authService from "../../api/auth.service";
 
-// Real THUNK for login
-// export const login = createAsyncThunk(
-//   "auth/login",
-//   async (data, { rejectWithValue }) => {
-//     try {
-//       console.log(data);
-//       const res = await authService.login(data?.email, data?.password);
-
-//       // localStorage.setItem("user", JSON.stringify(res.data));
-
-//       return res;
-//     } catch (err) {
-//       return rejectWithValue(err.response.data);
-//     }
-//   }
-// );
-
-// function for network delay
-
-// THIS IS THE Fake THUNK
 export const login = createAsyncThunk(
   "auth/login",
   async (data, { rejectWithValue }) => {
     try {
       console.log(data);
-      const res = await authService.login(data?.phone, data?.password);
-
-      // localStorage.setItem("user", JSON.stringify(res.data));
-
+      const res = await authService.login(data?.phone_number, data?.password);
       return res;
     } catch (err) {
       return rejectWithValue(err.response.data);

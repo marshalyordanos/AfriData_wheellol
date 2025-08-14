@@ -115,12 +115,12 @@ const LoginPage = () => {
             <div className="flex flex-col items-center">
               <Form.Item
                 label="Phone"
-                name="phone"
+                name="phone_number"
                 className="flex-1 w-full"
                 rules={[
                   {
                     required: true,
-                    message: "Please input your phone!",
+                    message: "Please input your phone number!",
                   },
                 ]}
               >
