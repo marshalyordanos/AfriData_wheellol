@@ -2,13 +2,13 @@ import api from "./api";
 import TokenService from "./token.service";
 
 class AuthService {
-  login(email, password) {
+  login(phone_number, password) {
     return api
       .post("/user/login", {
-        email,
-        password
+        phone_number,
+        password,
       })
-      .then(response => {
+      .then((response) => {
         if (response.data.data.accessToken) {
           TokenService.setUser(response.data.data);
         }
@@ -23,11 +23,10 @@ class AuthService {
   forgotPassword(email) {
     return api.post("/user/forgot-password", { email });
   }
-  
-   resetPassword(newPassword, tokenFromEmail) {
+
+  resetPassword(newPassword, tokenFromEmail) {
     return api.post(`/user/reset-password/${tokenFromEmail}`, { newPassword });
   }
-
 
   register(formData) {
     return api.post("/user/register", formData);
@@ -37,12 +36,10 @@ class AuthService {
     return TokenService.getUser();
   }
 
-  async checkPermmision(permmission,value){
-    const res  = await api
-    .get(`/auth/checkPermmission/${permmission}/${value}`)
-    
+  async checkPermmision(permmission, value) {
+    const res = await api.get(`/auth/checkPermmission/${permmission}/${value}`);
+
     return res.data?.data;
-    
   }
 }
 

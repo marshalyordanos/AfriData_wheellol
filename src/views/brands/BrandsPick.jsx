@@ -1,24 +1,24 @@
 
     import React, { useEffect, useRef, useState } from 'react'
     import { useSearchParams } from 'react-router-dom'
-    import brandService from './BrandService';
+    import brandsService from './BrandsService';
     import CommonTable from '../../components/commons/CommonTable';
     import { ButtonStyle, SearchInputStyle } from '../../components/commons/CommonStyles';
     import { Divider, Input } from 'antd';
-    import { searchBrand, updateBrandState, brandSearchText } from './BrandRedux';//** */
+    import { searchBrands, updateBrandsState, brandsSearchText } from './BrandsRedux';//** */
     import { useDispatch, useSelector } from 'react-redux'; /*** */
 
     
-    const BrandPick = ({setIsModalOpen,selectHandler}) => {
-    const [brandData, setBrandData] = useState([])
+    const BrandsPick = ({setIsModalOpen,selectHandler}) => {
+    const [brandsData, setBrandsData] = useState([])
     const [total, setTotal] = useState()
     const [searchParams,setSearchParams] = useSearchParams()
     const dispatch = useDispatch(); /*** */
-    const searchText = useSelector(brandSearchText); //** */
+    const searchText = useSelector(brandsSearchText); //** */
     
     
     const [loading, setLoading] = useState();
-    const [brandSelection, setBrandSelection] = useState([])
+    const [brandsSelection, setBrandsSelection] = useState([])
     const delayTimerRef = useRef(null);
     
     const getPaginationInfo = () => {
@@ -29,7 +29,7 @@
 
     useEffect(() => {
         const [page, limit] = getPaginationInfo();
-        dispatch(updateBrandState({ page: page, limit: limit }))
+        dispatch(updateBrandsState({ page: page, limit: limit }))
 
         searchData();
     }, [])
@@ -37,8 +37,8 @@
     async function searchData() {
         try {
             setLoading(true)
-            const { payload } = await dispatch(searchBrand());
-            setBrandData(payload.data)
+            const { payload } = await dispatch(searchBrands());
+            setBrandsData(payload.data)
             setTotal(payload.total)
             setLoading(false)
         } catch (err) {
@@ -49,7 +49,7 @@
         const { value } = e.target;
         const [page, limit] = getPaginationInfo();
 
-        dispatch(updateBrandState({ page: page, limit: limit, searchText: value }))
+        dispatch(updateBrandsState({ page: page, limit: limit, searchText: value }))
         clearTimeout(delayTimerRef.current);
         delayTimerRef.current = setTimeout(() => {
 
@@ -76,6 +76,26 @@
                 dataIndex: 'name',
 
             },
+             
+            {
+                title: 'country',
+                dataIndex: 'country',
+
+            },
+             
+            {
+                title: 'is_featured',
+                dataIndex: 'is_featured',
+                render: (text, recored) => {
+                    return recored.is_featured ? <p>true</p> : <p>false</p>
+                },
+            },
+             
+            {
+                title: 'logo',
+                dataIndex: 'logo',
+
+            },
             
          
          ];
@@ -96,9 +116,9 @@
 
     <CommonTable
                 rowSelectionType={"radio"}
-                data={brandData}
+                data={brandsData}
                 columns={columns}
-                setSelection={setBrandSelection}
+                setSelection={setBrandsSelection}
                 handlePagination={handlePagination}
                 total={total}
                 loadding={loading}
@@ -110,7 +130,7 @@
      <button    onClick={()=>setIsModalOpen(false)} >
         cancel
       </button>
-      <button disabled={brandSelection.length==0} className={brandSelection.length>0?'':'disable'} onClick={()=>selectHandler(brandSelection[0])}>
+      <button disabled={brandsSelection.length==0} className={brandsSelection.length>0?'':'disable'} onClick={()=>selectHandler(brandsSelection[0])}>
         Return
       </button>
      </ButtonStyle>     
@@ -121,5 +141,5 @@
     
     
 
-    export default BrandPick
+    export default BrandsPick
     

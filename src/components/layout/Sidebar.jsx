@@ -4,7 +4,10 @@ import React, { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { DashboardOutlined, UserOutlined } from "@ant-design/icons";
 import styled from "styled-components";
-import MedicinesLogo from "../../assets/medicinesLogo.svg";
+import Logo from "../../assets/logo1.png";
+import { FaCar } from "react-icons/fa";
+import { BiSolidCategory } from "react-icons/bi";
+import { SiBrandfolder } from "react-icons/si";
 
 import { useTranslation } from "react-i18next";
 
@@ -84,8 +87,11 @@ const Sidebar = ({ collapsed }) => {
 
       getItem(t("Dashboard"), "/dash", <DashboardOutlined />),
 
-      getItem(t("Users"), "/dash/users", <UserOutlined />),
-      getItem("Brand", "/dash/brand", <DashboardOutlined />),
+      getItem(t("Users"), "user", <UserOutlined />),
+      getItem("Cars", "cars", <FaCar />),
+
+      getItem("Categories", "categories", <BiSolidCategory />),
+      getItem("Brands", "brands", <SiBrandfolder />),
     ];
 
     setItems(items2);
@@ -101,7 +107,7 @@ const Sidebar = ({ collapsed }) => {
         position: "fixed",
 
         display: collapsed && "none",
-        backgroundColor: "#0c0a09",
+        backgroundColor: "white",
         zIndex: 110,
       }}
       trigger={null}
@@ -114,7 +120,7 @@ const Sidebar = ({ collapsed }) => {
         style={{
           width: 249,
           height: 100,
-          background: "#0c0a09",
+          background: "white",
           borderRadius: "0px 40px 0 0",
         }}
       >
@@ -123,12 +129,14 @@ const Sidebar = ({ collapsed }) => {
           className={"flex  justify-center items-center gap-1"}
         >
           <img
-            src={MedicinesLogo}
+            src={Logo}
             color="white"
-            className=" h-16    text-black border-red-800"
+            className=" h-20    text-black border-red-800"
             alt="MK Logo"
           />
-          <p className="text-2xl font-bold tracking-wide text-white">Logo</p>{" "}
+          <p className="text-2xl font-black tracking-wide text-green-500">
+            AFRICAR
+          </p>{" "}
         </NavLink>
       </div>
       <div className="sidebar__menus">
@@ -194,16 +202,19 @@ const SidebarStyle = styled(Sider)`
     background-color: transparent !important;
   }
 
+  .ant-menu-item {
+    color: black !important;
+  }
   .ant-menu-item-selected {
     background-color: #3bb66e !important;
-    color: white !important;
+    color: wheat !important;
   }
   span {
     font-size: 13px !important;
-    color: white !important;
+    color: black !important;
   }
   .ant-menu-item-selected span {
-    color: white !important;
+    color: wheat !important;
   }
 `;
 
