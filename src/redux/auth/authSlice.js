@@ -1,35 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import authService from "../../api/auth.service";
 
-// Real THUNK for login
-// export const login = createAsyncThunk(
-//   "auth/login",
-//   async (data, { rejectWithValue }) => {
-//     try {
-//       console.log(data);
-//       const res = await authService.login(data?.email, data?.password);
-
-//       // localStorage.setItem("user", JSON.stringify(res.data));
-
-//       return res;
-//     } catch (err) {
-//       return rejectWithValue(err.response.data);
-//     }
-//   }
-// );
-
-// function for network delay
-
-// THIS IS THE Fake THUNK
 export const login = createAsyncThunk(
   "auth/login",
   async (data, { rejectWithValue }) => {
     try {
       console.log(data);
-      const res = await authService.login(data?.phone, data?.password);
-
-      // localStorage.setItem("user", JSON.stringify(res.data));
-
+      const res = await authService.login(data?.email, data?.password);
       return res;
     } catch (err) {
       return rejectWithValue(err.response.data);
@@ -37,12 +14,13 @@ export const login = createAsyncThunk(
   }
 );
 
+
 export const authSlice = createSlice({
   name: "auth",
   initialState: {
     status: "idle",
     user: null,
-    err: null,
+    err: null
   },
   reducers: {
     setCredential: (state, action) => {
@@ -52,31 +30,31 @@ export const authSlice = createSlice({
     logout: (state) => {
       authService.logout();
       state.user = null;
-      state.status = "idle";
+      state.status = 'idle';
       state.err = null;
     },
   },
-  extraReducers: (builder) => {
-    builder
-      // Cases for LOGIN
-      .addCase(login.pending, (state) => {
-        state.status = "loading";
-        state.err = null;
-      })
-      .addCase(login.fulfilled, (state, action) => {
-        state.status = "success";
-        state.user = action.payload;
-      })
-      .addCase(login.rejected, (state, action) => {
-        state.status = "failed";
-        state.user = null;
-        state.err = action.payload?.message || "An unknown error occurred";
-      });
-  },
+ extraReducers: (builder) => {
+  builder
+   // Cases for LOGIN
+    .addCase(login.pending, (state) => {
+      state.status = "loading";
+      state.err = null;
+    })
+    .addCase(login.fulfilled, (state, action) => {
+      state.status = "success";
+      state.user = action.payload;
+    })
+    .addCase(login.rejected, (state, action) => {
+      state.status = "failed";
+      state.user = null;
+      state.err = action.payload?.message || 'An unknown error occurred';
+    })
+},
 });
 
 // Action creators are generated for each case reducer function
-export const { setCredential, logout } = authSlice.actions;
+export const { setCredential, logout} = authSlice.actions;
 
 export default authSlice.reducer;
 export const selectCurrentUser = (state) => state.auth.user;
