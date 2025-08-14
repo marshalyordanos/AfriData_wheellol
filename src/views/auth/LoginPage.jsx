@@ -1,11 +1,9 @@
 import React, { useState, useEffect} from "react";
 import { useSelector, useDispatch } from "react-redux";
-// import api from "../../api/api";
-import { login } from "../../redux/auth/authSlice";
+import { login, selectCurrentUser } from "../../redux/auth/authSlice";
 import { useNavigate } from "react-router-dom";
-import { Button, Checkbox, Form, Input, message, Modal } from "antd";
-import { selectCurrentUser } from "../../redux/auth/authSlice"; 
-// import authService from "../../api/auth.service"; 
+import { Button, Form, Input, message, Modal } from "antd";
+import authService from "../../api/auth.service"; 
 
 const LoginPage = () => {
   const dispatch = useDispatch();
@@ -43,10 +41,6 @@ const LoginPage = () => {
     }
   };
 
-  // const onFinishFailed = (errorInfo) => {
-  //   console.log("Failed:", errorInfo);
-  // };
-
   const showModal = () => {
     setIsModalVisible(true);
   };
@@ -57,25 +51,7 @@ const LoginPage = () => {
     form.resetFields();
   };
 
-   // Fake FUNCTION
-const handleForgotPassword = async (values) => {
-  setModalLoading(true); 
-  console.log("Requesting password reset for email:", values.email);
-  await new Promise(resolve => setTimeout(resolve, 1000)); 
-
-  if (values.email === "notfound@gmail.com") {
-    console.log("Email not found");
-    message.error("No account found with that email address.");
-  } else {
-    console.log("Password reset email sent");
-    message.success("If an account exists for that email, a reset link has been sent.");
-    handleCancel(); 
-  }
-  setModalLoading(false); 
-
-  // --- The REAL function we will use later ---
-  /*
-  const handleForgotPassword_REAL = async (values) => {
+  const handleForgotPassword = async (values) => {
     setModalLoading(true);
     try {
       await authService.forgotPassword(values.email);
@@ -88,8 +64,6 @@ const handleForgotPassword = async (values) => {
       setModalLoading(false);
     }
   };
-  */
-};
 
   return (
     <div className="w-[100vw] h-[100vh] bg-[#628DBA]  flex flex-col lg:flex-row justify-between ">
@@ -100,12 +74,8 @@ const handleForgotPassword = async (values) => {
           </div>
           <Form
             name="basic"
-            // initialValues={{
-            //   remember: true,
-            // }}
             layout="vertical"
             onFinish={onFinish}
-            // onFinishFailed={onFinishFailed}
             autoComplete="off"
           >
             <div className="flex flex-col items-center">

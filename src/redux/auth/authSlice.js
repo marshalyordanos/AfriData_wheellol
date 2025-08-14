@@ -1,55 +1,18 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import authService from "../../api/auth.service";
 
-// Real THUNK for login
-// export const login = createAsyncThunk(
-//   "auth/login",
-//   async (data, { rejectWithValue }) => {
-//     try {
-//       console.log(data);
-//       const res = await authService.login(data?.email, data?.password);
-
-//       // localStorage.setItem("user", JSON.stringify(res.data));
-
-//       return res;
-//     } catch (err) {
-//       return rejectWithValue(err.response.data);
-//     }
-//   }
-// );
-
-
-// function for network delay
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// THIS IS THE Fake THUNK
 export const login = createAsyncThunk(
   "auth/login",
-  async (credentials, { rejectWithValue }) => {
-    console.log("SIMULATING LOGIN with:", credentials);
-    await sleep(1000); 
-
-    if (credentials.email === "admin1@gmail.com" && credentials.password === "1234") {
-      console.log("Simulating SUCCESSFUL login response");
-      const fakeSuccessResponse = {
-        user: { id: 1, name: "Admin User", email: "admin1@gmail.com", role: "admin" },
-        accessToken: "fake-access-token-string-123",
-        refreshToken: "fake-refresh-token-string-abc",
-      };
-      
-      localStorage.setItem("user", JSON.stringify(fakeSuccessResponse));
-      
-      return fakeSuccessResponse;
-    } else {
-      console.log("failed login response");
-      const fakeErrorResponse = {
-        message: "Invalid credentials. Please try again.",
-      };
-      return rejectWithValue(fakeErrorResponse);
+  async (data, { rejectWithValue }) => {
+    try {
+      console.log(data);
+      const res = await authService.login(data?.email, data?.password);
+      return res;
+    } catch (err) {
+      return rejectWithValue(err.response.data);
     }
   }
 );
-
 
 
 export const authSlice = createSlice({
