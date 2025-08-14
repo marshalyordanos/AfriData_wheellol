@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-// import api from "../../api/api";
-import { login } from "../../redux/auth/authSlice";
+import { login, selectCurrentUser } from "../../redux/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 import { Button, Checkbox, Form, Input, message, Modal } from "antd";
-import { selectCurrentUser } from "../../redux/auth/authSlice";
+// import { selectCurrentUser } from "../../redux/auth/authSlice";
 // import authService from "../../api/auth.service";
+
 
 const LoginPage = () => {
   const dispatch = useDispatch();
@@ -45,10 +45,6 @@ const LoginPage = () => {
     }
   };
 
-  // const onFinishFailed = (errorInfo) => {
-  //   console.log("Failed:", errorInfo);
-  // };
-
   const showModal = () => {
     setIsModalVisible(true);
   };
@@ -58,7 +54,6 @@ const LoginPage = () => {
     // setIsOtpSent(false);
     form.resetFields();
   };
-
   // Fake FUNCTION
   const handleForgotPassword = async (values) => {
     setModalLoading(true);
@@ -80,6 +75,9 @@ const LoginPage = () => {
     // --- The REAL function we will use later ---
     /*
   const handleForgotPassword_REAL = async (values) => {
+=======
+  const handleForgotPassword = async (values) => {
+>>>>>>> upstream/main
     setModalLoading(true);
     try {
       await authService.forgotPassword(values.email);
@@ -104,12 +102,8 @@ const LoginPage = () => {
           </div>
           <Form
             name="basic"
-            // initialValues={{
-            //   remember: true,
-            // }}
             layout="vertical"
             onFinish={onFinish}
-            // onFinishFailed={onFinishFailed}
             autoComplete="off"
           >
             <div className="flex flex-col items-center">

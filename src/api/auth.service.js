@@ -12,7 +12,6 @@ class AuthService {
         if (response.data.data.accessToken) {
           TokenService.setUser(response.data.data);
         }
-
         return response.data.data;
       });
   }
