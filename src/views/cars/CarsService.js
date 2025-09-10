@@ -3,7 +3,7 @@ import api from "../../api/api";
 class CarsService {
   createCar(data) {
     return api
-      .post("/car-owner/cars", data, {
+      .post("/cars", data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

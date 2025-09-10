@@ -185,11 +185,9 @@ const CarsList = () => {
       },
     },
     {
-      title: "Name",
-      dataIndex: "title",
-      render: (text, recored) => {
-        return <p>{text}</p>;
-      },
+      title: "Car Type",
+      dataIndex: "car_type",
+      render: (_, record) => <p>{record.vehicle_type?.name}</p>, // or record.title if exists
       // sorter: true,
     },
 
@@ -205,6 +203,7 @@ const CarsList = () => {
     {
       title: "Model",
       dataIndex: "model",
+      render: (model) => model?.name || "",
       // sorter: true,
     },
 
@@ -225,16 +224,6 @@ const CarsList = () => {
         );
       },
     },
-
-    {
-      title: "Category",
-      dataIndex: "category.name",
-      // sorter: true,
-      render: (text, recored) => {
-        return <p>{recored?.category?.name}</p>;
-      },
-    },
-
     {
       title: "Transmission",
       dataIndex: "transmission",
@@ -262,6 +251,7 @@ const CarsList = () => {
     {
       title: "Location",
       dataIndex: "location",
+      render: (loc) => loc?.city || loc?.address || "",
       sorter: true,
     },
 
