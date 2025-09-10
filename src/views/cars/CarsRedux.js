@@ -5,7 +5,15 @@ export const searchCars = createAsyncThunk(
   "cars/searchCars",
   async (data, { rejectWithValue, getState }) => {
     try {
-      const { searchText, page, limit, sort, order } = getState().cars.query; // Access state directly
+      const {
+        searchText,
+        page,
+        limit,
+        sort,
+        order,
+        notActiveOnly,
+        notApprovedOnly,
+      } = getState().cars.query; // Access state directly
 
       const res = await CarsService.searchCar({
         page,
@@ -13,6 +21,8 @@ export const searchCars = createAsyncThunk(
         searchText,
         sort,
         order,
+        notActiveOnly,
+        notApprovedOnly,
       });
 
       return res;
@@ -31,6 +41,8 @@ export const carsSlice = createSlice({
       limit: 5,
       sort: "",
       order: "",
+      notActiveOnly: false,
+      notApprovedOnly: false,
     },
   },
   reducers: {

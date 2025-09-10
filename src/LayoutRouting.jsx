@@ -11,7 +11,7 @@ import UserDetail from "./views/user/UserDetails";
 import CategorysList from "./views/categorys/CategorysList";
 import CategorysDetail from "./views/categorys/CategorysDetails";
 import CarsList from "./views/cars/CarsList";
-import CarsDetail from "./views/cars/CarsDetails";
+import CarsDetails from "./views/cars/CarsDetails";
 
 const LayoutRouting = () => {
   return (
@@ -29,7 +29,7 @@ const LayoutRouting = () => {
         <Route path="categories/:id" element={<CategorysDetail />} />
 
         <Route path="cars" element={<CarsList />} />
-        <Route path="cars/:id" element={<CarsDetail />} />
+        <Route path="cars/details/:id" element={<CarsDetails />} />
 
         <Route path="/change-password" element={<ChangePassword />} />
 

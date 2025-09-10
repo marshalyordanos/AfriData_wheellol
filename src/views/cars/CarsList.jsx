@@ -1,23 +1,29 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Image, Input, Select, Tag } from "antd";
+import { Button, Checkbox, Dropdown, Image, Input, Select, Tag } from "antd";
 import styled from "styled-components";
 import CommonModal from "../../components/commons/CommonModel";
 
 import carsService from "./CarsService";
 import CarsEdit from "./CarsEdit";
-import { NavLink, useSearchParams } from "react-router-dom";
+import { NavLink, useSearchParams, useNavigate } from "react-router-dom";
 //import { HeaderStyle, SearchInputStyle } from '../../components/commons/CommonStyles';
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import { useDispatch, useSelector } from "react-redux";
-import { searchCars, updateCarsState, carsSearchText } from "./CarsRedux";
+import {
+  searchCars,
+  updateCarsState,
+  carsSearchText,
+  carsQuery,
+} from "./CarsRedux";
 
 const CarsList = () => {
   const [carsData, setCarsData] = useState([]);
   const [total, setTotal] = useState();
 
   const searchText = useSelector(carsSearchText);
+  const { notActiveOnly, notApprovedOnly } = useSelector(carsQuery);
   const [loading, setLoading] = useState();
   const [carsSelection, setCarsSelection] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,6 +31,7 @@ const CarsList = () => {
 
   const [modeID, setModeID] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const delayTimerRef = useRef(null);
   const dispatch = useDispatch();
@@ -95,6 +102,8 @@ const CarsList = () => {
         sort: "",
         order: "",
         searchText: "",
+        notActiveOnly: false,
+        notApprovedOnly: false,
       })
     );
     searchData();
@@ -146,7 +155,7 @@ const CarsList = () => {
 
   const columns = [
     {
-      title: " ",
+      title: "Action",
       dataIndex: "action",
       render: (_, recored) => {
         return (
@@ -174,13 +183,26 @@ const CarsList = () => {
       dataIndex: "images",
       sorter: true,
       render: (text, recored) => {
+        const imagesArr = Array.isArray(recored?.images)
+          ? recored.images.filter(Boolean)
+          : recored?.images
+          ? [recored.images]
+          : [];
+        const first = imagesArr[0];
+        if (!first) return null;
         return (
-          <Image
-            // height={50}
-            width={80}
-            style={{ objectFit: "cover", maxHeight: 50 }}
-            src={recored?.images[0]}
-          />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ cursor: "zoom-in" }}
+          >
+            <Image
+              width={80}
+              style={{ objectFit: "cover", maxHeight: 50 }}
+              src={first}
+              preview={{ src: first }}
+              alt={recored?.title || recored?.model?.name || "car image"}
+            />
+          </div>
         );
       },
     },
@@ -272,6 +294,26 @@ const CarsList = () => {
       dataIndex: "rental_terms",
       sorter: true,
     },
+    {
+      title: "Details",
+      key: "details",
+      width: 110,
+      render: (_, record) => {
+        const id = record?.id || record?._id;
+        const to = id ? `/dash/cars/details/${id}` : `/dash/cars/details`;
+        return (
+          <Button
+            type="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(to, { state: record });
+            }}
+          >
+            View
+          </Button>
+        );
+      },
+    },
   ];
 
   return (
@@ -310,8 +352,8 @@ const CarsList = () => {
 
       <span className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700">
         <div className="flex flex-col p-6 md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Carss</h1>
-          <div className="flex">
+          <h1 className="text-2xl font-bold pb-4">Cars</h1>
+          <div className="flex items-center gap-3">
             <Input
               onChange={searchHandler}
               placeholder="Search"
@@ -320,6 +362,40 @@ const CarsList = () => {
               //   style={{ borderRadius: "0px 0px 0px 0px" }}
               className=" drop-shadow-sm rounded-lg  py-2"
             />
+            <Checkbox
+              checked={!!notActiveOnly}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                const [page, limit] = getPaginationInfo();
+                dispatch(
+                  updateCarsState({
+                    page,
+                    limit,
+                    notActiveOnly: checked,
+                  })
+                );
+                searchData();
+              }}
+            >
+              Not active
+            </Checkbox>
+            <Checkbox
+              checked={!!notApprovedOnly}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                const [page, limit] = getPaginationInfo();
+                dispatch(
+                  updateCarsState({
+                    page,
+                    limit,
+                    notApprovedOnly: checked,
+                  })
+                );
+                searchData();
+              }}
+            >
+              Not approved
+            </Checkbox>
             {/* <div className="hover:border-[#4096FF] transition-all delay-75 ease-in hover:border border-y-[0.5px] py-[0.15rem] border-r-[0.5px] rounded-r-[8px] border-[#CCCCCC] searchSelect">
               <Select
                 onChange={(val) => {
@@ -373,6 +449,16 @@ const CarsList = () => {
         total={total}
         loadding={loading}
         tableChange={tableChange}
+        rowKey={(r) => r?.id || r?._id}
+        onRow={(record) => ({
+          onClick: () => {
+            const id = record?.id || record?._id;
+            navigate(id ? `/dash/cars/details/${id}` : `/dash/cars/details`, {
+              state: record,
+            });
+          },
+          style: { cursor: "pointer" },
+        })}
       />
     </div>
   );

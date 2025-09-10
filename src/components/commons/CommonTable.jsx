@@ -14,6 +14,9 @@ const CommonTable = React.memo(
     tableChange,
     type,
     scroll,
+    rowKey,
+    onRow,
+    ...rest
   }) => {
     const onShowSizeChange = (current, pageSize) => {
       console.log(current, pageSize);
@@ -47,7 +50,7 @@ const CommonTable = React.memo(
               ...rowSelection,
             }}
             loading={loadding}
-            rowKey={"_id"}
+            rowKey={rowKey || "_id"}
             locale={{
               emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />,
             }}
@@ -56,6 +59,8 @@ const CommonTable = React.memo(
             onChange={tableChange}
             pagination={false}
             className=" text-base"
+            onRow={onRow}
+            {...rest}
           />
         </div>
 
