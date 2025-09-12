@@ -50,7 +50,8 @@ class CarsService {
     }
 
     if (notApprovedOnly) {
-      url = url + `&is_active=false`;
+      // assuming backend uses status=pending (adjust if different)
+      url = url + `&status=pending`;
     }
 
     return api.get(url).then((response) => {
@@ -78,21 +79,30 @@ class CarsService {
 
   // Admin actions
   adminApproveCar(carId) {
-    return api.patch(`/admin/cars/approve/${carId}`).then((response) => {
-      return response.data.data;
-    });
+    return api
+      .patch(`/admin/cars/approve/${carId}`, { status: true })
+      .then((response) =>
+        response.data && response.data.car ? response.data.car : null
+      )
+      .catch(() => null);
   }
 
-  adminRejectCar(carId) {
-    return api.patch(`/admin/cars/reject/${carId}`).then((response) => {
-      return response.data.data;
-    });
+  adminRejectCar(carId, reason) {
+    return api
+      .patch(`/admin/cars/reject/${carId}`, { reason })
+      .then((response) =>
+        response.data && response.data.car ? response.data.car : null
+      )
+      .catch(() => null);
   }
 
-  adminToggleCarActiveStatus(carId) {
-    return api.patch(`/admin/cars/activate/${carId}`).then((response) => {
-      return response.data.data;
-    });
+  adminToggleCarActiveStatus(carId, status) {
+    return api
+      .patch(`/admin/cars/activate/${carId}`, { status })
+      .then((response) =>
+        response.data && response.data.car ? response.data.car : null
+      )
+      .catch(() => null);
   }
 }
 

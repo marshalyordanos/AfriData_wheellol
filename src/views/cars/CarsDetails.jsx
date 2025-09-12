@@ -18,6 +18,7 @@ const CarsDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(state || null);
+  const [originalData, setOriginalData] = useState(state || null); // snapshot of first full car payload
   const [loading, setLoading] = useState(false);
   const [approveLoading, setApproveLoading] = useState(false);
   const [rejectLoading, setRejectLoading] = useState(false);
@@ -46,6 +47,7 @@ const CarsDetail = () => {
         try {
           const res = await CarsService.getCar(id);
           setData(res);
+          setOriginalData((prev) => prev || res);
         } catch (e) {
           message.error("Failed to load car");
         }
@@ -58,7 +60,18 @@ const CarsDetail = () => {
   return (
     <DetailStyle>
       <div className="header">
-        <h1>{data?.title || "Car Detail"}</h1>
+        <h1>
+          {(() => {
+            const base = originalData || data;
+            if (!base) return "Car Detail";
+            const parts = [
+              base?.brand?.name || base?.brand || null,
+              base?.model?.name || base?.model || null,
+              base?.year || null,
+            ].filter(Boolean);
+            return parts.length ? parts.join(" ") : "Car Detail";
+          })()}
+        </h1>
         <Space size="small">
           {data?.is_featured ? (
             <Tag color="green">Featured</Tag>
@@ -66,7 +79,11 @@ const CarsDetail = () => {
             <Tag>Standard</Tag>
           )}
           {data?.is_active && <Tag color="blue">Active</Tag>}
-          {data?.status && <Tag>{data.status}</Tag>}
+          {typeof data?.is_approved === "boolean" && (
+            <Tag color={data.is_approved ? "green" : "red"}>
+              {data.is_approved ? "Approved" : "Not Approved"}
+            </Tag>
+          )}
         </Space>
       </div>
 
@@ -75,19 +92,18 @@ const CarsDetail = () => {
           type="primary"
           icon={<CheckCircleOutlined />}
           loading={approveLoading}
+          disabled={data?.is_approved === true}
           onClick={async () => {
             try {
               setApproveLoading(true);
               const updated = await CarsService.adminApproveCar(carId);
-              if (updated && typeof updated === "object") {
-                setData(updated);
-              } else {
-                setData((d) => ({ ...d, status: "approved" }));
-              }
+              // Only update the status-related fields; never replace structural data
+              setData((prev) => ({
+                ...prev,
+                is_approved: true,
+                rejection_reason: undefined,
+              }));
               message.success("Car approved");
-              setTimeout(() => {
-                refresh(true).catch(() => {});
-              }, 300);
             } catch (e) {
               message.error("Approve failed");
             } finally {
@@ -95,18 +111,27 @@ const CarsDetail = () => {
             }
           }}
         >
-          Approve
+          {data?.is_approved ? "Approved" : "Approve"}
         </Button>
 
         <Button
           danger
           loading={rejectLoading}
+          disabled={data?.is_approved === false}
           onClick={async () => {
             try {
+              const reason = window.prompt("Rejection reason (optional)", "");
               setRejectLoading(true);
-              await CarsService.adminRejectCar(carId);
+              const updated = await CarsService.adminRejectCar(
+                carId,
+                reason || undefined
+              );
+              setData((d) => ({
+                ...d,
+                is_approved: false,
+                rejection_reason: reason || "No reason provided",
+              }));
               message.success("Car rejected");
-              navigate("/dash/cars");
             } catch (e) {
               message.error("Reject failed");
             } finally {
@@ -114,26 +139,40 @@ const CarsDetail = () => {
             }
           }}
         >
-          Reject
+          {data?.is_approved === false ? "Rejected" : "Reject"}
         </Button>
 
         <Button
           icon={<PoweroffOutlined />}
           loading={toggleLoading}
           onClick={async () => {
+            if (!data) return;
+            const previous = data.is_active;
+            const nextStatus = !previous;
+            // optimistic update
+            setData((d) => ({ ...d, is_active: nextStatus }));
             try {
               setToggleLoading(true);
               const updated = await CarsService.adminToggleCarActiveStatus(
-                carId
+                carId,
+                nextStatus
               );
-              if (updated && typeof updated === "object") {
-                setData(updated);
+              if (
+                updated &&
+                typeof updated === "object" &&
+                Object.prototype.hasOwnProperty.call(updated, "is_active")
+              ) {
+                setData((prev) => ({ ...prev, is_active: updated.is_active }));
               } else {
-                setData((d) => ({ ...d, is_active: !d?.is_active }));
+                // ensure field not lost when response has no car object
+                setData((d) => ({ ...d, is_active: nextStatus }));
               }
-              message.success("Toggled active status");
-              await refresh(true);
+              message.success(
+                `Car ${nextStatus ? "activated" : "deactivated"}`
+              );
             } catch (e) {
+              // revert on failure
+              setData((d) => ({ ...d, is_active: previous }));
               message.error("Toggle failed");
             } finally {
               setToggleLoading(false);
