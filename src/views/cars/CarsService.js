@@ -3,7 +3,7 @@ import api from "../../api/api";
 class CarsService {
   createCar(data) {
     return api
-      .post("/car-owner/cars", data, {
+      .post("/cars", data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -25,7 +25,15 @@ class CarsService {
       });
   }
 
-  searchCar({ page, limit, searchText = null, sort = null, order }) {
+  searchCar({
+    page,
+    limit,
+    searchText = null,
+    sort = null,
+    order,
+    notActiveOnly = false,
+    notApprovedOnly = false,
+  }) {
     let url = `/admin/listcars?page=${page}&limit=${limit}`;
     if (sort) {
       const sortValue =
@@ -34,7 +42,16 @@ class CarsService {
     }
 
     if (searchText) {
-      url = url + `&searchText=${searchText}`;
+      url = url + `&searchText=${encodeURIComponent(searchText)}`;
+    }
+
+    if (notActiveOnly) {
+      url = url + `&is_active=false`;
+    }
+
+    if (notApprovedOnly) {
+      // assuming backend uses status=pending (adjust if different)
+      url = url + `&status=pending`;
     }
 
     return api.get(url).then((response) => {
@@ -48,22 +65,44 @@ class CarsService {
     });
   }
 
+  getCarSilent(id) {
+    return api
+      .get("/cars/" + id, { suppressErrorToast: true })
+      .then((response) => response.data.data);
+  }
+
   deleteCar(id) {
     return api.delete("/cars/" + id).then((response) => {
       return response.data.data;
     });
   }
 
-  carsDo({ method, payload }) {
-    return api.post("/cars/do", { method, payload }).then((response) => {
-      return response.data.data;
-    });
+  // Admin actions
+  adminApproveCar(carId) {
+    return api
+      .patch(`/admin/cars/approve/${carId}`, { status: true })
+      .then((response) =>
+        response.data && response.data.car ? response.data.car : null
+      )
+      .catch(() => null);
   }
 
-  carDo({ method, payload, id }) {
-    return api.post("/cars/do/" + id, { method, payload }).then((response) => {
-      return response.data.data;
-    });
+  adminRejectCar(carId, reason) {
+    return api
+      .patch(`/admin/cars/reject/${carId}`, { reason })
+      .then((response) =>
+        response.data && response.data.car ? response.data.car : null
+      )
+      .catch(() => null);
+  }
+
+  adminToggleCarActiveStatus(carId, status) {
+    return api
+      .patch(`/admin/cars/activate/${carId}`, { status })
+      .then((response) =>
+        response.data && response.data.car ? response.data.car : null
+      )
+      .catch(() => null);
   }
 }
 

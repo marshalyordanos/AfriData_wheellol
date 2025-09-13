@@ -9,7 +9,7 @@ const handleErrorResponse = (errorMessage) => {
 };
 
 const instance = axios.create({
-  // baseURL: "https://car-rental-back-hzzg.onrender.com/api/v1",
+  baseURL: "https://car-rental-back-hzzg.onrender.com/api/v1",
   // baseURL: "http://localhost:8000/api/v1",
   baseURL: "http://localhost:8000/api/v1",
 
@@ -69,21 +69,25 @@ const setup = (store) => {
           } catch (_error) {
             TokenService.removeUser();
             dispatch(logout());
-
-            handleErrorResponse(err.response?.data?.message || err.message);
-
+            if (!originalConfig?.suppressErrorToast) {
+              handleErrorResponse(err.response?.data?.message || err.message);
+            }
             return Promise.reject(_error);
           }
         } else {
-          return handleErrorResponse(
-            err.response?.data?.message || err.message
-          );
+          if (!originalConfig?.suppressErrorToast) {
+            handleErrorResponse(err.response?.data?.message || err.message);
+          }
+          return Promise.reject(err);
         }
       } else if (
         err.response?.status !== 401 ||
         (originalConfig.url === "/auth/signin" && err.response)
       ) {
-        return handleErrorResponse(err.response?.data?.message || err.message);
+        if (!originalConfig?.suppressErrorToast) {
+          handleErrorResponse(err.response?.data?.message || err.message);
+        }
+        return Promise.reject(err);
       }
 
       return Promise.reject(err);

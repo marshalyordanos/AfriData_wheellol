@@ -11,8 +11,12 @@ import UserDetail from "./views/user/UserDetails";
 import CategorysList from "./views/categorys/CategorysList";
 import CategorysDetail from "./views/categorys/CategorysDetails";
 import CarsList from "./views/cars/CarsList";
+<<<<<<< HEAD
 import CarsDetail from "./views/cars/CarsDetails";
 import BookingList from "./views/bookings/BookingList";
+=======
+import CarsDetails from "./views/cars/CarsDetails";
+>>>>>>> 68809b21eefdc9db75b921cb55cc3729f18b9e3e
 
 const LayoutRouting = () => {
   return (
@@ -30,8 +34,12 @@ const LayoutRouting = () => {
         <Route path="categories/:id" element={<CategorysDetail />} />
 
         <Route path="cars" element={<CarsList />} />
+<<<<<<< HEAD
         <Route path="cars/:id" element={<CarsDetail />} />
         <Route path="bookings" element={<BookingList />} />
+=======
+        <Route path="cars/details/:id" element={<CarsDetails />} />
+>>>>>>> 68809b21eefdc9db75b921cb55cc3729f18b9e3e
 
         <Route path="/change-password" element={<ChangePassword />} />
 

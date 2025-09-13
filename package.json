@@ -21,7 +21,7 @@
     "axios": "^1.6.0",
     "dayjs": "^1.11.10",
     "framer-motion": "^12.23.12",
-    "i18next": "^23.16.4",
+    "i18next": "^25.5.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.454.0",
     "mapbox-gl": "^3.7.0",

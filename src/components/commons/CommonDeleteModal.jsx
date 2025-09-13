@@ -15,7 +15,7 @@ const CommonDeleteModal = ({children,setIsModalOpen,handleDelete,isModalOpen,loa
                             </Button>,
                           ]}
                         onCancel={()=>setIsModalOpen(false)}>
-                                {children}
+                              {children}
              </Modal>
   )
 }
