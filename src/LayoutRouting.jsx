@@ -13,6 +13,7 @@ import CarModelsDetail from "./views/carModels/CarModelsDetails";
 import CarsList from "./views/cars/CarsList";
 import CarsDetails from "./views/cars/CarsDetails";
 import BookingList from "./views/bookings/BookingList";
+import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
 
 const LayoutRouting = () => {
   return (
@@ -31,8 +32,9 @@ const LayoutRouting = () => {
         <Route path="models/:id" element={<CarModelsDetail />} />
 
         <Route path="cars" element={<CarsList />} />
-        <Route path="cars/:id" element={<CarsDetails />} />
+        <Route path="cars/details/:id" element={<CarsDetails />} />
         <Route path="bookings" element={<BookingList />} />
+        <Route path="vehicle-types" element={<VehicleTypesList />} />
 
         <Route path="/change-password" element={<ChangePassword />} />
 

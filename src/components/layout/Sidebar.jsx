@@ -6,9 +6,10 @@ import { DashboardOutlined, UserOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import Logo from "../../assets/logo1.png";
 import { FaCar } from "react-icons/fa";
-import { BiSolidCategory } from "react-icons/bi";
 import { SiBrandfolder } from "react-icons/si";
 import { SiBookstack } from "react-icons/si";
+import { TbTruckDelivery } from "react-icons/tb"; // icon for Vehicle Types
+import { PiCubeFill } from "react-icons/pi"; // distinct icon for Models
 
 import { useTranslation } from "react-i18next";
 
@@ -34,7 +35,6 @@ const Sidebar = ({ collapsed }) => {
 
     localStorage.setItem("keyPath", JSON.stringify([...y, e.keyPath]));
   };
-
 
   const onOpenChange = (keys) => {
     const latestOpenKey = keys.find((key) => openKeys.indexOf(key) === -1);
@@ -92,9 +92,9 @@ const Sidebar = ({ collapsed }) => {
       getItem(t("Users"), "user", <UserOutlined />),
       getItem("Cars", "cars", <FaCar />),
 
-      getItem("Categories", "categories", <BiSolidCategory />),
       getItem("Brands", "brands", <SiBrandfolder />),
-      getItem("Models", "models", <SiBrandfolder />),
+      getItem("Models", "models", <PiCubeFill />),
+      getItem("Vehicle Types", "vehicle-types", <TbTruckDelivery />),
       getItem("Bookings", "bookings", <SiBookstack />),
     ];
 

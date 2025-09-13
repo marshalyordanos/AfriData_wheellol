@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {
   Button,
+  Divider,
+  Dropdown,
   Form,
   Input,
   InputNumber,
@@ -8,7 +10,6 @@ import {
   Spin,
   Switch,
   DatePicker,
-  Divider,
 } from "antd";
 import styled from "styled-components";
 import {
@@ -16,11 +17,14 @@ import {
   FlexStyle,
   FormStyle,
 } from "../../components/commons/CommonStyles";
-import categorysService from "./CategorysService";
+import categorysService from "./VehicleTypesService";
 import CommonModal from "../../components/commons/CommonModel";
-import CategorysPick from "./CategorysPick";
+import CategorysPick from "./VehicleTypesPick";
 import dayjs from "dayjs";
+import CommonTable from "../../components/commons/CommonTable";
+import { MoreOutlined, ReloadOutlined } from "@ant-design/icons";
 
+import { NavLink } from "react-router-dom";
 const { Option } = Select;
 
 const validateMessages = {
@@ -42,6 +46,8 @@ const CategorysEdit = ({
   categorysData,
   searchData,
 }) => {
+  const [categorysData2, setCategorysData2] = useState([]);
+
   const [form] = Form.useForm();
   const [switch2, setSwitch2] = useState("");
   const [loading, setLoading] = useState("");
@@ -63,7 +69,7 @@ const CategorysEdit = ({
   }, []);
 
   const handleReset = () => {
-    form.resetFields(); // Reset form fields
+    form.resetFields();
   };
 
   const categoryPickHandler = (data) => {
@@ -72,14 +78,18 @@ const CategorysEdit = ({
     setCategoryPick(false);
   };
 
-  const onAdd = async (datas) => {
+  const onAdd = async (e) => {
+    e.preventDefault();
     try {
       setLoading(true);
 
-      const data = await categorysService.createCategory(datas.category);
+      const data = await categorysService.categorysDo({
+        method: "add_list_to_category",
+        payload: { data: categorysData2 },
+      });
       setIsModalOpen(false);
-      searchData();
 
+      searchData();
       setLoading(false);
     } catch (err) {
       setLoading(false);
@@ -100,8 +110,69 @@ const CategorysEdit = ({
   };
 
   const onFinish = (values) => {
-    mode == "" ? onAdd(values) : onUpdate(values);
+    console.log("===========");
+    mode == "" ? handleAddToList(values) : onUpdate(values);
   };
+  const handleAddToList = (e) => {
+    // e.preventDefault()
+    setCategorysData2([
+      { ...form.getFieldsValue()?.category, _id: new Date().getTime() },
+      ...categorysData2,
+    ]);
+    handleReset();
+  };
+
+  const onClick = ({ key }, record) => {
+    if (key == "edit") {
+      console.log("========", record);
+
+      form.setFieldsValue({ category: record });
+      const data = categorysData2.filter(
+        (category) => category._id !== record._id
+      );
+      setCategorysData2(data);
+    } else if (key === "delete") {
+      console.log("========", record);
+      const data = categorysData2.filter(
+        (category) => category._id !== record._id
+      );
+      setCategorysData2(data);
+    }
+  };
+  const items = [
+    {
+      key: "edit",
+      label: <Button type="text">Edit</Button>,
+    },
+    {
+      key: "delete",
+      label: <Button type="text"> Delete</Button>,
+    },
+    {
+      key: "3",
+      label: (
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="https://www.luohanacademy.com"
+        >
+          3rd menu item
+        </a>
+      ),
+    },
+  ];
+
+  const columns = [
+    {
+      title: "name",
+      dataIndex: "name",
+    },
+
+    {
+      title: "description",
+      dataIndex: "description",
+    },
+  ];
 
   return (
     <div>
@@ -128,7 +199,7 @@ const CategorysEdit = ({
       ) : (
         ""
       )}
-      {/* <button onClick={() => setCategoryPick(true)}>hhhhhh</button> */}
+      <button onClick={() => setCategoryPick(true)}>hhhhhh</button>
 
       <FormStyle
         form={form}
@@ -141,32 +212,61 @@ const CategorysEdit = ({
         <Form.Item
           className=" flex-1"
           name={["category", "name"]}
-          label="Name"
+          label="name"
           rules={[
             {
               required: true,
             },
           ]}
         >
-          <Input className="bg-gray-100 py-2" />
+          <Input className="border-gray-400 py-2" />
         </Form.Item>
 
         <Form.Item
           className=" flex-1"
           name={["category", "description"]}
-          label="Description"
+          label="description"
           rules={[
             {
               required: true,
             },
           ]}
         >
-          <Input.TextArea className="bg-gray-100 py-2" />
+          <Input className="border-gray-400 py-2" />
         </Form.Item>
+
+        {categorysData2.length > 0 && (
+          <CommonTable
+            rowSelectionType={"checkbox"}
+            data={categorysData2}
+            columns={columns}
+            total={categorysData2.lenght}
+            loadding={loading}
+            type={true}
+          />
+        )}
+
+        <Divider />
 
         <ButtonStyle>
           <button onClick={() => setIsModalOpen(false)}>cancel</button>
-          <button type="submit">Submit</button>
+
+          {mode ? (
+            <button type="submit">Submit</button>
+          ) : (
+            <button type="submit">Add List</button>
+          )}
+
+          {!mode && (
+            <button
+              disabled={categorysData2.length == 0}
+              onClick={onAdd}
+              className={categorysData2.length > 0 ? "" : "disable"}
+              type="submit"
+            >
+              Submit
+            </button>
+          )}
         </ButtonStyle>
       </FormStyle>
     </div>

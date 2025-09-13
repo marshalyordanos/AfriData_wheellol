@@ -25,7 +25,7 @@ import CommonModal from "../../components/commons/CommonModel";
 import CarsPick from "./CarsPick";
 import dayjs from "dayjs";
 import { PlusOutlined } from "@ant-design/icons";
-import CategorysService from "../categorys/CategorysService";
+import CategorysService from "../vehicleTypes/VehicleTypesService";
 import BrandsService from "../brands/BrandsService";
 
 const { Option } = Select;
