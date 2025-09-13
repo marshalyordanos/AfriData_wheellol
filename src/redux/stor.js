@@ -4,6 +4,7 @@ import brandsReducer from "../views/brands/BrandsRedux"; // import the brands
 import userReducer from "../views/user/UserRedux"; // import the user
 import categorysReducer from "../views/categorys/CategorysRedux"; // import the categorys
 import carsReducer from "../views/cars/CarsRedux"; // import the cars
+import bookingReducer from "../views/bookings/BookingRedux";
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     user: userReducer, // add the user here
     categorys: categorysReducer, // add the categorys here
     cars: carsReducer, // add the cars here
+    booking: bookingReducer,
   },
 });

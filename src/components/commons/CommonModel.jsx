@@ -1,28 +1,25 @@
-import React, { useState } from 'react';
-import { Button, Modal } from 'antd';
-const CommonModal = ({children,isModalOpen,setIsModalOpen,handleSubmit,width,title}) => {
-  const showModal = () => {
-    setIsModalOpen(true);
-  };
-  const handleOk = () => {
-    setIsModalOpen(false);
-  };
+// src/components/commons/CommonModal.jsx
+import React from "react";
+import { Modal } from "antd";
 
-  console.log("ks",isModalOpen)
-  const handleCancel = () => {
-    setIsModalOpen(false);
-  };
+const CommonModal = ({
+  children,
+  isModalOpen,
+  setIsModalOpen,
+  width,
+  title,
+}) => {
   return (
-    <>
-      
-      <Modal 
+    <Modal
       width={width}
       footer={false}
-      
-      title={title} open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
-        {children}
-      </Modal>
-    </>
+      title={title}
+      open={isModalOpen}
+      onCancel={() => setIsModalOpen(false)}
+    >
+      {children}
+    </Modal>
   );
 };
+
 export default CommonModal;

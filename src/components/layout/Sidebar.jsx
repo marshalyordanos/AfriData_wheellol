@@ -8,6 +8,7 @@ import Logo from "../../assets/logo1.png";
 import { FaCar } from "react-icons/fa";
 import { BiSolidCategory } from "react-icons/bi";
 import { SiBrandfolder } from "react-icons/si";
+import { SiBookstack } from "react-icons/si";
 
 import { useTranslation } from "react-i18next";
 
@@ -33,6 +34,7 @@ const Sidebar = ({ collapsed }) => {
 
     localStorage.setItem("keyPath", JSON.stringify([...y, e.keyPath]));
   };
+
 
   const onOpenChange = (keys) => {
     const latestOpenKey = keys.find((key) => openKeys.indexOf(key) === -1);
@@ -92,6 +94,7 @@ const Sidebar = ({ collapsed }) => {
 
       getItem("Categories", "categories", <BiSolidCategory />),
       getItem("Brands", "brands", <SiBrandfolder />),
+      getItem("Bookings", "bookings", <SiBookstack />),
     ];
 
     setItems(items2);
