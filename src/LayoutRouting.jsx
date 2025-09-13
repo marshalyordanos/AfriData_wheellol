@@ -8,8 +8,8 @@ import DashboardPage from "./views/Dashboard/DashboardPage";
 import ChangePassword from "./views/auth/ChangePassword";
 import UserList from "./views/user/UserList";
 import UserDetail from "./views/user/UserDetails";
-import CategorysList from "./views/categorys/CategorysList";
-import CategorysDetail from "./views/categorys/CategorysDetails";
+import CarModelsList from "./views/carModels/CarModelsList";
+import CarModelsDetail from "./views/carModels/CarModelsDetails";
 import CarsList from "./views/cars/CarsList";
 import CarsDetails from "./views/cars/CarsDetails";
 
@@ -25,8 +25,9 @@ const LayoutRouting = () => {
 
         <Route path="user" element={<UserList />} />
         <Route path="user/:id" element={<UserDetail />} />
-        <Route path="categories" element={<CategorysList />} />
-        <Route path="categories/:id" element={<CategorysDetail />} />
+
+        <Route path="models" element={<CarModelsList />} />
+        <Route path="models/:id" element={<CarModelsDetail />} />
 
         <Route path="cars" element={<CarsList />} />
         <Route path="cars/details/:id" element={<CarsDetails />} />

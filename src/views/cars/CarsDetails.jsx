@@ -149,7 +149,6 @@ const CarsDetail = () => {
             if (!data) return;
             const previous = data.is_active;
             const nextStatus = !previous;
-            // optimistic update
             setData((d) => ({ ...d, is_active: nextStatus }));
             try {
               setToggleLoading(true);

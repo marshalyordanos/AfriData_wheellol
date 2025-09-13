@@ -3,7 +3,7 @@ import api from "../../api/api";
 class CarsService {
   createCar(data) {
     return api
-      .post("/cars", data, {
+      .post("/admin/cars", data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -15,7 +15,7 @@ class CarsService {
 
   updateCar(data, id) {
     return api
-      .patch("/car-owner/cars/" + id, data, {
+      .patch("/admin/cars/editcar/" + id, data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -40,7 +40,7 @@ class CarsService {
         order == "ascend" ? sort : order == "descend" ? "-" + sort : "";
       url = url + `&sort=${sortValue}`;
     }
-
+    
     if (searchText) {
       url = url + `&searchText=${encodeURIComponent(searchText)}`;
     }

@@ -92,6 +92,7 @@ const Sidebar = ({ collapsed }) => {
 
       getItem("Categories", "categories", <BiSolidCategory />),
       getItem("Brands", "brands", <SiBrandfolder />),
+      getItem("Models", "models", <SiBrandfolder />),
     ];
 
     setItems(items2);
