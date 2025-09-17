@@ -109,6 +109,20 @@ const CarsList = () => {
     searchData();
   };
 
+  // Action menu handler for each row (3 dots)
+  const onActionClick = ({ key, domEvent }, record) => {
+    if (domEvent) domEvent.stopPropagation();
+    if (key === "edit") {
+      const id = record?.id || record?._id;
+      setModeID(id);
+      setIsModalOpen(true);
+    }
+    if (key === "delete") {
+      setModeID(record?._id || record?.id);
+      setIsDeleteModalOpen(true);
+    }
+  };
+
   const handleDelete = async () => {
     try {
       setLoading(true);
@@ -122,61 +136,31 @@ const CarsList = () => {
     }
   };
 
-  const onClick = ({ key }, record) => {
-    if (key == "edit") {
-      setIsModalOpen(true);
-    } else if (key === "delete") {
-      setIsDeleteModalOpen(true);
-    }
-  };
-
   const items = [
-    {
-      key: "edit",
-      label: <Button type="text">Edit</Button>,
-    },
-    {
-      key: "delete",
-      label: <Button type="text"> Delete</Button>,
-    },
-    {
-      key: "3",
-      label: (
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href="https://www.luohanacademy.com"
-        >
-          3rd menu item
-        </a>
-      ),
-    },
+    { key: "edit", label: <Button type="text">Edit</Button> },
+    { key: "delete", label: <Button type="text">Delete</Button> },
   ];
 
   const columns = [
     {
       title: "Action",
       dataIndex: "action",
-      render: (_, recored) => {
-        return (
-          <Dropdown
-            menu={{
-              items,
-              onClick: (value) => onClick(value, recored),
+      render: (_, recored) => (
+        <Dropdown
+          menu={{ items, onClick: (value) => onActionClick(value, recored) }}
+          trigger={["click"]}
+          placement="bottomLeft"
+        >
+          <Button
+            type="text"
+            icon={<MoreOutlined style={{ fontSize: 20 }} />}
+            onClick={(e) => {
+              e.stopPropagation();
+              setModeID(recored._id);
             }}
-            trigger={["click"]}
-            placement="bottomLeft"
-          >
-            <Button
-              type="text"
-              icon={<MoreOutlined style={{ fontSize: 20 }} />}
-              onClick={() => {
-                setModeID(recored._id);
-              }}
-            ></Button>
-          </Dropdown>
-        );
-      },
+          />
+        </Dropdown>
+      ),
     },
     {
       title: "Image",
@@ -209,7 +193,21 @@ const CarsList = () => {
     {
       title: "Car Type",
       dataIndex: "car_type",
-      render: (_, record) => <p>{record.vehicle_type?.name}</p>, // or record.title if exists
+      render: (_, record) => {
+        const id = record?.id || record?._id;
+        const label = record?.vehicle_type?.name || "-";
+        return (
+          <Button
+            type="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (id) navigate(`/dash/cars/details/${id}`, { state: record });
+            }}
+          >
+            {label}
+          </Button>
+        );
+      },
       // sorter: true,
     },
 
@@ -453,9 +451,7 @@ const CarsList = () => {
         onRow={(record) => ({
           onClick: () => {
             const id = record?.id || record?._id;
-            navigate(id ? `/dash/cars/details/${id}` : `/dash/cars/details`, {
-              state: record,
-            });
+            if (id) navigate(`/dash/cars/details/${id}`, { state: record });
           },
           style: { cursor: "pointer" },
         })}

@@ -104,6 +104,14 @@ class CarsService {
       )
       .catch(() => null);
   }
+  adminEditCar(carId, status) {
+    return api
+      .patch(`/admin/cars/editcar/${carId}`, { status })
+      .then((response) =>
+        response.data && response.data.car ? response.data.car : null
+      )
+      .catch(() => null);
+  }
 }
 
 export default new CarsService();
