@@ -9,8 +9,8 @@ const handleErrorResponse = (errorMessage) => {
 };
 
 const instance = axios.create({
-  baseURL: "https://car-rental-back-hzzg.onrender.com/api/v1",
-  // baseURL: "http://localhost:8000/api/v1",
+  // baseURL: "https://car-rental-back-hzzg.onrender.com/api/v1",
+  baseURL: "http://localhost:8000/api/v1",
   // baseURL: "http://localhost:8000/api/v1",
 
   headers: {

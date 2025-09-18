@@ -30,6 +30,7 @@ const CarsList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const [modeID, setModeID] = useState("");
+  const [selectedCar, setSelectedCar] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -115,6 +116,7 @@ const CarsList = () => {
     if (key === "edit") {
       const id = record?.id || record?._id;
       setModeID(id);
+      setSelectedCar(record);
       setIsModalOpen(true);
     }
     if (key === "delete") {
@@ -329,6 +331,7 @@ const CarsList = () => {
             mode={modeID}
             isModelOpen={isModalOpen}
             setIsModalOpen={setIsModalOpen}
+            initialCar={selectedCar}
           />
         </CommonModal>
       ) : (
@@ -428,6 +431,7 @@ const CarsList = () => {
             onClick={() => {
               setIsModalOpen(true);
               setModeID("");
+              setSelectedCar(null);
             }}
           >
             <span className="flex flex-row">
