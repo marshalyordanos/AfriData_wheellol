@@ -1,7 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Checkbox, Dropdown, Image, Input, Select, Tag } from "antd";
+import {
+  Button,
+  Checkbox,
+  Dropdown,
+  Image,
+  Input,
+  Select,
+  Tag,
+  message,
+} from "antd";
 import styled from "styled-components";
 import CommonModal from "../../components/commons/CommonModel";
 
@@ -128,8 +137,10 @@ const CarsList = () => {
   const handleDelete = async () => {
     try {
       setLoading(true);
-      const data = await carsService.deleteCar(modeID);
+      // Use admin delete endpoint to avoid 404 on public delete route
+      await carsService.adminDeleteCar(modeID, true);
       setIsDeleteModalOpen(false);
+      message.success("Car deleted successfully");
 
       searchData();
       setLoading(false);

@@ -7,7 +7,7 @@ const BrandsDetail = () => {
   const { state } = useLocation();
   return (
     <DetailStyle>
-      <h1>BRand Detail</h1>
+      <h1>Brand Detail</h1>
       <Divider style={{ margin: "15px 0 25px 0" }} />
 
       <div className="detail_child">

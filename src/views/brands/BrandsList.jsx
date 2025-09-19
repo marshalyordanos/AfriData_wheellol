@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Image, Input, Select, Tag } from "antd";
+import { Button, Dropdown, Image, Input, Select } from "antd";
 import styled from "styled-components";
 import CommonModal from "../../components/commons/CommonModel";
 
@@ -136,7 +136,6 @@ const BrandsList = () => {
       key: "delete",
       label: <Button type="text"> Delete</Button>,
     },
-    
   ];
 
   const columns = [
@@ -187,18 +186,7 @@ const BrandsList = () => {
       dataIndex: "country",
       // sorter: true,
     },
-
-    {
-      title: "Is featured",
-      dataIndex: "is_featured",
-      render: (text, recored) => {
-        return recored.is_featured ? (
-          <Tag color="green">Featured</Tag>
-        ) : (
-          <Tag color="blue">Not featured</Tag>
-        );
-      },
-    },
+    // Removed Is featured column
   ];
 
   return (

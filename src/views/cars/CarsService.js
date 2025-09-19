@@ -112,6 +112,14 @@ class CarsService {
       )
       .catch(() => null);
   }
+  adminDeleteCar(carId, status) {
+    return api
+      .delete(`/admin/cars/deletecar/${carId}`, { status })
+      .then((response) =>
+        response.data && response.data.car ? response.data.car : null
+      )
+      .catch(() => null);
+  }
 }
 
 export default new CarsService();

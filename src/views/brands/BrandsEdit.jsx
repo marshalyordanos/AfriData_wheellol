@@ -6,7 +6,6 @@ import {
   InputNumber,
   Select,
   Spin,
-  Switch,
   DatePicker,
   Divider,
   Image,
@@ -87,7 +86,7 @@ const BrandsEdit = ({
   searchData,
 }) => {
   const [form] = Form.useForm();
-  const [switch2, setSwitch2] = useState("");
+  // removed is_featured toggle state
   const [loading, setLoading] = useState("");
   const [brandPick, setBrandPick] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -160,7 +159,7 @@ const BrandsEdit = ({
     const formData = new FormData();
     formData.append("name", values.brand.name);
     formData.append("country", values.brand.country);
-    formData.append("is_featured", values.brand?.is_featured);
+    // is_featured removed
 
     fileList.forEach((file) => {
       if (file.originFileObj) {
@@ -267,13 +266,7 @@ const BrandsEdit = ({
           <Input className="bg-gray-100 py-2" />
         </Form.Item>
 
-        <Form.Item name={["brand", "is_featured"]} label="Is featured">
-          <Switch
-            checked={switch2}
-            onChange={(value) => setSwitch2(value)}
-            style={{ background: switch2 ? "blue" : "gray" }}
-          />
-        </Form.Item>
+        {/* Is featured toggle removed */}
 
         {/* <Form.Item
             className=' flex-1'
