@@ -7,6 +7,15 @@ export const login = createAsyncThunk(
     try {
       console.log(data);
       const res = await authService.login(data?.phone, data?.password);
+      // Store tokens at root level for TokenService compatibility
+      if (res && res.tokens) {
+        const userToStore = {
+          ...res.user,
+          accessToken: res.tokens.accessToken,
+          refreshToken: res.tokens.refreshToken,
+        };
+        localStorage.setItem("user", JSON.stringify(userToStore));
+      }
       return res;
     } catch (err) {
       return rejectWithValue(err.response.data);

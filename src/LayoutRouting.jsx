@@ -1,6 +1,7 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 import LayoutApp from "./components/layout/LayoutApp";
+import PermissionList from "./views/permissions/PermissionList";
 import BrandsList from "./views/brands/BrandsList";
 import BrandsDetail from "./views/brands/BrandsDetails";
 
@@ -35,6 +36,8 @@ const LayoutRouting = () => {
         <Route path="cars/details/:id" element={<CarsDetails />} />
         <Route path="bookings" element={<BookingList />} />
         <Route path="vehicle-types" element={<VehicleTypesList />} />
+
+        <Route path="permissions" element={<PermissionList />} />
 
         <Route path="/change-password" element={<ChangePassword />} />
 

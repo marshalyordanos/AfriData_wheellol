@@ -96,6 +96,7 @@ const Sidebar = ({ collapsed }) => {
       getItem("Models", "models", <PiCubeFill />),
       getItem("Vehicle Types", "vehicle-types", <TbTruckDelivery />),
       getItem("Bookings", "bookings", <SiBookstack />),
+      getItem("Permissions", "permissions", <UserOutlined />),
     ];
 
     setItems(items2);
