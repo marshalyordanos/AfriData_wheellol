@@ -60,14 +60,14 @@ class CarsService {
   }
 
   getCar(id) {
-    return api.get("/cars/" + id).then((response) => {
+    return api.get("/admin/cars/" + id).then((response) => {
       return response.data.data;
     });
   }
 
   getCarSilent(id) {
     return api
-      .get("/cars/" + id, { suppressErrorToast: true })
+      .get("/admin/cars/" + id, { suppressErrorToast: true })
       .then((response) => response.data.data);
   }
 

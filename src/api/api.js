@@ -10,7 +10,7 @@ const handleErrorResponse = (errorMessage) => {
 
 const instance = axios.create({
   // baseURL: "https://car-rental-back-hzzg.onrender.com/api/v1",
-  baseURL: "http://localhost:8000/api/v1",
+  baseURL: "https://car-back-22tv.onrender.com",
   // baseURL: "http://localhost:8000/api/v1",
 
   headers: {
@@ -57,7 +57,7 @@ const setup = (store) => {
           console.log("ppppppppppppppppppp", isreFrasing);
 
           try {
-            const rs = await instance.post("/auth/refreshtoken", {
+            const rs = await instance.get("/auth/refresh", {
               refreshToken: TokenService.getLocalRefreshToken(),
             });
 

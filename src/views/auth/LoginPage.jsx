@@ -6,7 +6,6 @@ import { Button, Checkbox, Form, Input, message, Modal } from "antd";
 // import { selectCurrentUser } from "../../redux/auth/authSlice";
 // import authService from "../../api/auth.service";
 
-
 const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -25,9 +24,15 @@ const LoginPage = () => {
 
   const onFinish = async (values) => {
     setLoading(true);
-    console.log("Success:", values);
+    // Ensure phone is a string and matches backend key
+    const payload = {
+      ...values,
+      phone: values.phone_number ? String(values.phone_number) : "",
+    };
+    delete payload.phone_number;
+    console.log("Success:", payload);
     try {
-      const actionResult = await dispatch(login(values));
+      const actionResult = await dispatch(login(payload));
 
       if (login.fulfilled.match(actionResult)) {
         message.success("Login Successful!");

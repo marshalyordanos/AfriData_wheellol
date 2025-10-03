@@ -2,15 +2,22 @@ import api from "./api";
 import TokenService from "./token.service";
 
 class AuthService {
-  login(phone_number, password) {
+  login(phone, password) {
     return api
-      .post("/user/login", {
-        phone_number,
+      .post("/auth/login", {
+        phone,
         password,
       })
       .then((response) => {
-        if (response.data.data.accessToken) {
-          TokenService.setUser(response.data.data);
+        // Adapt to new backend response structure
+        if (response.data && response.data.success && response.data.data) {
+          const { user, tokens } = response.data.data;
+          return {
+            success: response.data.success,
+            message: response.data.message,
+            user,
+            tokens,
+          };
         }
         return response.data.data;
       });
