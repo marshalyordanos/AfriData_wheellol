@@ -1,101 +1,43 @@
 import api from "../../api/api";
 
 class CarModelsService {
-  createModel(data) {
+  // Create a new model
+  createModelFields({ name, makeId }) {
     return api
-      .post("/admin/models/", data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      .then((response) => {
-        return response.data.data;
-      });
+      .post(`/car-models`, { name, makeId })
+      .then((res) => res.data.data);
   }
 
-  updateModel(data, id) {
+  // Update a model
+  updateModelFields(id, { name, makeId }) {
     return api
-      .put("/admin/models/" + id, data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      .then((response) => {
-        return response.data.data;
-      });
+      .put(`/car-models/${id}`, { name, makeId })
+      .then((res) => res.data.data);
   }
 
-  // Update simple fields (name, brand) using JSON body (no multipart)
-  updateModelFields(id, { name, brand_id }) {
-    return api
-      .put(`/admin/models/${id}`, { name, brand: brand_id })
-      .then((response) => response.data.data);
-  }
-
-  createModelFields({ name, brand_id }) {
-    return api
-      .post(`/admin/models`, { name, brand: brand_id })
-      .then((response) => response.data.data);
-  }
-
-  searchModels({ page, limit, searchText = null, sort = null, order }) {
-    let url = `/admin/models?page=${page}&limit=${limit}`;
-    if (sort) {
-      const sortValue =
-        order == "ascend" ? sort : order == "descend" ? "-" + sort : "";
-      url = url + `&sort=${sortValue}`;
-    }
-
-    if (searchText) {
-      url = url + `&searchText=${searchText}`;
-    }
-
-    return api.get(url).then((response) => {
-      return { data: response.data.data, total: response.data.total };
-    });
-  }
-
-  getModel(id) {
-    return api.get("/admin/models/" + id).then((response) => {
-      return response.data.data;
-    });
-  }
-
-  // Fetch all brands for dropdown (large limit)
-  fetchAllBrands(searchText = "") {
-    const limit = 500;
-    const url = `/admin/brands?page=1&limit=${limit}$${""}`;
-    // (Optional) Add search param if backend supports same query param name
-    return api
-      .get(
-        searchText
-          ? `/admin/brands?page=1&limit=${limit}&searchText=${encodeURIComponent(
-              searchText
-            )}`
-          : `/admin/brands?page=1&limit=${limit}`
-      )
-      .then((res) => res.data.data || []);
-  }
-
+  // Delete a model
   deleteModel(id) {
-    return api.delete("/admin/models/" + id).then((response) => {
-      return response.data.data;
-    });
+    return api.delete(`/car-models/${id}`).then((res) => res.data.data);
   }
 
-  modelsDo({ method, payload }) {
-    return api.post("/models/do", { method, payload }).then((response) => {
-      return response.data.data;
-    });
+  // Fetch models with optional search and pagination
+  searchModels({ page, limit, searchText = "" }) {
+    let url = `/car-models?page=${page}&limit=${limit}`;
+    if (searchText) {
+      url += `&search=name:${encodeURIComponent(searchText)}`;
+    }
+    return api.get(url).then((res) => ({
+      data: res.data.data,
+      total: res.data.pagination.total,
+    }));
   }
 
-  modelDo({ method, payload, id }) {
-    return api
-      .post("/models/do/" + id, { method, payload })
-      .then((response) => {
-        return response.data.data;
-      });
+  // Fetch all brands (makes)
+  fetchAllBrands(searchText = "") {
+    let url = `/car-makes`;
+    if (searchText) url += `?searchText=${encodeURIComponent(searchText)}`;
+    return api.get(url).then((res) => res.data.data || []);
   }
 }
-// singleton export with correct class reference
+
 export default new CarModelsService();

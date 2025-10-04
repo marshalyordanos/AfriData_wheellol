@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Input,
-  Spin,
   Card,
   Tag,
   Modal,
@@ -35,29 +34,40 @@ const CarModelsList = () => {
   const [brands, setBrands] = useState([]);
   const [brandLoading, setBrandLoading] = useState(false);
   const [form] = Form.useForm();
+
+  // Group models by brand (make)
   const group = (list) =>
     list.reduce((acc, item) => {
-      const brandName = item.brand?.name || "Unknown Brand";
+      const brandName = item.make?.name || "Unknown Brand";
       if (!acc[brandName]) acc[brandName] = [];
       acc[brandName].push(item);
       return acc;
     }, {});
 
+  // Fetch models
   const fetchData = async () => {
     try {
       setLoading(true);
       const res = await ModelsService.searchModels({
         page: 1,
         limit: 500,
-        searchText,
-        sort: "",
-        order: "",
+        searchText: "", // fetch all models for frontend filtering
       });
-      const list = res.data || [];
+      let list = res.data || [];
+
+      if (searchText.trim() !== "") {
+        const lower = searchText.toLowerCase();
+        list = list.filter(
+          (m) =>
+            m.name.toLowerCase().includes(lower) ||
+            m.make?.name?.toLowerCase().includes(lower)
+        );
+      }
+
       setModels(list);
       setGrouped(group(list));
     } catch (e) {
-      // ignore
+      message.error("Failed to fetch models");
     } finally {
       setLoading(false);
     }
@@ -72,12 +82,18 @@ const CarModelsList = () => {
     return () => clearTimeout(t);
   }, [searchText]);
 
+  // Open edit modal
   const openEdit = (model) => {
     setEditing(model);
-    form.setFieldsValue({ name: model.name, brand_id: model.brand?._id });
+    form.setFieldsValue({
+      name: model.name,
+      makeId: model.make?.id || null,
+    });
     setEditOpen(true);
     if (!brands.length) loadBrands("");
   };
+
+  // Open create modal
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
@@ -85,68 +101,62 @@ const CarModelsList = () => {
     if (!brands.length) loadBrands("");
   };
 
+  // Load brands for Select
   const loadBrands = async (q) => {
     try {
       setBrandLoading(true);
       const list = await ModelsService.fetchAllBrands(q);
       setBrands(list);
     } catch (e) {
+      message.error("Failed to fetch brands");
     } finally {
       setBrandLoading(false);
     }
   };
+
   const handleSearchBrands = (val) => loadBrands(val);
 
+  // Add or update model
   const handleUpdate = async () => {
     try {
       const values = await form.validateFields();
+
       if (editing) {
-        await ModelsService.updateModelFields(editing._id, {
-          name: values.name,
-          brand_id: values.brand_id,
-        });
-        message.success("Model updated");
-        const patched = models.map((m) =>
-          m._id === editing._id
-            ? {
-                ...m,
-                name: values.name,
-                brand: {
-                  _id: values.brand_id,
-                  name:
-                    brands.find((b) => b._id === values.brand_id)?.name ||
-                    m.brand?.name,
-                },
-              }
-            : m
-        );
-        setModels(patched);
-        setGrouped(group(patched));
+        // Editing (we'll fix this later when endpoint is confirmed)
+        message.warning("Editing temporarily disabled.");
       } else {
+        // Creating a new model
         const created = await ModelsService.createModelFields({
           name: values.name,
-          brand_id: values.brand_id,
+          makeId: values.makeId,
         });
         message.success("Model created");
-        const newList = [...models, created];
+
+        // Attach the brand object manually so it shows in the correct section
+        const brandObj = brands.find((b) => b.id === values.makeId);
+        const createdWithMake = { ...created, make: brandObj };
+
+        const newList = [...models, createdWithMake];
         setModels(newList);
         setGrouped(group(newList));
       }
+
       setEditOpen(false);
     } catch (e) {
-      // ignore
+      message.error("Failed to save model");
     }
   };
 
+  // Delete model
   const handleDelete = async (model) => {
     Modal.confirm({
       title: `Delete model "${model.name}"?`,
       okType: "danger",
       onOk: async () => {
         try {
-          await ModelsService.deleteModel(model._id);
+          await ModelsService.deleteModel(model.id);
           message.success("Deleted");
-          const rest = models.filter((m) => m._id !== model._id);
+          const rest = models.filter((m) => m.id !== model.id);
           setModels(rest);
           setGrouped(group(rest));
         } catch (e) {
@@ -156,6 +166,7 @@ const CarModelsList = () => {
     });
   };
 
+  // Collapse panels by brand
   const brandPanels = Object.entries(grouped).map(([brand, items]) => ({
     key: brand,
     label: (
@@ -168,7 +179,7 @@ const CarModelsList = () => {
       <div className="grid gap-4 md:grid-cols-4 sm:grid-cols-2 grid-cols-1">
         {items.map((m) => (
           <Card
-            key={m._id}
+            key={m.id}
             size="small"
             title={<span className="font-semibold">{m.name}</span>}
             className="model-card shadow-sm hover:shadow-md transition-shadow"
@@ -229,9 +240,11 @@ const CarModelsList = () => {
           ))}
         </div>
       )}
+
       {!loading && brandPanels.length === 0 && (
         <Empty description="No models" />
       )}
+
       {!loading && brandPanels.length > 0 && (
         <Collapse
           items={brandPanels}
@@ -240,6 +253,7 @@ const CarModelsList = () => {
           expandIconPosition="end"
         />
       )}
+
       <Modal
         title={isEdit ? "Edit Model" : "Add Model"}
         open={editOpen}
@@ -257,7 +271,7 @@ const CarModelsList = () => {
           </Form.Item>
           <Form.Item
             label="Brand"
-            name="brand_id"
+            name="makeId"
             rules={[{ required: true, message: "Brand required" }]}
           >
             <Select
@@ -266,7 +280,7 @@ const CarModelsList = () => {
               filterOption={false}
               onSearch={handleSearchBrands}
               loading={brandLoading}
-              options={brands.map((b) => ({ label: b.name, value: b._id }))}
+              options={brands.map((b) => ({ label: b.name, value: b.id }))}
             />
           </Form.Item>
         </Form>
