@@ -1,13 +1,13 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import VehicleTypesService from "./PermissionService";
+import PermissionsService from "./PermissionService";
 
-export const searchVehicleTypes = createAsyncThunk(
-  "vehicleTypes/search",
+export const searchPermissions = createAsyncThunk(
+  "permissions/search",
   async (_, { rejectWithValue, getState }) => {
     try {
       const { searchText, page, limit, sort, order } =
-        getState().vehicleTypes.query;
-      const res = await VehicleTypesService.search({
+        getState().permissions.query;
+      const res = await PermissionsService.search({
         page,
         limit,
         searchText,
@@ -23,8 +23,8 @@ export const searchVehicleTypes = createAsyncThunk(
   }
 );
 
-export const vehicleTypesSlice = createSlice({
-  name: "vehicleTypes",
+export const permissionsSlice = createSlice({
+  name: "permissions",
   initialState: {
     query: {
       searchText: "",
@@ -41,12 +41,12 @@ export const vehicleTypesSlice = createSlice({
   },
 });
 
-export const { updateVehicleTypesState } = vehicleTypesSlice.actions;
+export const { updateVehicleTypesState } = permissionsSlice.actions;
 
-export default vehicleTypesSlice.reducer;
-export const vehicleTypesSearchText = (state) =>
-  state.vehicleTypes.query.searchText;
-export const vehicleTypesPage = (state) => state.vehicleTypes.query.page;
-export const vehicleTypesLimit = (state) => state.vehicleTypes.query.limit;
-export const vehicleTypesSort = (state) => state.vehicleTypes.query.sort;
-export const vehicleTypesQuery = (state) => state.vehicleTypes.query;
+export default permissionsSlice.reducer;
+export const permissionsSearchText = (state) =>
+  state.permissions.query.searchText;
+export const permissionsPage = (state) => state.permissions.query.page;
+export const permissionsLimit = (state) => state.permissions.query.limit;
+export const permissionsSort = (state) => state.permissions.query.sort;
+export const permissionsQuery = (state) => state.permissions.query;

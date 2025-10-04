@@ -6,6 +6,8 @@ import userReducer from "../views/user/UserRedux"; // import the user
 import vehicleTypesReducer from "../views/vehicleTypes/VehicleTypesRedux"; // vehicle types slice
 import carsReducer from "../views/cars/CarsRedux"; // import the cars
 import bookingReducer from "../views/bookings/BookingRedux";
+import permissionsReducer from "../views/permissions/PermissionRedux";
+import rolesReducer from "../views/roles/RoleRedux";
 
 export const store = configureStore({
   reducer: {
@@ -16,5 +18,7 @@ export const store = configureStore({
     vehicleTypes: vehicleTypesReducer, // add the vehicle types here
     cars: carsReducer, // add the cars here
     booking: bookingReducer,
+    permissions: permissionsReducer,
+    roles: rolesReducer,
   },
 });
