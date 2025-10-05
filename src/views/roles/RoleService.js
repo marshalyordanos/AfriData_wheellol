@@ -77,6 +77,26 @@ class RolesService {
       .delete(`access-control/roles/${id}`)
       .then((r) => r.data.data);
   }
+
+  // Assign permission to Role
+  assignPermissionToRole(data) {
+    return api
+      .post(`access-control/roles/permissions/assign/`,data)
+      .then((r) => r.data.data);
+  }
+  // update Assign permission to Role
+  updateAssignedPermissionToRole(id,data) {
+    return api
+      .post(`access-control/roles/${id}/permissions/update`,data)
+      .then((r) => r.data.data);
+  }
+  // Remove permission from Role
+  removeAssignedPermissionToRole(id,data) {
+    return api
+      .post(`access-control/roles/${id}/permissions/remove`,data)
+      .then((r) => r.data.data);
+  }
+
 }
 
 export default new RolesService();

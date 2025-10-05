@@ -2,7 +2,11 @@ import { Menu } from "antd";
 import Sider from "antd/es/layout/Sider";
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { DashboardOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  DashboardOutlined,
+  UserOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 import styled from "styled-components";
 import Logo from "../../assets/logo1.png";
 import { FaCar } from "react-icons/fa";
@@ -97,7 +101,7 @@ const Sidebar = ({ collapsed }) => {
       getItem("Vehicle Types", "vehicle-types", <TbTruckDelivery />),
       getItem("Bookings", "bookings", <SiBookstack />),
       getItem("Permissions", "permissions", <UserOutlined />),
-      getItem("Roles", "roles", <UserOutlined />),
+      getItem("Roles", "roles", <TeamOutlined />),
     ];
 
     setItems(items2);

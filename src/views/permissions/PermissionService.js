@@ -19,8 +19,8 @@ class PermissionsService {
   search({
     page = 1,
     limit = 10,
-    search = null, 
-    filter = null, 
+    search = null,
+    filter = null,
     sort = null,
   } = {}) {
     let params = [];
@@ -31,10 +31,7 @@ class PermissionsService {
 
     // Search
     if (search) {
-      const searchParams = Object.entries(search)
-        .map(([key, value]) => `${key}:${value}`)
-        .join(",");
-      params.push(`search=${encodeURIComponent(searchParams)}`);
+      params.push(`search=${encodeURIComponent(search)}`);
     }
 
     // Filter

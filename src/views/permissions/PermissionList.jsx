@@ -36,10 +36,13 @@ const PermissionList = () => {
     async (opts = {}) => {
       try {
         setLoading(true);
+        const searchVal =
+          opts.searchText !== undefined ? opts.searchText : searchText;
+        // Send search as plain string for backend compatibility
         const res = await PermissionService.search({
           page: opts.page || page,
           limit: PAGE_SIZE,
-          search: opts.searchText !== undefined ? opts.searchText : searchText,
+          search: searchVal || undefined,
         });
         setData(res.data || []);
         setTotal(res.pagination?.total || 0);
