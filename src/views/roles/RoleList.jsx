@@ -442,7 +442,7 @@ const RoleList = () => {
         <Space wrap>
           <Input
             allowClear
-            placeholder="Search permissions..."
+            placeholder="Search roles..."
             className="w-60"
             value={searchText}
             onChange={handleSearchChange}

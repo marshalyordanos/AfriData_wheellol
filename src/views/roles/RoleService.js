@@ -3,9 +3,7 @@ import api from "../../api/api";
 class RolesService {
   // Create
   create(data) {
-    return api
-      .post("access-control/roles", data)
-      .then((r) => r.data.data);
+    return api.post("access-control/roles", data).then((r) => r.data.data);
   }
 
   // Update
@@ -19,8 +17,8 @@ class RolesService {
   search({
     page = 1,
     limit = 10,
-    search = null, 
-    filter = null, 
+    search = null,
+    filter = null,
     sort = null,
   } = {}) {
     let params = [];
@@ -31,10 +29,7 @@ class RolesService {
 
     // Search
     if (search) {
-      const searchParams = Object.entries(search)
-        .map(([key, value]) => `${key}:${value}`)
-        .join(",");
-      params.push(`search=${encodeURIComponent(searchParams)}`);
+      params.push(`search=${encodeURIComponent(search)}`);
     }
 
     // Filter
@@ -73,30 +68,27 @@ class RolesService {
 
   // Delete
   remove(id) {
-    return api
-      .delete(`access-control/roles/${id}`)
-      .then((r) => r.data.data);
+    return api.delete(`access-control/roles/${id}`).then((r) => r.data.data);
   }
 
   // Assign permission to Role
   assignPermissionToRole(data) {
     return api
-      .post(`access-control/roles/permissions/assign/`,data)
+      .post(`access-control/roles/permissions/assign/`, data)
       .then((r) => r.data.data);
   }
   // update Assign permission to Role
-  updateAssignedPermissionToRole(id,data) {
+  updateAssignedPermissionToRole(id, data) {
     return api
-      .post(`access-control/roles/${id}/permissions/update`,data)
+      .post(`access-control/roles/${id}/permissions/update`, data)
       .then((r) => r.data.data);
   }
   // Remove permission from Role
-  removeAssignedPermissionToRole(id,data) {
+  removeAssignedPermissionToRole(id, data) {
     return api
-      .post(`access-control/roles/${id}/permissions/remove`,data)
+      .post(`access-control/roles/${id}/permissions/remove`, data)
       .then((r) => r.data.data);
   }
-
 }
 
 export default new RolesService();
