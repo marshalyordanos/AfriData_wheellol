@@ -10,6 +10,7 @@ import {
   Popconfirm,
   Empty,
 } from "antd";
+import styled from "styled-components";
 import {
   PlusOutlined,
   ReloadOutlined,
@@ -38,28 +39,21 @@ const PermissionList = () => {
         setLoading(true);
         const searchVal =
           opts.searchText !== undefined ? opts.searchText : searchText;
-        // Send search as plain string for backend compatibility
+        const pageVal = opts.page !== undefined ? opts.page : page;
         const res = await PermissionService.search({
-          page: opts.page || page,
+          page: pageVal,
           limit: PAGE_SIZE,
-          search: searchVal || undefined,
+          search: searchVal,
         });
-        setData(res.data || []);
-        setTotal(res.pagination?.total || 0);
-      } catch (e) {
-        message.error(
-          e?.response?.data?.message || "Failed to load permissions"
-        );
-      } finally {
+        setData(res.data);
+        setTotal(res.total);
+        setLoading(false);
+      } catch (err) {
         setLoading(false);
       }
     },
-    [page, searchText]
+    [searchText, page]
   );
-
-  useEffect(() => {
-    fetchList();
-  }, [page]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
@@ -177,31 +171,46 @@ const PermissionList = () => {
     },
   ];
 
+  useEffect(() => {
+    fetchList();
+    // eslint-disable-next-line
+  }, [page, searchText]);
+
   return (
     <div className="p-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
-        <div className="flex flex-col w-full md:w-auto">
-          <h1 className="text-2xl font-bold tracking-wide">Permissions</h1>
+      <div className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700 mb-5">
+        <div className="flex flex-col p-6 md:w-[45vw] w-full">
+          <h1 className="text-2xl font-bold pb-4">Permissions</h1>
+          <div className="flex">
+            <Input
+              onChange={handleSearchChange}
+              placeholder="Search"
+              value={searchText}
+              allowClear
+              className="drop-shadow-sm rounded-lg py-2"
+            />
+          </div>
         </div>
-        <Space wrap>
-          <Input
-            allowClear
-            placeholder="Search permissions..."
-            className="w-60"
-            value={searchText}
-            onChange={handleSearchChange}
-          />
-          <Button
-            icon={<ReloadOutlined />}
+        <div className="flex ml-6 mb-6 md:mr-6">
+          <button
             onClick={() => {
               setPage(1);
               fetchList({ page: 1 });
             }}
-          />
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            New Permission
-          </Button>
-        </Space>
+            className="border border-[#1D9BF0] py-2 px-3 text-[#1D9BF0] rounded mr-4 flex items-center justify-center"
+          >
+            <ReloadOutlined className="boder boder-red-900" />
+          </button>
+          <button
+            className="px-4 py-2 border border-[#3BB66E] text-white bg-[#3BB66E] rounded"
+            onClick={openCreate}
+          >
+            <span className="flex flex-row">
+              <PlusOutlined />
+              <p className="pl-2">Add Permission</p>
+            </span>
+          </button>
+        </div>
       </div>
 
       <Table
