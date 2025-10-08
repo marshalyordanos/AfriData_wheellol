@@ -24,9 +24,16 @@ import PermissionService from "../permissions/PermissionService";
 const PAGE_SIZE = 10;
 
 const RoleList = () => {
+  const [updatePermissionLoading, setUpdatePermissionLoading] = useState(false);
+  // Modal state for viewing all permissions/actions
+  const [permissionModal, setPermissionModal] = useState({
+    open: false,
+    role: null,
+  });
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
   const [selectedRolePermission, setSelectedRolePermission] = useState(null);
+  const [removePermissionLoading, setRemovePermissionLoading] = useState(false);
   const [updateActions, setUpdateActions] = useState({
     createAction: false,
     readAction: false,
@@ -38,6 +45,7 @@ const RoleList = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [permissions, setPermissions] = useState([]);
   const [selectedPermission, setSelectedPermission] = useState(null);
+  const [assignPermissionLoading, setAssignPermissionLoading] = useState(false);
   // Store selected permissions and actions as an object: { permissionId: { createAction, readAction, ... } }
   const [selectedPermissions, setSelectedPermissions] = useState({});
   // Fetch all permissions for assign modal
@@ -84,6 +92,7 @@ const RoleList = () => {
         selectedRolePermission.permission?.id,
       ...updateActions,
     };
+    setUpdatePermissionLoading(true);
     try {
       await RolesService.updateAssignedPermissionToRole(
         selectedRole.id,
@@ -91,15 +100,23 @@ const RoleList = () => {
       );
       message.success("Permission updated");
       setUpdateModalOpen(false);
+      // Reload the updated role and update modal
+      const updatedRole = await RolesService.get(selectedRole.id);
+      setPermissionModal((prev) =>
+        prev.open ? { open: true, role: updatedRole } : prev
+      );
       fetchList();
     } catch (e) {
       message.error(e?.response?.data?.message || "Update failed");
+    } finally {
+      setUpdatePermissionLoading(false);
     }
   };
 
   // Remove permission API call
   const handleRemovePermission = async () => {
     if (!selectedRole || !selectedRolePermission) return;
+    setRemovePermissionLoading(true);
     const payload = {
       permissionId:
         selectedRolePermission.permissionId ||
@@ -112,9 +129,16 @@ const RoleList = () => {
       );
       message.success("Permission removed");
       setRemoveModalOpen(false);
+      // Reload the updated role and update modal
+      const updatedRole = await RolesService.get(selectedRole.id);
+      setPermissionModal((prev) =>
+        prev.open ? { open: true, role: updatedRole } : prev
+      );
       fetchList();
     } catch (e) {
       message.error(e?.response?.data?.message || "Remove failed");
+    } finally {
+      setRemovePermissionLoading(false);
     }
   };
   const openAssignModal = (role) => {
@@ -163,6 +187,7 @@ const RoleList = () => {
   // Assign permission to role
   const handleAssignPermission = async () => {
     if (!selectedRole || Object.keys(selectedPermissions).length === 0) return;
+    setAssignPermissionLoading(true);
     // Prepare payload as { roleId, permissions: [ ... ] }
     const permissionsArr = Object.entries(selectedPermissions).map(
       ([permissionId, actions]) => {
@@ -186,6 +211,8 @@ const RoleList = () => {
       fetchList();
     } catch (e) {
       message.error(e?.response?.data?.message || "Assign failed");
+    } finally {
+      setAssignPermissionLoading(false);
     }
   };
   const [total, setTotal] = useState(0);
@@ -338,76 +365,60 @@ const RoleList = () => {
     {
       title: "Permissions",
       dataIndex: "rolePermissions",
-      render: (rolePermissions, record) => (
-        <ul style={{ paddingLeft: 16 }}>
-          {rolePermissions && rolePermissions.length > 0 ? (
-            rolePermissions.map((perm) => (
-              <li
-                key={perm.id}
+      render: (rolePermissions, record) => {
+        const maxPreview = 2;
+        const preview = (rolePermissions || []).slice(0, maxPreview);
+        return (
+          <div style={{ position: "relative", minHeight: 32 }}>
+            <div
+              style={{
+                display: "inline-block",
+                maxWidth: "calc(100% - 80px)",
+                verticalAlign: "middle",
+              }}
+            >
+              {preview.map((perm) => (
+                <span
+                  key={perm.id}
+                  style={{
+                    marginRight: 8,
+                    fontWeight: 500,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: 120,
+                    display: "inline-block",
+                  }}
+                >
+                  {perm.permission?.resource || perm.permissionId}
+                </span>
+              ))}
+              {rolePermissions && rolePermissions.length > maxPreview && (
+                <span style={{ color: "#888", marginRight: 8 }}>
+                  +{rolePermissions.length - maxPreview} more
+                </span>
+              )}
+            </div>
+            {rolePermissions && rolePermissions.length > 0 && (
+              <Button
+                size="small"
+                onClick={() => setPermissionModal({ open: true, role: record })}
                 style={{
-                  marginBottom: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
+                  position: "absolute",
+                  right: 0,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  padding: "0 8px",
+                  zIndex: 2,
+                  minWidth: 70,
                 }}
               >
-                <Dropdown
-                  overlay={
-                    <Menu>
-                      <Menu.Item
-                        key="update"
-                        onClick={() => openUpdateModal(record, perm)}
-                      >
-                        Update Permission
-                      </Menu.Item>
-                      <Menu.Item
-                        key="remove"
-                        onClick={() => openRemoveModal(record, perm)}
-                      >
-                        Remove Permission
-                      </Menu.Item>
-                    </Menu>
-                  }
-                  trigger={["click"]}
-                >
-                  <Button size="small" style={{ marginRight: 8 }}>
-                    <span style={{ fontSize: 18, verticalAlign: "middle" }}>
-                      ⋮
-                    </span>
-                  </Button>
-                </Dropdown>
-                <b>{perm.permission?.resource}</b>:
-                {perm.createAction && (
-                  <span style={{ color: "#22c55e", fontWeight: 500 }}>
-                    {" "}
-                    Create
-                  </span>
-                )}
-                {perm.readAction && (
-                  <span style={{ color: "#3b82f6", fontWeight: 500 }}>
-                    {" "}
-                    Read
-                  </span>
-                )}
-                {perm.updateAction && (
-                  <span style={{ color: "#f59e42", fontWeight: 500 }}>
-                    {" "}
-                    Update
-                  </span>
-                )}
-                {perm.deleteAction && (
-                  <span style={{ color: "#ef4444", fontWeight: 500 }}>
-                    {" "}
-                    Delete
-                  </span>
-                )}
-              </li>
-            ))
-          ) : (
-            <span>-</span>
-          )}
-        </ul>
-      ),
+                View All
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: "Actions",
@@ -435,6 +446,134 @@ const RoleList = () => {
 
   return (
     <div className="p-4">
+      {/* Modal to show all permissions and actions for a role */}
+      <Modal
+        open={permissionModal.open}
+        onCancel={() => setPermissionModal({ open: false, role: null })}
+        title={
+          permissionModal.role
+            ? `Permissions for ${permissionModal.role.name}`
+            : "Permissions"
+        }
+        footer={null}
+        width={800}
+        bodyStyle={{ minHeight: 350, padding: 32 }}
+      >
+        {permissionModal.role &&
+        permissionModal.role.rolePermissions &&
+        permissionModal.role.rolePermissions.length > 0 ? (
+          <ul style={{ paddingLeft: 0 }}>
+            {permissionModal.role.rolePermissions.map((perm) => (
+              <li
+                key={perm.id}
+                style={{
+                  marginBottom: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  borderBottom: "1px solid #eee",
+                  paddingBottom: 8,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flex: 1,
+                    gap: 18,
+                  }}
+                >
+                  <span style={{ fontWeight: 600, minWidth: 140 }}>
+                    {perm.permission?.resource || perm.permissionId}
+                  </span>
+                  <span>
+                    {perm.createAction && (
+                      <span
+                        style={{
+                          color: "#22c55e",
+                          fontWeight: 500,
+                          marginRight: 8,
+                        }}
+                      >
+                        Create
+                      </span>
+                    )}
+                    {perm.readAction && (
+                      <span
+                        style={{
+                          color: "#3b82f6",
+                          fontWeight: 500,
+                          marginRight: 8,
+                        }}
+                      >
+                        Read
+                      </span>
+                    )}
+                    {perm.updateAction && (
+                      <span
+                        style={{
+                          color: "#f59e42",
+                          fontWeight: 500,
+                          marginRight: 8,
+                        }}
+                      >
+                        Update
+                      </span>
+                    )}
+                    {perm.deleteAction && (
+                      <span
+                        style={{
+                          color: "#ef4444",
+                          fontWeight: 500,
+                          marginRight: 8,
+                        }}
+                      >
+                        Delete
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginLeft: "auto",
+                  }}
+                >
+                  <Button
+                    size="small"
+                    type="dashed"
+                    style={{
+                      borderColor: "#4096ff",
+                      color: "#4096ff",
+                      fontWeight: 500,
+                    }}
+                    onClick={() => openUpdateModal(permissionModal.role, perm)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    type="default"
+                    danger
+                    style={{
+                      borderColor: "#ef4444",
+                      color: "#ef4444",
+                      fontWeight: 500,
+                      background: "#fff",
+                    }}
+                    onClick={() => openRemoveModal(permissionModal.role, perm)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span>No permissions assigned.</span>
+        )}
+      </Modal>
       <div className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700 mb-5">
         <div className="flex flex-col p-6 md:w-[45vw] w-full">
           <h1 className="text-2xl font-bold pb-4">Roles</h1>
@@ -518,8 +657,26 @@ const RoleList = () => {
             ? `Assign Permissions to ${selectedRole.name}`
             : "Assign Permissions"
         }
-        okText="Assign"
+        okText={
+          assignPermissionLoading ? (
+            <span>
+              <span
+                className="ant-spin-dot ant-spin-dot-spin"
+                style={{ marginRight: 8 }}
+              >
+                <i className="ant-spin-dot-item" />
+                <i className="ant-spin-dot-item" />
+                <i className="ant-spin-dot-item" />
+                <i className="ant-spin-dot-item" />
+              </span>
+              Assigning...
+            </span>
+          ) : (
+            "Assign"
+          )
+        }
         onOk={handleAssignPermission}
+        confirmLoading={assignPermissionLoading}
         destroyOnClose
         width={700}
       >
@@ -650,10 +807,9 @@ const RoleList = () => {
         open={updateModalOpen}
         onCancel={() => setUpdateModalOpen(false)}
         title="Update Permission"
-        okText="Update"
-        onOk={handleUpdatePermission}
         destroyOnClose
         width={600}
+        footer={null}
       >
         {selectedRolePermission && (
           <div>
@@ -725,6 +881,31 @@ const RoleList = () => {
                 );
               })}
             </div>
+            <div style={{ marginTop: 24, textAlign: "right" }}>
+              <Button
+                type="primary"
+                onClick={handleUpdatePermission}
+                loading={updatePermissionLoading}
+                style={{ minWidth: 100 }}
+              >
+                {updatePermissionLoading ? (
+                  <span>
+                    <span
+                      className="ant-spin-dot ant-spin-dot-spin"
+                      style={{ marginRight: 8 }}
+                    >
+                      <i className="ant-spin-dot-item" />
+                      <i className="ant-spin-dot-item" />
+                      <i className="ant-spin-dot-item" />
+                      <i className="ant-spin-dot-item" />
+                    </span>
+                    Updating...
+                  </span>
+                ) : (
+                  "Update"
+                )}
+              </Button>
+            </div>
           </div>
         )}
       </Modal>
@@ -734,8 +915,26 @@ const RoleList = () => {
         open={removeModalOpen}
         onCancel={() => setRemoveModalOpen(false)}
         title="Remove Permission"
-        okText="Remove"
+        okText={
+          removePermissionLoading ? (
+            <span>
+              <span
+                className="ant-spin-dot ant-spin-dot-spin"
+                style={{ marginRight: 8 }}
+              >
+                <i className="ant-spin-dot-item" />
+                <i className="ant-spin-dot-item" />
+                <i className="ant-spin-dot-item" />
+                <i className="ant-spin-dot-item" />
+              </span>
+              Removing...
+            </span>
+          ) : (
+            "Remove"
+          )
+        }
         onOk={handleRemovePermission}
+        confirmLoading={removePermissionLoading}
         destroyOnClose
         width={350}
       >
