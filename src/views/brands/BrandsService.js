@@ -1,71 +1,53 @@
 import api from "../../api/api";
 
 class BrandsService {
+  // CREATE
   createBrand(data) {
-    return api
-      .post("/admin/brands/", data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      .then((response) => {
-        return response.data.data;
-      });
+    return api.post("/car-makes", data).then((response) => response.data.data);
   }
 
+  // UPDATE
   updateBrand(data, id) {
     return api
-      .put("/admin/brands/" + id, data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      .then((response) => {
-        return response.data.data;
-      });
+      .patch(`/car-makes/${id}`, data)
+      .then((response) => response.data.data);
   }
 
+  // LIST / SEARCH
+
   searchBrand({ page, limit, searchText = null, sort = null, order }) {
-    let url = `/admin/brands?page=${page}&limit=${limit}`;
+    let url = `/car-makes?page=${page}&limit=${limit}`;
+
     if (sort) {
       const sortValue =
-        order == "ascend" ? sort : order == "descend" ? "-" + sort : "";
+        order === "ascend" ? sort : order === "descend" ? "-" + sort : "";
       url = url + `&sort=${sortValue}`;
     }
 
     if (searchText) {
-      url = url + `&searchText=${searchText}`;
+      // 🔑 Use 'search' param if backend expects partial matching
+      url = url + `&search=${encodeURIComponent(searchText)}`;
     }
 
     return api.get(url).then((response) => {
-      return { data: response.data.data, total: response.data.total };
+      const res = response.data;
+      return {
+        data: res.data || [],
+        total: res.pagination?.total || (res.data ? res.data.length : 0),
+      };
     });
   }
 
+  // GET ONE
   getBrand(id) {
-    return api.get("/admin/brands/" + id).then((response) => {
-      return response.data.data;
-    });
+    return api.get(`/car-makes/${id}`).then((response) => response.data.data);
   }
 
+  // DELETE
   deleteBrand(id) {
-    return api.delete("/admin/brands/" + id).then((response) => {
-      return response.data.data;
-    });
-  }
-
-  brandsDo({ method, payload }) {
-    return api.post("/brands/do", { method, payload }).then((response) => {
-      return response.data.data;
-    });
-  }
-
-  brandDo({ method, payload, id }) {
     return api
-      .post("/brands/do/" + id, { method, payload })
-      .then((response) => {
-        return response.data.data;
-      });
+      .delete(`/car-makes/${id}`)
+      .then((response) => response.data.data);
   }
 }
 

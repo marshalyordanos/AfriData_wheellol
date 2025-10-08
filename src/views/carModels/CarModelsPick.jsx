@@ -8,18 +8,19 @@ import {
 } from "../../components/commons/CommonStyles";
 import { Divider, Input } from "antd";
 import {
-  searchBrands,
-  updateBrandsState,
-  brandsSearchText,
+  searchModels,
+  updateModelsState,
+  modelsSearchText,
 } from "./CarModelsRedux"; //** */
+
 import { useDispatch, useSelector } from "react-redux"; /*** */
 
-const BrandsPick = ({ setIsModalOpen, selectHandler }) => {
+const CarModelsPick = ({ setIsModalOpen, selectHandler }) => {
   const [brandsData, setBrandsData] = useState([]);
   const [total, setTotal] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useDispatch(); /*** */
-  const searchText = useSelector(brandsSearchText); //** */
+  const searchText = useSelector(modelsSearchText); //** */
 
   const [loading, setLoading] = useState();
   const [brandsSelection, setBrandsSelection] = useState([]);
@@ -31,7 +32,7 @@ const BrandsPick = ({ setIsModalOpen, selectHandler }) => {
 
   useEffect(() => {
     const [page, limit] = getPaginationInfo();
-    dispatch(updateBrandsState({ page: page, limit: limit }));
+    dispatch(updateModelsState({ page: page, limit: limit }));
 
     searchData();
   }, []);
@@ -39,7 +40,7 @@ const BrandsPick = ({ setIsModalOpen, selectHandler }) => {
   async function searchData() {
     try {
       setLoading(true);
-      const { payload } = await dispatch(searchBrands());
+      const { payload } = await dispatch(searchModels());
       setBrandsData(payload.data);
       setTotal(payload.total);
       setLoading(false);
@@ -125,5 +126,4 @@ const BrandsPick = ({ setIsModalOpen, selectHandler }) => {
     </div>
   );
 };
-
-export default BrandsPick;
+export default CarModelsPick;

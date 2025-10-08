@@ -14,6 +14,7 @@ import {
   Skeleton,
   Empty,
   Badge,
+  Switch,
 } from "antd";
 import {
   ReloadOutlined,
@@ -21,6 +22,7 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import ModelsService from "./CarModelsService";
 
 const CarModelsList = () => {
@@ -34,8 +36,9 @@ const CarModelsList = () => {
   const [brands, setBrands] = useState([]);
   const [brandLoading, setBrandLoading] = useState(false);
   const [form] = Form.useForm();
+  const navigate = useNavigate();
 
-  // Group models by brand (make)
+  // Group models by brand
   const group = (list) =>
     list.reduce((acc, item) => {
       const brandName = item.make?.name || "Unknown Brand";
@@ -51,7 +54,7 @@ const CarModelsList = () => {
       const res = await ModelsService.searchModels({
         page: 1,
         limit: 500,
-        searchText: "", // fetch all models for frontend filtering
+        searchText: "",
       });
       let list = res.data || [];
 
@@ -88,6 +91,7 @@ const CarModelsList = () => {
     form.setFieldsValue({
       name: model.name,
       makeId: model.make?.id || null,
+      isActive: model.isActive, // ✅ prefill active toggle
     });
     setEditOpen(true);
     if (!brands.length) loadBrands("");
@@ -97,11 +101,12 @@ const CarModelsList = () => {
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
+    form.setFieldsValue({ isActive: true }); // ✅ default new models as active
     setEditOpen(true);
     if (!brands.length) loadBrands("");
   };
 
-  // Load brands for Select
+  // Load brands
   const loadBrands = async (q) => {
     try {
       setBrandLoading(true);
@@ -116,23 +121,41 @@ const CarModelsList = () => {
 
   const handleSearchBrands = (val) => loadBrands(val);
 
-  // Add or update model
+  // ✅ Handle create/update
   const handleUpdate = async () => {
     try {
       const values = await form.validateFields();
 
       if (editing) {
-        // Editing (we'll fix this later when endpoint is confirmed)
-        message.warning("Editing temporarily disabled.");
+        console.log("Form values:", values);
+        // Update existing model
+        const updated = await ModelsService.updateModelFields({
+          id: editing.id,
+          name: values.name,
+          makeId: values.makeId,
+          isActive: values.isActive, // ✅ include active flag
+        });
+
+        message.success("Model updated");
+
+        const brandObj = brands.find((b) => b.id === values.makeId);
+        const updatedWithMake = { ...updated, make: brandObj };
+
+        const newList = models.map((m) =>
+          m.id === editing.id ? updatedWithMake : m
+        );
+
+        setModels(newList);
+        setGrouped(group(newList));
       } else {
-        // Creating a new model
+        // Create new model
         const created = await ModelsService.createModelFields({
           name: values.name,
           makeId: values.makeId,
+          isActive: values.isActive, // ✅ include active flag
         });
         message.success("Model created");
 
-        // Attach the brand object manually so it shows in the correct section
         const brandObj = brands.find((b) => b.id === values.makeId);
         const createdWithMake = { ...created, make: brandObj };
 
@@ -149,21 +172,25 @@ const CarModelsList = () => {
 
   // Delete model
   const handleDelete = async (model) => {
-    Modal.confirm({
-      title: `Delete model "${model.name}"?`,
-      okType: "danger",
-      onOk: async () => {
-        try {
-          await ModelsService.deleteModel(model.id);
-          message.success("Deleted");
-          const rest = models.filter((m) => m.id !== model.id);
-          setModels(rest);
-          setGrouped(group(rest));
-        } catch (e) {
-          message.error("Delete failed");
-        }
-      },
-    });
+    try {
+      await ModelsService.deleteModel(model.id);
+      message.success("Model deleted");
+
+      const newModels = models.filter((m) => m.id !== model.id);
+      setModels(newModels);
+      setGrouped(group(newModels));
+    } catch (err) {
+      if (err.response?.status === 400 || err.response?.status === 409) {
+        message.error("Cannot delete model: remove dependencies first");
+      } else {
+        message.error("Failed to delete model");
+      }
+    }
+  };
+
+  // Navigate to detail page
+  const goToDetail = (id) => {
+    navigate(`/dash/models/${id}`);
   };
 
   // Collapse panels by brand
@@ -183,22 +210,39 @@ const CarModelsList = () => {
             size="small"
             title={<span className="font-semibold">{m.name}</span>}
             className="model-card shadow-sm hover:shadow-md transition-shadow"
-            extra={<Tag color="blue">{brand}</Tag>}
+            extra={<Tag color={m.isActive ? "blue" : "red"}>{brand}</Tag>}
             actions={[
               <Tooltip title="Edit" key="edit">
-                <EditOutlined onClick={() => openEdit(m)} />
+                <EditOutlined
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEdit(m);
+                  }}
+                />
               </Tooltip>,
               <Popconfirm
                 key="del"
                 title="Delete model?"
                 okType="danger"
-                onConfirm={() => handleDelete(m)}
+                onConfirm={(e) => {
+                  e?.stopPropagation();
+                  handleDelete(m);
+                }}
               >
-                <DeleteOutlined className="text-red-500" />
+                <DeleteOutlined
+                  className="text-red-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
               </Popconfirm>,
             ]}
+            onClick={() => goToDetail(m.id)}
+            style={{ cursor: "pointer" }}
           >
-            <div className="text-xs text-gray-500">Brand: {brand}</div>
+            <div className="text-xs text-gray-500">
+              Brand: {brand}
+              <br />
+              Status: {m.isActive ? "Active ✅" : "Inactive ❌"}
+            </div>
           </Card>
         ))}
       </div>
@@ -269,6 +313,7 @@ const CarModelsList = () => {
           >
             <Input placeholder="Model name" />
           </Form.Item>
+
           <Form.Item
             label="Brand"
             name="makeId"
@@ -282,6 +327,10 @@ const CarModelsList = () => {
               loading={brandLoading}
               options={brands.map((b) => ({ label: b.name, value: b.id }))}
             />
+          </Form.Item>
+
+          <Form.Item label="Active" name="isActive" valuePropName="checked">
+            <Switch />
           </Form.Item>
         </Form>
       </Modal>

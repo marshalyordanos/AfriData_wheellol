@@ -1,292 +1,276 @@
+// src/views/brands/BrandsList.jsx
 import React, { useEffect, useRef, useState } from "react";
-import CommonTable from "../../components/commons/CommonTable";
+import { Button, Dropdown, Input, message } from "antd";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Image, Input, Select } from "antd";
-import styled from "styled-components";
-import CommonModal from "../../components/commons/CommonModel";
-
-import brandsService from "./BrandsService";
-import BrandsEdit from "./BrandsEdit";
-import { NavLink, useSearchParams } from "react-router-dom";
-//import { HeaderStyle, SearchInputStyle } from '../../components/commons/CommonStyles';
-import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  searchBrands,
-  updateBrandsState,
-  brandsSearchText,
-} from "./BrandsRedux";
+import { useSearchParams, useNavigate } from "react-router-dom";
+
+import CommonTable from "../../components/commons/CommonTable";
+import CommonModal from "../../components/commons/CommonModel";
+import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
+import BrandsEdit from "./BrandsEdit";
+import brandsService from "./BrandsService";
+import { updateBrandsState, brandsSearchText } from "./BrandsRedux";
 
 const BrandsList = () => {
   const [brandsData, setBrandsData] = useState([]);
-  const [total, setTotal] = useState();
-
-  const searchText = useSelector(brandsSearchText);
-  const [loading, setLoading] = useState();
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [brandsSelection, setBrandsSelection] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-  const [modeID, setModeID] = useState("");
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const delayTimerRef = useRef(null);
+  const [modeID, setModeID] = useState(""); // id for edit/delete
+  const reduxSearchText = useSelector(brandsSearchText);
   const dispatch = useDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const delayTimerRef = useRef(null);
+  const navigate = useNavigate();
 
-  const getPaginationInfo = () => {
-    return [searchParams.get("page") || 1, searchParams.get("limit") || 5];
-  };
+  // parse pagination params safely
+  const getPaginationInfo = () => [
+    parseInt(searchParams.get("page") || 1, 10),
+    parseInt(searchParams.get("limit") || 5, 10),
+  ];
 
   useEffect(() => {
     const [page, limit] = getPaginationInfo();
-    dispatch(updateBrandsState({ page: page, limit: limit }));
-    // setSearchParams({ ...Object.fromEntries(searchParams), 'searchText': e.target.value })
-    searchData();
+    // keep redux query in sync (used elsewhere)
+    dispatch(updateBrandsState({ page, limit }));
+    fetchData(); // initial load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function searchData() {
+  // Fetch data directly from service for predictable filtering/pagination
+  const fetchData = async (opts = {}) => {
+    const { page: p, limit: l, searchText: s } = opts;
+    const [page, limit] = [
+      p ?? getPaginationInfo()[0],
+      l ?? getPaginationInfo()[1],
+    ];
+    const searchText = s ?? reduxSearchText ?? "";
+
     try {
       setLoading(true);
-      const { payload } = await dispatch(searchBrands());
-      setBrandsData(payload.data);
-      setTotal(payload.total);
-      setLoading(false);
+      const res = await brandsService.searchBrand({
+        page,
+        limit,
+        searchText,
+      });
+      setBrandsData(res.data || []);
+      setTotal(res.total ?? (res.data ? res.data.length : 0));
     } catch (err) {
+      console.error("Failed to fetch brands", err);
+      message.error("Failed to load brands");
+    } finally {
       setLoading(false);
     }
-  }
+  };
 
+  // debounce text input
   const searchHandler = (e) => {
-    const { value } = e.target;
+    const value = e.target.value;
     const [page, limit] = getPaginationInfo();
+    dispatch(updateBrandsState({ page, limit, searchText: value }));
 
-    // setSearchParams({ page: page, limit: limit })
-    dispatch(
-      updateBrandsState({ page: page, limit: limit, searchText: value })
-    );
-    clearTimeout(delayTimerRef.current);
-    delayTimerRef.current = setTimeout(() => {
-      searchData();
-    }, 500);
-  };
-
-  const handlePagination = async (page, pageSize) => {
-    // permmission exmple
-
-    // if (!(await authService.checkPermmision('brands', 'read'))) {
-    //     return message.error('You have not a permmission');
-    // }
-
-    setSearchParams({ page: page, limit: pageSize });
-    dispatch(updateBrandsState({ page: page, limit: pageSize }));
-
-    searchData();
-  };
-
-  const tableChange = (pagination, filters, sorter) => {
-    const { field, order } = sorter;
-    dispatch(updateBrandsState({ sort: field, order: order }));
-
-    searchData();
+    // live search without delay
+    fetchData({ page, limit, searchText: value });
   };
 
   const handleReload = () => {
-    const [page, limit] = getPaginationInfo();
-
     setSearchParams({ page: 1, limit: 5 });
-    dispatch(
-      updateBrandsState({
-        page: 1,
-        limit: 5,
-        sort: "",
-        order: "",
-        searchText: "",
-      })
-    );
-    searchData();
+    dispatch(updateBrandsState({ page: 1, limit: 5, searchText: "" }));
+    fetchData({ page: 1, limit: 5, searchText: "" });
   };
 
   const handleDelete = async () => {
     try {
       setLoading(true);
-      const data = await brandsService.deleteBrand(modeID);
+      await brandsService.deleteBrand(modeID);
+      message.success("Brand deleted successfully");
       setIsDeleteModalOpen(false);
-
-      searchData();
-      setLoading(false);
+      fetchData(); // refresh list
     } catch (err) {
       setLoading(false);
+
+      // Log for debugging only
+      console.error("Delete brand error:", err?.response?.data?.message || err);
+
+      // Show only friendly message
+      const fkError =
+        err?.response?.data?.message?.toLowerCase().includes("foreign key") ||
+        err?.response?.status === 409 ||
+        err?.response?.status === 400;
+
+      if (fkError) {
+        message.error(
+          "Cannot delete brand: please remove related models first."
+        );
+      } else {
+        message.error("Failed to delete brand");
+      }
     }
   };
 
-  const onClick = ({ key }, record) => {
-    if (key == "edit") {
+  // Dropdown menu action handler: stop propagation and handle actions reliably
+  const handleMenuClick = (info, record) => {
+    // antd Menu click gives domEvent
+    try {
+      // prevent row click
+      if (info?.domEvent) info.domEvent.stopPropagation();
+    } catch (e) {}
+    setModeID(record.id);
+
+    if (info.key === "edit") {
       setIsModalOpen(true);
-    } else if (key === "delete") {
+    } else if (info.key === "delete") {
       setIsDeleteModalOpen(true);
     }
   };
 
-  const items = [
-    {
-      key: "edit",
-      label: <Button type="text">Edit</Button>,
-    },
-    {
-      key: "delete",
-      label: <Button type="text"> Delete</Button>,
-    },
+  const dropdownItems = [
+    { key: "edit", label: <Button type="text">Edit</Button> },
+    { key: "delete", label: <Button type="text">Delete</Button> },
   ];
 
   const columns = [
     {
-      title: " ",
+      title: "Action",
       dataIndex: "action",
-      render: (_, recored) => {
-        return (
-          <Dropdown
-            menu={{
-              items,
-              onClick: (value) => onClick(value, recored),
+      width: 60,
+      render: (_, record) => (
+        <Dropdown
+          menu={{
+            items: dropdownItems,
+            onClick: (info) => handleMenuClick(info, record),
+          }}
+          trigger={["click"]}
+          placement="bottomLeft"
+          // render dropdown into body so clicks don't bubble to table row
+          getPopupContainer={() => document.body}
+        >
+          <Button
+            type="text"
+            icon={<MoreOutlined />}
+            onClick={(e) => {
+              // clicking the trigger button should not navigate the row
+              e.stopPropagation();
+              setModeID(record.id);
             }}
-            trigger={["click"]}
-            placement="bottomLeft"
-          >
-            <Button
-              type="text"
-              icon={<MoreOutlined style={{ fontSize: 20 }} />}
-              onClick={() => {
-                setModeID(recored._id);
-              }}
-            ></Button>
-          </Dropdown>
-        );
-      },
-    },
-
-    {
-      title: "Logo",
-      dataIndex: "logo",
-      // sorter: true,
-      render: (text, recored) => {
-        return <Image height={50} src={recored?.logo} />;
-      },
+          />
+        </Dropdown>
+      ),
     },
     {
       title: "Name",
       dataIndex: "name",
-      render: (text, recored) => {
-        return <p>{text}</p>;
-      },
-      // sorter: true,
+      key: "name",
     },
-
     {
-      title: "Country",
-      dataIndex: "country",
-      // sorter: true,
+      title: "Active",
+      dataIndex: "isActive",
+      key: "isActive",
+      render: (val) => (val ? "Yes" : "No"),
     },
-    // Removed Is featured column
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date) => (date ? new Date(date).toLocaleDateString() : "N/A"),
+    },
+    {
+      title: "Models",
+      key: "models",
+      render: (_, record) =>
+        record.models && record.models.length > 0 ? (
+          <Button
+            type="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/dash/brands/${record.id}/models`);
+            }}
+          >
+            View Models ({record.models.length})
+          </Button>
+        ) : (
+          <span>No models</span>
+        ),
+    },
   ];
 
   return (
-    <div>
-      {isModalOpen ? (
+    <div className="p-6">
+      {isModalOpen && (
         <CommonModal
-          width={1000}
+          width={600}
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
         >
           <BrandsEdit
-            brandsData={brandsData}
-            searchData={searchData}
-            setMode={setModeID}
+            // pass a fresh fetch function so edit modal can refresh list after save
+            searchData={() => fetchData()}
             mode={modeID}
+            setMode={setModeID}
             isModelOpen={isModalOpen}
             setIsModalOpen={setIsModalOpen}
           />
         </CommonModal>
-      ) : (
-        ""
       )}
 
-      {isDeleteModalOpen ? (
+      {isDeleteModalOpen && (
         <CommonDeleteModal
+          isModalOpen={isDeleteModalOpen}
           setIsModalOpen={setIsDeleteModalOpen}
           handleDelete={handleDelete}
           loading={loading}
-          isModalOpen={isDeleteModalOpen}
         >
-          <h1 className=" text-2xl">Are you sure?</h1>
+          <h1 className="text-2xl">Are you sure?</h1>
         </CommonDeleteModal>
-      ) : (
-        ""
       )}
 
-      <span className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700">
-        <div className="flex flex-col p-6 md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Brands</h1>
-          <div className="flex">
-            <Input
-              onChange={searchHandler}
-              placeholder="Search"
-              value={searchText}
-              allowClear
-              //   style={{ borderRadius: "0px 0px 0px 0px" }}
-              className=" drop-shadow-sm rounded-lg  py-2"
-            />
-            {/* <div className="hover:border-[#4096FF] transition-all delay-75 ease-in hover:border border-y-[0.5px] py-[0.15rem] border-r-[0.5px] rounded-r-[8px] border-[#CCCCCC] searchSelect">
-              <Select
-                onChange={(val) => {
-                  searchData();
-                }}
-                bordered={false}
-                //   style={ borderRadius: "0px 8px 8px 0px" }
-                className=""
-                placeholder="Select item category"
-              >
-                <Option value={""}>All</Option>
-                <Option value={"spare_part"}>Spare part</Option>
-                <Option value={"lubricant"}>Lubricants</Option>
-              </Select>
-            </div>*/}
-          </div>
-        </div>
-        <span className="flex ml-6 mb-6 md:mr-6">
-          <button
-            onClick={handleReload}
-            className="
-             border border-[#1D9BF0] py-2 px-3
-             text-[#1D9BF0] rounded mr-4 flex items-center justify-center"
-          >
-            <ReloadOutlined className=" boder boder-red-900" />
-          </button>
+      <div className="flex justify-between items-center mb-6">
+        <Input
+          placeholder="Search Brands"
+          value={reduxSearchText} // bind to redux state
+          onChange={searchHandler}
+          className="max-w-sm rounded"
+          allowClear
+        />
 
-          <button
-            className="px-4  py-2 border border-[#3BB66E] 
-            text-white bg-[#3BB66E] rounded"
+        <div className="flex gap-4">
+          <Button onClick={handleReload} icon={<ReloadOutlined />} />
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
             onClick={() => {
-              setIsModalOpen(true);
               setModeID("");
+              setIsModalOpen(true);
             }}
           >
-            <span className="flex flex-row">
-              <PlusOutlined />
-              <p className="pl-2">Add Item</p>
-            </span>
-          </button>
-        </span>
-      </span>
+            Add Brand
+          </Button>
+        </div>
+      </div>
 
       <CommonTable
-        rowSelectionType={"checkbox"}
         data={brandsData}
         columns={columns}
+        rowKey="id" // important for row selection & uniqueness
+        rowSelectionType="checkbox"
         setSelection={setBrandsSelection}
-        handlePagination={handlePagination}
+        onRow={(record) => ({
+          onClick: (e) => {
+            // if click originates from action buttons, they will call stopPropagation()
+            // otherwise navigate to brand detail
+            navigate(`/dash/brands/${record.id}`, { state: record });
+          },
+        })}
+        handlePagination={(page, pageSize) => {
+          setSearchParams({ page, limit: pageSize });
+          dispatch(updateBrandsState({ page, limit: pageSize }));
+          fetchData({ page, limit: pageSize });
+        }}
         total={total}
         loadding={loading}
-        tableChange={tableChange}
       />
     </div>
   );

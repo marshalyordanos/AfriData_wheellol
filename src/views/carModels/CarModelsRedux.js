@@ -1,11 +1,12 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import ModelsService from "./CarModelsService";
 
-export const searchBrands = createAsyncThunk(
+// 🔍 Async thunk: Fetch models with pagination, search, sort, etc.
+export const searchModels = createAsyncThunk(
   "models/searchModels",
   async (data, { rejectWithValue, getState }) => {
     try {
-      const { searchText, page, limit, sort, order } = getState().models.query; // Access state directly
+      const { searchText, page, limit, sort, order } = getState().models.query;
 
       const res = await ModelsService.searchModels({
         page,
@@ -17,11 +18,12 @@ export const searchBrands = createAsyncThunk(
 
       return res;
     } catch (err) {
-      return rejectWithValue(err.response.data);
+      return rejectWithValue(err.response?.data || err.message);
     }
   }
 );
 
+// 🧩 Slice definition
 export const modelsSlice = createSlice({
   name: "models",
   initialState: {
@@ -40,9 +42,13 @@ export const modelsSlice = createSlice({
   },
 });
 
+// 🎯 Actions
 export const { updateModelsState } = modelsSlice.actions;
 
+// 🏁 Reducer
 export default modelsSlice.reducer;
+
+// 🔍 Selectors
 export const modelsSearchText = (state) => state.models.query.searchText;
 export const modelsPage = (state) => state.models.query.page;
 export const modelsLimit = (state) => state.models.query.limit;

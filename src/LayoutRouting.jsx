@@ -11,11 +11,12 @@ import ChangePassword from "./views/auth/ChangePassword";
 import UserList from "./views/user/UserList";
 import UserDetail from "./views/user/UserDetails";
 import CarModelsList from "./views/carModels/CarModelsList";
-import CarModelsDetail from "./views/carModels/CarModelsDetails";
+import CarModelsDetails from "./views/carModels/CarModelsDetails";
 import CarsList from "./views/cars/CarsList";
 import CarsDetails from "./views/cars/CarsDetails";
 import BookingList from "./views/bookings/BookingList";
 import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
+import BrandModelsList from "./views/brands/BrandModelsList";
 
 const LayoutRouting = () => {
   return (
@@ -25,13 +26,15 @@ const LayoutRouting = () => {
         <Route path="" element={<DashboardPage />} />
 
         <Route path="brands" element={<BrandsList />} />
+        <Route path="brands/:brandId/models" element={<BrandModelsList />} />
+
         <Route path="brands/:id" element={<BrandsDetail />} />
 
         <Route path="user" element={<UserList />} />
         <Route path="user/:id" element={<UserDetail />} />
 
         <Route path="models" element={<CarModelsList />} />
-        <Route path="models/:id" element={<CarModelsDetail />} />
+        <Route path="models/:id" element={<CarModelsDetails />} />
 
         <Route path="cars" element={<CarsList />} />
         <Route path="cars/details/:id" element={<CarsDetails />} />

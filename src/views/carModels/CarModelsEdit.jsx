@@ -1,65 +1,23 @@
+// src/views/car-models/CarModelsEdit.js
 import React, { useEffect, useState } from "react";
 import {
-  Button,
   Form,
   Input,
-  InputNumber,
   Select,
-  Spin,
   Switch,
-  DatePicker,
-  Divider,
-  Image,
   Upload,
+  Image,
   message,
+  Spin,
 } from "antd";
-import styled from "styled-components";
-import {
-  ButtonStyle,
-  FlexStyle,
-  FormStyle,
-} from "../../components/commons/CommonStyles";
-import brandsService from "./CarModelsService";
-import CommonModal from "../../components/commons/CommonModel";
-import BrandsPick from "./CarModelsPick";
-import dayjs from "dayjs";
 import { PlusOutlined } from "@ant-design/icons";
+import styled from "styled-components";
+import dayjs from "dayjs";
+import brandsService from "./CarModelsService";
 
 const { Option } = Select;
 
-var __awaiter =
-  (this && this.__awaiter) ||
-  function (thisArg, _arguments, P, generator) {
-    function adopt(value) {
-      return value instanceof P
-        ? value
-        : new P(function (resolve) {
-            resolve(value);
-          });
-    }
-    return new (P || (P = Promise))(function (resolve, reject) {
-      function fulfilled(value) {
-        try {
-          step(generator.next(value));
-        } catch (e) {
-          reject(e);
-        }
-      }
-      function rejected(value) {
-        try {
-          step(generator["throw"](value));
-        } catch (e) {
-          reject(e);
-        }
-      }
-      function step(result) {
-        result.done
-          ? resolve(result.value)
-          : adopt(result.value).then(fulfilled, rejected);
-      }
-      step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-  };
+// Convert file to base64
 const getBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -67,283 +25,223 @@ const getBase64 = (file) =>
     reader.onload = () => resolve(reader.result);
     reader.onerror = (error) => reject(error);
   });
-const validateMessages = {
-  required: "${label} is required!",
-  types: {
-    email: "${label} is not a valid email!",
-    number: "${label} is not a valid number!",
-  },
-  number: {
-    range: "${label} must be between ${min} and ${max}",
-  },
-};
 
-const BrandsEdit = ({
-  setIsModalOpen,
-  isModelOpen,
-  mode,
-  setMode,
-  brandsData,
-  searchData,
+const CarModelsEdit = ({
+  modelId = "",
+  mode = "",
+  setIsModalOpen, // list modal
+  closeModal, // detail page
+  refreshData, // detail page callback
 }) => {
   const [form] = Form.useForm();
-  const [switch2, setSwitch2] = useState("");
-  const [loading, setLoading] = useState("");
-  const [brandPick, setBrandPick] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState("");
+  const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [brandLoading, setBrandLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
+  const [previewImage, setPreviewImage] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const isEdit = !!modelId || !!mode;
+
+  // Fetch model data or brand for edit
   useEffect(() => {
-    const featchData = async () => {
+    const fetchData = async () => {
       try {
-        const data = await brandsService.getBrand(mode);
+        setLoading(true);
+        let data;
+        if (modelId) {
+          data = await brandsService.getModel(modelId);
+        } else if (mode) {
+          data = await brandsService.getBrand(mode);
+        } else return;
+
         form.setFieldsValue({
-          brand: { ...data, updatedAt: dayjs(data.updatedAt) },
+          name: data.name,
+          makeId: data.make?.id || null,
+          isActive: data.isActive,
         });
+
         if (data.logo) {
-          const prefilledPhotos = [
+          setFileList([
             {
-              uid: `-${1}`, // Required unique ID
-              name: `photo-${1}.jpg`,
+              uid: "-1",
+              name: "logo.jpg",
               status: "done",
               url: data.logo,
             },
-          ];
-          setFileList(prefilledPhotos);
+          ]);
         }
-      } catch (err) {}
+
+        // Preload brands
+        loadBrands("");
+      } catch (err) {
+        message.error("Failed to load model data");
+      } finally {
+        setLoading(false);
+      }
     };
-    if (mode == "") {
-    } else {
-      featchData();
-    }
-  }, []);
+    fetchData();
+  }, [modelId, mode]);
 
-  const handleReset = () => {
-    form.resetFields(); // Reset form fields
-  };
-
-  const brandPickHandler = (data) => {
-    console.log("brandPickHandler", data);
-
-    setBrandPick(false);
-  };
-
-  const onAdd = async (datas) => {
+  // Load brands
+  const loadBrands = async (searchText = "") => {
     try {
-      setLoading(true);
-
-      const data = await brandsService.createBrand(datas);
-      setIsModalOpen(false);
-      searchData();
-
-      setLoading(false);
+      setBrandLoading(true);
+      const list = await brandsService.fetchAllBrands(searchText);
+      setBrands(list);
     } catch (err) {
-      setLoading(false);
+      message.error("Failed to load brands");
+    } finally {
+      setBrandLoading(false);
     }
   };
 
-  const onUpdate = async (datas) => {
-    try {
-      setLoading(true);
+  const handleSearchBrands = (val) => loadBrands(val);
 
-      const data = await brandsService.updateBrand(datas, mode);
-      searchData();
-      setIsModalOpen(false);
-      setLoading(false);
-    } catch (err) {
-      setLoading(false);
+  const handlePreview = async (file) => {
+    if (!file.url && !file.preview) {
+      file.preview = await getBase64(file.originFileObj);
     }
+    setPreviewImage(file.url || file.preview);
+    setPreviewOpen(true);
   };
 
-  const onFinish = (values) => {
-    const formData = new FormData();
-    formData.append("name", values.brand.name);
-    formData.append("country", values.brand.country);
-    formData.append("is_featured", values.brand?.is_featured);
-
-    fileList.forEach((file) => {
-      if (file.originFileObj) {
-        formData.append("logo", file.originFileObj);
-      }
-    });
-    mode == "" ? onAdd(formData) : onUpdate(formData);
-  };
-
-  const handlePreview = (file) =>
-    __awaiter(void 0, void 0, void 0, function* () {
-      if (!file.url && !file.preview) {
-        file.preview = yield getBase64(file.originFileObj);
-      }
-      setPreviewImage(file.url || file.preview);
-      setPreviewOpen(true);
-    });
   const handleChange = ({ fileList: newFileList }) => setFileList(newFileList);
-  const uploadButton = (
-    <button style={{ border: 0, background: "none" }} type="button">
-      <PlusOutlined />
-      <div style={{ marginTop: 8 }}>Upload</div>
-    </button>
-  );
+
+  const dummyRequest = ({ onSuccess }) => {
+    setTimeout(() => onSuccess("ok"), 0);
+  };
+
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith("image/");
-    const isLt2M = file.size / 1024 / 1024 < 2; // < 2MB
-
     if (!isImage) {
       message.error("You can only upload image files!");
       return Upload.LIST_IGNORE;
     }
-
-    // if (!isLt2M) {
-    //   message.error('Image must smaller than 2MB!');
-    //   return Upload.LIST_IGNORE;
-    // }
-
     return true;
   };
-  const dummyRequest = ({ onSuccess }) => {
-    setTimeout(() => {
-      onSuccess("ok");
-    }, 0);
-  };
-  return (
-    <div>
-      {/*******  picks **********/}
-      {brandPick ? (
-        <CommonModal
-          width={700}
-          isModalOpen={brandPick}
-          setIsModalOpen={setBrandPick}
-        >
-          <BrandsPick
-            setIsModalOpen={setBrandPick}
-            selectHandler={brandPickHandler}
-          />
-        </CommonModal>
-      ) : (
-        ""
-      )}
 
+  const onFinish = async (values) => {
+    try {
+      const formData = new FormData();
+      formData.append("name", values.name);
+      formData.append("makeId", values.makeId);
+      formData.append("isActive", values.isActive);
+
+      fileList.forEach((file) => {
+        if (file.originFileObj) formData.append("logo", file.originFileObj);
+      });
+
+      if (isEdit) {
+        await brandsService.updateModelFields({
+          id: modelId || mode,
+          name: values.name,
+          makeId: values.makeId,
+          isActive: values.isActive,
+        });
+        message.success("Model updated");
+      } else {
+        await brandsService.createModelFields(values);
+        message.success("Model created");
+      }
+
+      if (refreshData) refreshData();
+      if (setIsModalOpen) setIsModalOpen(false);
+      if (closeModal) closeModal();
+    } catch (err) {
+      message.error("Failed to save model");
+    }
+  };
+
+  return (
+    <>
       {loading ? (
         <SpinStyle>
-          <Spin style={{ color: "#fff" }} size="large" />
+          <Spin size="large" />
         </SpinStyle>
       ) : (
-        ""
-      )}
-      {/* <button onClick={() => setBrandPick(true)}>hhhhhh</button> */}
-
-      <FormStyle
-        form={form}
-        layout="vertical"
-        name="nest-messages"
-        onFinish={onFinish}
-        onError={() => {}}
-        validateMessages={validateMessages}
-      >
-        <Form.Item
-          className=" flex-1"
-          name={["brand", "name"]}
-          label="name"
-          rules={[
-            {
-              required: true,
-            },
-          ]}
-        >
-          <Input className="bg-gray-100 py-2" />
-        </Form.Item>
-
-        <Form.Item
-          className=" flex-1"
-          name={["brand", "country"]}
-          label="Country"
-          rules={[
-            {
-              required: true,
-            },
-          ]}
-        >
-          <Input className="bg-gray-100 py-2" />
-        </Form.Item>
-
-        <Form.Item name={["brand", "is_featured"]} label="Is featured">
-          <Switch
-            checked={switch2}
-            onChange={(value) => setSwitch2(value)}
-            style={{ background: switch2 ? "blue" : "gray" }}
-          />
-        </Form.Item>
-
-        {/* <Form.Item
-            className=' flex-1'
-            name={['brand', 'logo']}
-            label="logo"
-            rules={[
-                {
-                required: true,
-                },
-            ]}
-            >
-            <Input  
-            className='bg-gray-100 py-2'
-            />
-            </Form.Item>
-             */}
-
-        <div style={{ marginBottom: 20 }}>
-          <h2 style={{ marginBottom: 7 }} className="text-md  ">
-            Logo
-          </h2>
-          <Upload
-            // action="https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload"
-            customRequest={dummyRequest}
-            listType="picture-card"
-            fileList={fileList}
-            onPreview={handlePreview}
-            onChange={handleChange}
-            beforeUpload={beforeUpload}
+        <Form form={form} layout="vertical" onFinish={onFinish}>
+          <Form.Item
+            label="Model Name"
+            name="name"
+            rules={[{ required: true, message: "Name is required" }]}
           >
-            {fileList.length >= 1 ? null : uploadButton}
-          </Upload>
-          {previewImage && (
-            <Image
-              wrapperStyle={{ display: "none" }}
-              preview={{
-                visible: previewOpen,
-                onVisibleChange: (visible) => setPreviewOpen(visible),
-                afterOpenChange: (visible) => !visible && setPreviewImage(""),
-              }}
-              src={previewImage}
-            />
-          )}
-        </div>
+            <Input placeholder="Model name" />
+          </Form.Item>
 
-        <ButtonStyle>
-          <button onClick={() => setIsModalOpen(false)}>cancel</button>
-          <button type="submit">Submit</button>
-        </ButtonStyle>
-      </FormStyle>
-    </div>
+          <Form.Item
+            label="Brand"
+            name="makeId"
+            rules={[{ required: true, message: "Brand is required" }]}
+          >
+            <Select
+              showSearch
+              placeholder="Select brand"
+              filterOption={false}
+              onSearch={handleSearchBrands}
+              loading={brandLoading}
+              options={brands.map((b) => ({ label: b.name, value: b.id }))}
+            />
+          </Form.Item>
+
+          <Form.Item label="Status" name="isActive" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+
+          <Form.Item label="Logo">
+            <Upload
+              customRequest={dummyRequest}
+              listType="picture-card"
+              fileList={fileList}
+              onPreview={handlePreview}
+              onChange={handleChange}
+              beforeUpload={beforeUpload}
+            >
+              {fileList.length >= 1 ? null : (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
+            {previewImage && (
+              <Image
+                wrapperStyle={{ display: "none" }}
+                preview={{
+                  visible: previewOpen,
+                  onVisibleChange: (visible) => setPreviewOpen(visible),
+                  afterOpenChange: (visible) => !visible && setPreviewImage(""),
+                }}
+                src={previewImage}
+              />
+            )}
+          </Form.Item>
+
+          <div style={{ display: "flex", gap: "10px", marginTop: 20 }}>
+            <button
+              type="button"
+              onClick={() =>
+                setIsModalOpen ? setIsModalOpen(false) : closeModal()
+              }
+            >
+              Cancel
+            </button>
+            <button type="submit">{isEdit ? "Update" : "Create"}</button>
+          </div>
+        </Form>
+      )}
+    </>
   );
 };
 
 const SpinStyle = styled.div`
-  /* border: 1px solid; */
   width: 50px;
   height: 50px;
-  background-color: rgba(0, 0, 0, 0.2);
-  z-index: 100;
   display: flex;
-  border-radius: 120px;
   justify-content: center;
   align-items: center;
   position: absolute;
   left: 40%;
-
-  .ant-spin-dot .ant-spin-dot-spin {
-    background-color: red;
-  }
 `;
 
-export default BrandsEdit;
+export default CarModelsEdit;
