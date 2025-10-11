@@ -17,6 +17,7 @@ import CarsDetails from "./views/cars/CarsDetails";
 import BookingList from "./views/bookings/BookingList";
 import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
 import BrandModelsList from "./views/brands/BrandModelsList";
+import CarInsurancePage from "./views/cars/CarInsurancePage";
 
 const LayoutRouting = () => {
   return (
@@ -38,6 +39,8 @@ const LayoutRouting = () => {
 
         <Route path="cars" element={<CarsList />} />
         <Route path="cars/details/:id" element={<CarsDetails />} />
+        <Route path="/cars/:carId/insurance" element={<CarInsurancePage />} />
+
         <Route path="bookings" element={<BookingList />} />
         <Route path="vehicle-types" element={<VehicleTypesList />} />
 

@@ -48,7 +48,7 @@ class CarModelsService {
   }
 
   getModelsByBrand({ brandId, page = 1, limit = 10, searchText = "" }) {
-    let url = `/car-models?makeId=${brandId}&page=${page}&limit=${limit}`;
+    let url = `/car-models?filter=makeId:${brandId}&page=${page}&limit=${limit}`;
     if (searchText) {
       url += `&search=name:${encodeURIComponent(searchText)}`;
     }

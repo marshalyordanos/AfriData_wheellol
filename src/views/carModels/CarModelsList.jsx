@@ -1,76 +1,68 @@
+// src/views/car-models/CarModelsList.jsx
 import React, { useEffect, useState } from "react";
 import {
+  Button,
   Input,
+  Tooltip,
   Card,
   Tag,
-  Modal,
-  Form,
-  Select,
-  Button,
-  message,
   Collapse,
-  Tooltip,
-  Popconfirm,
-  Skeleton,
   Empty,
-  Badge,
-  Switch,
+  message,
+  Spin,
 } from "antd";
 import {
-  ReloadOutlined,
   PlusOutlined,
+  ReloadOutlined,
   EditOutlined,
   DeleteOutlined,
+  CarOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import ModelsService from "./CarModelsService";
+import CommonModal from "../../components/commons/CommonModel";
+import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
+import CarModelsEdit from "./CarModelsEdit";
+import CarModelsService from "./CarModelsService";
+
+const { Panel } = Collapse;
 
 const CarModelsList = () => {
   const [models, setModels] = useState([]);
   const [grouped, setGrouped] = useState({});
-  const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const isEdit = !!editing;
-  const [brands, setBrands] = useState([]);
-  const [brandLoading, setBrandLoading] = useState(false);
-  const [form] = Form.useForm();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const navigate = useNavigate();
 
-  // Group models by brand
-  const group = (list) =>
-    list.reduce((acc, item) => {
-      const brandName = item.make?.name || "Unknown Brand";
-      if (!acc[brandName]) acc[brandName] = [];
-      acc[brandName].push(item);
-      return acc;
-    }, {});
-
-  // Fetch models
+  // ============================
+  // FETCH MODELS
+  // ============================
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await ModelsService.searchModels({
+      const res = await CarModelsService.searchModels({
         page: 1,
         limit: 500,
-        searchText: "",
+        search: searchText,
       });
-      let list = res.data || [];
 
-      if (searchText.trim() !== "") {
-        const lower = searchText.toLowerCase();
-        list = list.filter(
-          (m) =>
-            m.name.toLowerCase().includes(lower) ||
-            m.make?.name?.toLowerCase().includes(lower)
-        );
-      }
-
+      const list = res?.data || [];
       setModels(list);
-      setGrouped(group(list));
-    } catch (e) {
-      message.error("Failed to fetch models");
+
+      // Group by brand name
+      const groupedData = list.reduce((acc, model) => {
+        const brandName = model.make?.name || "Unknown Brand";
+        acc[brandName] = acc[brandName] || [];
+        acc[brandName].push(model);
+        return acc;
+      }, {});
+      setGrouped(groupedData);
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to load car models");
     } finally {
       setLoading(false);
     }
@@ -80,260 +72,191 @@ const CarModelsList = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const t = setTimeout(() => fetchData(), 400);
-    return () => clearTimeout(t);
-  }, [searchText]);
-
-  // Open edit modal
-  const openEdit = (model) => {
-    setEditing(model);
-    form.setFieldsValue({
-      name: model.name,
-      makeId: model.make?.id || null,
-      isActive: model.isActive, // ✅ prefill active toggle
-    });
-    setEditOpen(true);
-    if (!brands.length) loadBrands("");
+  // ============================
+  // DELETE MODEL
+  // ============================
+  const confirmDelete = (model) => {
+    setDeleteTarget(model);
+    setIsDeleteModalOpen(true);
   };
 
-  // Open create modal
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setLoading(true);
+      await CarModelsService.deleteModel(deleteTarget.id);
+      message.success("Model deleted successfully");
+      setIsDeleteModalOpen(false);
+      fetchData();
+    } catch (err) {
+      message.error("Failed to delete model");
+    } finally {
+      setLoading(false);
+      setDeleteTarget(null);
+    }
+  };
+
+  // ============================
+  // SEARCH FILTER
+  // ============================
+  const filteredGroups = Object.entries(grouped).reduce(
+    (acc, [brand, brandModels]) => {
+      const filtered = brandModels.filter(
+        (m) =>
+          m.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          (m.make?.name || "").toLowerCase().includes(searchText.toLowerCase())
+      );
+      if (filtered.length) acc[brand] = filtered;
+      return acc;
+    },
+    {}
+  );
+
+  // ============================
+  // MODAL HANDLERS
+  // ============================
   const openCreate = () => {
     setEditing(null);
-    form.resetFields();
-    form.setFieldsValue({ isActive: true }); // ✅ default new models as active
     setEditOpen(true);
-    if (!brands.length) loadBrands("");
   };
 
-  // Load brands
-  const loadBrands = async (q) => {
-    try {
-      setBrandLoading(true);
-      const list = await ModelsService.fetchAllBrands(q);
-      setBrands(list);
-    } catch (e) {
-      message.error("Failed to fetch brands");
-    } finally {
-      setBrandLoading(false);
-    }
+  const openEdit = (model) => {
+    setEditing(model);
+    setEditOpen(true);
   };
 
-  const handleSearchBrands = (val) => loadBrands(val);
-
-  // ✅ Handle create/update
-  const handleUpdate = async () => {
-    try {
-      const values = await form.validateFields();
-
-      if (editing) {
-        console.log("Form values:", values);
-        // Update existing model
-        const updated = await ModelsService.updateModelFields({
-          id: editing.id,
-          name: values.name,
-          makeId: values.makeId,
-          isActive: values.isActive, // ✅ include active flag
-        });
-
-        message.success("Model updated");
-
-        const brandObj = brands.find((b) => b.id === values.makeId);
-        const updatedWithMake = { ...updated, make: brandObj };
-
-        const newList = models.map((m) =>
-          m.id === editing.id ? updatedWithMake : m
-        );
-
-        setModels(newList);
-        setGrouped(group(newList));
-      } else {
-        // Create new model
-        const created = await ModelsService.createModelFields({
-          name: values.name,
-          makeId: values.makeId,
-          isActive: values.isActive, // ✅ include active flag
-        });
-        message.success("Model created");
-
-        const brandObj = brands.find((b) => b.id === values.makeId);
-        const createdWithMake = { ...created, make: brandObj };
-
-        const newList = [...models, createdWithMake];
-        setModels(newList);
-        setGrouped(group(newList));
-      }
-
-      setEditOpen(false);
-    } catch (e) {
-      message.error("Failed to save model");
-    }
-  };
-
-  // Delete model
-  const handleDelete = async (model) => {
-    try {
-      await ModelsService.deleteModel(model.id);
-      message.success("Model deleted");
-
-      const newModels = models.filter((m) => m.id !== model.id);
-      setModels(newModels);
-      setGrouped(group(newModels));
-    } catch (err) {
-      if (err.response?.status === 400 || err.response?.status === 409) {
-        message.error("Cannot delete model: remove dependencies first");
-      } else {
-        message.error("Failed to delete model");
-      }
-    }
-  };
-
-  // Navigate to detail page
-  const goToDetail = (id) => {
-    navigate(`/dash/models/${id}`);
-  };
-
-  // Collapse panels by brand
-  const brandPanels = Object.entries(grouped).map(([brand, items]) => ({
-    key: brand,
-    label: (
-      <div className="flex items-center justify-between w-full pr-2">
-        <span className="font-medium">{brand}</span>
-        <Badge count={items.length} size="small" />
-      </div>
-    ),
-    children: (
-      <div className="grid gap-4 md:grid-cols-4 sm:grid-cols-2 grid-cols-1">
-        {items.map((m) => (
-          <Card
-            key={m.id}
-            size="small"
-            title={<span className="font-semibold">{m.name}</span>}
-            className="model-card shadow-sm hover:shadow-md transition-shadow"
-            extra={<Tag color={m.isActive ? "blue" : "red"}>{brand}</Tag>}
-            actions={[
-              <Tooltip title="Edit" key="edit">
-                <EditOutlined
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openEdit(m);
-                  }}
-                />
-              </Tooltip>,
-              <Popconfirm
-                key="del"
-                title="Delete model?"
-                okType="danger"
-                onConfirm={(e) => {
-                  e?.stopPropagation();
-                  handleDelete(m);
-                }}
-              >
-                <DeleteOutlined
-                  className="text-red-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </Popconfirm>,
-            ]}
-            onClick={() => goToDetail(m.id)}
-            style={{ cursor: "pointer" }}
-          >
-            <div className="text-xs text-gray-500">
-              Brand: {brand}
-              <br />
-              Status: {m.isActive ? "Active ✅" : "Inactive ❌"}
-            </div>
-          </Card>
-        ))}
-      </div>
-    ),
-  }));
-
+  // ============================
+  // RENDER
+  // ============================
   return (
     <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
-        <div className="flex flex-col w-full md:w-2/3 lg:w-1/2">
-          <h1 className="text-2xl font-bold pb-2">Models</h1>
-          <Input
-            placeholder="Search model or brand"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            allowClear
-          />
-        </div>
-        <div className="flex items-center gap-3 self-start md:self-end">
-          <Tooltip title="Reload">
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={fetchData}
-              shape="circle"
-            />
-          </Tooltip>
+      {/* Header controls */}
+      <div className="flex justify-between items-center mb-6">
+        <Input
+          placeholder="Search model or brand"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          style={{ width: 250 }}
+        />
+        <div className="flex gap-3">
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={fetchData}
+            loading={loading}
+          >
+            Refresh
+          </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
             Add Model
           </Button>
         </div>
       </div>
 
-      {loading && (
-        <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="shadow-sm">
-              <Skeleton active title={false} paragraph={{ rows: 3 }} />
-            </Card>
-          ))}
+      {/* Loader */}
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <Spin size="large" />
         </div>
-      )}
-
-      {!loading && brandPanels.length === 0 && (
-        <Empty description="No models" />
-      )}
-
-      {!loading && brandPanels.length > 0 && (
+      ) : Object.keys(filteredGroups).length === 0 ? (
+        <Empty description="No car models found" />
+      ) : (
         <Collapse
-          items={brandPanels}
-          defaultActiveKey={brandPanels.slice(0, 3).map((p) => p.key)}
           bordered={false}
           expandIconPosition="end"
-        />
+          style={{ background: "transparent" }}
+          defaultActiveKey={Object.keys(filteredGroups)} // ✅ all expanded initially
+        >
+          {Object.entries(filteredGroups).map(([brand, models]) => (
+            <Panel
+              header={
+                <div className="flex items-center gap-2">
+                  <CarOutlined />
+                  <span className="font-semibold text-base">{brand}</span>
+                  <Tag color="blue">{models.length}</Tag>
+                </div>
+              }
+              key={brand}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {models.map((model) => (
+                  <Card
+                    key={model.id}
+                    hoverable
+                    title={model.name}
+                    size="small"
+                    onClick={() => navigate(`/dash/models/${model.id}`)}
+                    extra={
+                      <div
+                        className="flex gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Tooltip title="Edit">
+                          <Button
+                            icon={<EditOutlined />}
+                            type="text"
+                            onClick={() => openEdit(model)}
+                          />
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <Button
+                            icon={<DeleteOutlined />}
+                            type="text"
+                            danger
+                            onClick={() => confirmDelete(model)} // ✅ show confirmation
+                          />
+                        </Tooltip>
+                      </div>
+                    }
+                  >
+                    <p>
+                      <strong>Brand:</strong> {model.make?.name || "N/A"}
+                    </p>
+                    <p>
+                      <strong>Status:</strong>{" "}
+                      <Tag color={model.isActive ? "green" : "red"}>
+                        {model.isActive ? "Active" : "Inactive"}
+                      </Tag>
+                    </p>
+                  </Card>
+                ))}
+              </div>
+            </Panel>
+          ))}
+        </Collapse>
       )}
 
-      <Modal
-        title={isEdit ? "Edit Model" : "Add Model"}
-        open={editOpen}
-        onCancel={() => setEditOpen(false)}
-        onOk={handleUpdate}
-        okText={isEdit ? "Save" : "Create"}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="Model Name"
-            name="name"
-            rules={[{ required: true, message: "Name required" }]}
-          >
-            <Input placeholder="Model name" />
-          </Form.Item>
+      {/* Add / Edit Modal */}
+      {editOpen && (
+        <CommonModal
+          width={700}
+          isModalOpen={editOpen}
+          setIsModalOpen={setEditOpen}
+        >
+          <CarModelsEdit
+            modelId={editing?.id || ""}
+            setIsModalOpen={setEditOpen}
+            refreshData={fetchData}
+          />
+        </CommonModal>
+      )}
 
-          <Form.Item
-            label="Brand"
-            name="makeId"
-            rules={[{ required: true, message: "Brand required" }]}
-          >
-            <Select
-              showSearch
-              placeholder="Select brand"
-              filterOption={false}
-              onSearch={handleSearchBrands}
-              loading={brandLoading}
-              options={brands.map((b) => ({ label: b.name, value: b.id }))}
-            />
-          </Form.Item>
-
-          <Form.Item label="Active" name="isActive" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-        </Form>
-      </Modal>
+      {/* ✅ Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <CommonDeleteModal
+          isModalOpen={isDeleteModalOpen}
+          setIsModalOpen={setIsDeleteModalOpen}
+          handleDelete={handleDelete}
+          loading={loading}
+        >
+          <h1 className="text-2xl text-center font-semibold mb-2">
+            Are you sure?
+          </h1>
+          <p className="text-center text-gray-600">
+            This will permanently delete{" "}
+            <strong>{deleteTarget?.name || "this model"}</strong>.
+          </p>
+        </CommonDeleteModal>
+      )}
     </div>
   );
 };

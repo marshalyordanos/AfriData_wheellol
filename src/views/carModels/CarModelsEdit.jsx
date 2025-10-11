@@ -1,4 +1,4 @@
-// src/views/car-models/CarModelsEdit.js
+// src/views/car-models/CarModelsEdit.jsx
 import React, { useEffect, useState } from "react";
 import {
   Form,
@@ -12,12 +12,11 @@ import {
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import styled from "styled-components";
-import dayjs from "dayjs";
 import brandsService from "./CarModelsService";
 
 const { Option } = Select;
 
-// Convert file to base64
+// Convert file to base64 for preview
 const getBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -26,13 +25,7 @@ const getBase64 = (file) =>
     reader.onerror = (error) => reject(error);
   });
 
-const CarModelsEdit = ({
-  modelId = "",
-  mode = "",
-  setIsModalOpen, // list modal
-  closeModal, // detail page
-  refreshData, // detail page callback
-}) => {
+const CarModelsEdit = ({ modelId = "", setIsModalOpen, refreshData }) => {
   const [form] = Form.useForm();
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -41,47 +34,40 @@ const CarModelsEdit = ({
   const [previewImage, setPreviewImage] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const isEdit = !!modelId || !!mode;
+  const isEdit = !!modelId;
 
-  // Fetch model data or brand for edit
+  // Load model data (if edit) and brands on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchModelOrBrand = async () => {
       try {
         setLoading(true);
-        let data;
+
         if (modelId) {
-          data = await brandsService.getModel(modelId);
-        } else if (mode) {
-          data = await brandsService.getBrand(mode);
-        } else return;
-
-        form.setFieldsValue({
-          name: data.name,
-          makeId: data.make?.id || null,
-          isActive: data.isActive,
-        });
-
-        if (data.logo) {
-          setFileList([
-            {
-              uid: "-1",
-              name: "logo.jpg",
-              status: "done",
-              url: data.logo,
-            },
-          ]);
+          // Editing existing model
+          const data = await brandsService.getModel(modelId);
+          form.setFieldsValue({
+            name: data.name,
+            makeId: data.make?.id || null,
+            isActive: data.isActive,
+          });
+          if (data.logo) {
+            setFileList([
+              { uid: "-1", name: "logo.jpg", status: "done", url: data.logo },
+            ]);
+          }
         }
 
-        // Preload brands
-        loadBrands("");
+        // Always load brands for both create & edit
+        await loadBrands("");
       } catch (err) {
         message.error("Failed to load model data");
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, [modelId, mode]);
+
+    fetchModelOrBrand();
+  }, [modelId]);
 
   // Load brands
   const loadBrands = async (searchText = "") => {
@@ -108,13 +94,10 @@ const CarModelsEdit = ({
 
   const handleChange = ({ fileList: newFileList }) => setFileList(newFileList);
 
-  const dummyRequest = ({ onSuccess }) => {
-    setTimeout(() => onSuccess("ok"), 0);
-  };
+  const dummyRequest = ({ onSuccess }) => setTimeout(() => onSuccess("ok"), 0);
 
   const beforeUpload = (file) => {
-    const isImage = file.type.startsWith("image/");
-    if (!isImage) {
+    if (!file.type.startsWith("image/")) {
       message.error("You can only upload image files!");
       return Upload.LIST_IGNORE;
     }
@@ -134,7 +117,7 @@ const CarModelsEdit = ({
 
       if (isEdit) {
         await brandsService.updateModelFields({
-          id: modelId || mode,
+          id: modelId,
           name: values.name,
           makeId: values.makeId,
           isActive: values.isActive,
@@ -147,7 +130,6 @@ const CarModelsEdit = ({
 
       if (refreshData) refreshData();
       if (setIsModalOpen) setIsModalOpen(false);
-      if (closeModal) closeModal();
     } catch (err) {
       message.error("Failed to save model");
     }
@@ -184,7 +166,7 @@ const CarModelsEdit = ({
             />
           </Form.Item>
 
-          <Form.Item label="Status" name="isActive" valuePropName="checked">
+          <Form.Item label="Active" name="isActive" valuePropName="checked">
             <Switch />
           </Form.Item>
 
@@ -220,9 +202,7 @@ const CarModelsEdit = ({
           <div style={{ display: "flex", gap: "10px", marginTop: 20 }}>
             <button
               type="button"
-              onClick={() =>
-                setIsModalOpen ? setIsModalOpen(false) : closeModal()
-              }
+              onClick={() => setIsModalOpen && setIsModalOpen(false)}
             >
               Cancel
             </button>
