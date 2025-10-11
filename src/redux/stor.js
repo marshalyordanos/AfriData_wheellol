@@ -8,6 +8,7 @@ import carsReducer from "../views/cars/CarsRedux"; // import the cars
 import bookingReducer from "../views/bookings/BookingRedux";
 import permissionsReducer from "../views/permissions/PermissionRedux";
 import rolesReducer from "../views/roles/RoleRedux";
+import hostReducer from "../views/host/HostRedux";
 
 export const store = configureStore({
   reducer: {
@@ -20,5 +21,6 @@ export const store = configureStore({
     booking: bookingReducer,
     permissions: permissionsReducer,
     roles: rolesReducer,
+    host: hostReducer,
   },
 });

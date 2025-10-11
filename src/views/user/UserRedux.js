@@ -7,7 +7,6 @@ export const searchUser = createAsyncThunk(
     try {
       const { searchText, page, limit, sort, order } = getState().user.query; // Access state directly
 
-      console.log("0000000000000 data:", data);
       const res = await UserService.searchUse({
         page,
         limit,
@@ -16,6 +15,7 @@ export const searchUser = createAsyncThunk(
         order,
         data,
       });
+      console.log("USERRRRRRRRRRRRRR_________________ data:", res);
 
       return res;
     } catch (err) {

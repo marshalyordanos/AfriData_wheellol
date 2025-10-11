@@ -2,57 +2,72 @@ import api from "../../api/api";
 
 class UserService {
   createUse(data) {
-    return api.post("/user", data).then((response) => {
+    return api.post("/users", data).then((response) => {
       return response.data.data;
     });
   }
 
   updateUse(data, id) {
-    return api.patch("/user/" + id, data).then((response) => {
+    return api.patch("/users/" + id, data).then((response) => {
       return response.data.data;
     });
   }
 
-  searchUse({ page, limit, searchText = null, sort = null, order, data }) {
-    let url = `/user/all-users?page=${page}&limit=${limit}`;
+  searchUse({
+    page = 1,
+    limit = 10,
+    search = null,
+    filter = null,
+    sort = null,
+    order = null,
+  } = {}) {
+    let params = [];
+
+    // Pagination
+    params.push(`page=${page}`);
+    params.push(`pageSize=${limit}`);
+
+    // Search
+    if (search) {
+      params.push(`search=${encodeURIComponent(search)}`);
+    }
+
+    // Filter
+    if (filter) {
+      const filterParams = Object.entries(filter)
+        .map(([key, value]) => {
+          if (Array.isArray(value)) {
+            return `${key}:[${value.join(",")}]`;
+          }
+          return `${key}:${value}`;
+        })
+        .join(",");
+      params.push(`filter=${encodeURIComponent(filterParams)}`);
+    }
+
+    // Sort
     if (sort) {
-      const sortValue =
-        order == "ascend" ? sort : order == "descend" ? "-" + sort : "";
-      url = url + `&sort=${sortValue}`;
-    }
-    if (data) {
-      url = url + `&role=${data}`;
+      // If order is provided, use it
+      let sortValue = order === "desc" ? `-${sort}` : sort;
+      params.push(`sort=${sortValue}`);
     }
 
-    if (searchText) {
-      url = url + `&searchText=${searchText}`;
-    }
+    const url = `users?${params.join("&")}`;
 
-    return api.get(url).then((response) => {
-      return { data: response.data.data, total: response.data.total };
-    });
+    return api.get(url).then((r) => ({
+      data: r.data.data,
+      total: r.data.pagination?.total,
+    }));
   }
 
   getUse(id) {
-    return api.get("/user/" + id).then((response) => {
+    return api.get("/users/" + id).then((response) => {
       return response.data.data;
     });
   }
 
   deleteUse(id) {
-    return api.delete("/user/" + id).then((response) => {
-      return response.data.data;
-    });
-  }
-
-  userDo({ method, payload }) {
-    return api.post("/user/do", { method, payload }).then((response) => {
-      return response.data.data;
-    });
-  }
-
-  useDo({ method, payload, id }) {
-    return api.post("/user/do/" + id, { method, payload }).then((response) => {
+    return api.delete("/users/" + id).then((response) => {
       return response.data.data;
     });
   }

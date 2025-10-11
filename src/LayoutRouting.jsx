@@ -8,8 +8,9 @@ import BrandsDetail from "./views/brands/BrandsDetails";
 
 import DashboardPage from "./views/Dashboard/DashboardPage";
 import ChangePassword from "./views/auth/ChangePassword";
-import UserList from "./views/user/UserList";
-import UserDetail from "./views/user/UserDetails";
+import HostList from "./views/host/HostList";
+import HostDetail from "./views/host/HostDetails";
+
 import CarModelsList from "./views/carModels/CarModelsList";
 import CarModelsDetail from "./views/carModels/CarModelsDetails";
 import CarsList from "./views/cars/CarsList";
@@ -27,8 +28,9 @@ const LayoutRouting = () => {
         <Route path="brands" element={<BrandsList />} />
         <Route path="brands/:id" element={<BrandsDetail />} />
 
-        <Route path="user" element={<UserList />} />
-        <Route path="user/:id" element={<UserDetail />} />
+        <Route path="host" element={<HostList />} />
+
+        <Route path="host/details/:id" element={<HostDetail />} />
 
         <Route path="models" element={<CarModelsList />} />
         <Route path="models/:id" element={<CarModelsDetail />} />

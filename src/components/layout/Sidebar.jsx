@@ -5,8 +5,10 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   DashboardOutlined,
   UserOutlined,
-  TeamOutlined,
+  TeamOutlined
 } from "@ant-design/icons";
+import { FaUserTie } from "react-icons/fa";
+
 import styled from "styled-components";
 import Logo from "../../assets/logo1.png";
 import { FaCar } from "react-icons/fa";
@@ -94,6 +96,7 @@ const Sidebar = ({ collapsed }) => {
       getItem(t("Dashboard"), "/dash", <DashboardOutlined />),
 
       getItem(t("Users"), "user", <UserOutlined />),
+  getItem("Host", "host", <FaUserTie />),
       getItem("Cars", "cars", <FaCar />),
 
       getItem("Brands", "brands", <SiBrandfolder />),
