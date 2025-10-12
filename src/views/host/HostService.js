@@ -47,8 +47,7 @@ class HostService {
 
     // Sort
     if (sort) {
-      // If order is provided, use it
-      let sortValue = order === "desc" ? `-${sort}` : sort;
+      let sortValue = `${sort}:${order || "asc"}`;
       params.push(`sort=${sortValue}`);
     }
 

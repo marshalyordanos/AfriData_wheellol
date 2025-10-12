@@ -47,7 +47,7 @@ class GustService {
 
     // Sort
     if (sort) {
-      let sortValue = order === "desc" ? `-${sort}` : sort;
+      let sortValue = `${sort}:${order || "asc"}`;
       params.push(`sort=${sortValue}`);
     }
 
