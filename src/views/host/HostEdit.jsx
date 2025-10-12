@@ -3,24 +3,17 @@ import {
   Button,
   Form,
   Input,
-  InputNumber,
   Select,
   Spin,
-  Switch,
-  DatePicker,
-  Divider,
   Upload,
 } from "antd";
 import styled from "styled-components";
 import {
   ButtonStyle,
-  FlexStyle,
   FormStyle,
 } from "../../components/commons/CommonStyles";
 import userService from "./HostService";
-import CommonModal from "../../components/commons/CommonModel";
-import HostPick from "./HostPick";
-import dayjs from "dayjs";
+
 
 const { Option } = Select;
 

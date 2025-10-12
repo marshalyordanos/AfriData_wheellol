@@ -5,8 +5,14 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   DashboardOutlined,
   UserOutlined,
-  TeamOutlined
+  TeamOutlined,
+  KeyOutlined,
+  UserSwitchOutlined,
+  SafetyOutlined,
+  LockOutlined,
+  IdcardOutlined,
 } from "@ant-design/icons";
+
 import { FaUserTie } from "react-icons/fa";
 
 import styled from "styled-components";
@@ -95,16 +101,17 @@ const Sidebar = ({ collapsed }) => {
 
       getItem(t("Dashboard"), "/dash", <DashboardOutlined />),
 
-      getItem(t("Users"), "user", <UserOutlined />),
-  getItem("Host", "host", <FaUserTie />),
+      // getItem(t("Users"), "user", <UserOutlined />),
       getItem("Cars", "cars", <FaCar />),
-
+      getItem("Staffs", "staff", <IdcardOutlined />),
+      getItem("Hosts", "host", <FaUserTie />),
+      getItem("Gusts", "gust", <UserOutlined />),
       getItem("Brands", "brands", <SiBrandfolder />),
       getItem("Models", "models", <PiCubeFill />),
       getItem("Vehicle Types", "vehicle-types", <TbTruckDelivery />),
       getItem("Bookings", "bookings", <SiBookstack />),
-      getItem("Permissions", "permissions", <UserOutlined />),
-      getItem("Roles", "roles", <TeamOutlined />),
+      getItem("Permissions", "permissions", <LockOutlined />),
+      getItem("Roles", "roles", <SafetyOutlined />),
     ];
 
     setItems(items2);

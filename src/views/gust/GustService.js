@@ -1,19 +1,19 @@
 import api from "../../api/api";
 
-class UserService {
-  createUse(data) {
-    return api.post("/users", data).then((response) => {
+class GustService {
+  createGust(data) {
+    return api.post("/users/", data).then((response) => {
       return response.data.data;
     });
   }
 
-  updateUse(data, id) {
+  updateGust(data, id) {
     return api.patch("/users/" + id, data).then((response) => {
       return response.data.data;
     });
   }
 
-  searchUse({
+  searchGusts({
     page = 1,
     limit = 10,
     search = null,
@@ -47,12 +47,11 @@ class UserService {
 
     // Sort
     if (sort) {
-      // If order is provided, use it
       let sortValue = order === "desc" ? `-${sort}` : sort;
       params.push(`sort=${sortValue}`);
     }
 
-    const url = `users?${params.join("&")}`;
+    const url = `users/gusts?${params.join("&")}`;
 
     return api.get(url).then((r) => ({
       data: r.data.data,
@@ -60,17 +59,17 @@ class UserService {
     }));
   }
 
-  getUse(id) {
+  getGust(id) {
     return api.get("/users/" + id).then((response) => {
       return response.data.data;
     });
   }
 
-  deleteUse(id) {
+  deleteGust(id) {
     return api.delete("/users/" + id).then((response) => {
       return response.data.data;
     });
   }
 }
 
-export default new UserService();
+export default new GustService();

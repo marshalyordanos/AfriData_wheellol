@@ -1,19 +1,19 @@
 import api from "../../api/api";
 
-class UserService {
-  createUse(data) {
-    return api.post("/users", data).then((response) => {
+class StaffService {
+  createStaff(data) {
+    return api.post("/users/", data).then((response) => {
       return response.data.data;
     });
   }
 
-  updateUse(data, id) {
+  updateStaff(data, id) {
     return api.patch("/users/" + id, data).then((response) => {
       return response.data.data;
     });
   }
 
-  searchUse({
+  searchStaffs({
     page = 1,
     limit = 10,
     search = null,
@@ -52,7 +52,7 @@ class UserService {
       params.push(`sort=${sortValue}`);
     }
 
-    const url = `users?${params.join("&")}`;
+    const url = `users/staffs?${params.join("&")}`;
 
     return api.get(url).then((r) => ({
       data: r.data.data,
@@ -60,17 +60,17 @@ class UserService {
     }));
   }
 
-  getUse(id) {
+  getStaff(id) {
     return api.get("/users/" + id).then((response) => {
       return response.data.data;
     });
   }
 
-  deleteUse(id) {
+  deleteStaff(id) {
     return api.delete("/users/" + id).then((response) => {
       return response.data.data;
     });
   }
 }
 
-export default new UserService();
+export default new StaffService();

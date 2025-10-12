@@ -1,24 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import userService from "./UserService";
+import hostService from "./HostService";
 import CommonTable from "../../components/commons/CommonTable";
 import {
   ButtonStyle,
   SearchInputStyle,
 } from "../../components/commons/CommonStyles";
 import { Divider, Input } from "antd";
-import { searchUser, updateUserState, userSearchText } from "./UserRedux"; //** */
-import { useDispatch, useSelector } from "react-redux"; /*** */
+import { searchHost, updateHostState, hostSearchText } from "./HostRedux";
+import { useDispatch, useSelector } from "react-redux";
 
-const UserPick = ({ setIsModalOpen, selectHandler }) => {
-  const [userData, setUserData] = useState([]);
+const StaffPick = ({ setIsModalOpen, selectHandler }) => {
+  const [hostData, setHostData] = useState([]);
   const [total, setTotal] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
-  const dispatch = useDispatch(); /*** */
-  const searchText = useSelector(userSearchText); //** */
+  const dispatch = useDispatch();
+  const searchText = useSelector(hostSearchText);
 
   const [loading, setLoading] = useState();
-  const [userSelection, setUserSelection] = useState([]);
+  const [hostSelection, setHostSelection] = useState([]);
   const delayTimerRef = useRef(null);
 
   const getPaginationInfo = () => {
@@ -27,16 +27,15 @@ const UserPick = ({ setIsModalOpen, selectHandler }) => {
 
   useEffect(() => {
     const [page, limit] = getPaginationInfo();
-    dispatch(updateUserState({ page: page, limit: limit }));
-
+    dispatch(updateHostState({ page: page, limit: limit }));
     searchData();
   }, []);
 
   async function searchData() {
     try {
       setLoading(true);
-      const { payload } = await dispatch(searchUser());
-      setUserData(payload.data);
+      const { payload } = await dispatch(searchHost());
+      setHostData(payload.data);
       setTotal(payload.total);
       setLoading(false);
     } catch (err) {
@@ -46,8 +45,7 @@ const UserPick = ({ setIsModalOpen, selectHandler }) => {
   const searchHandler = (e) => {
     const { value } = e.target;
     const [page, limit] = getPaginationInfo();
-
-    dispatch(updateUserState({ page: page, limit: limit, searchText: value }));
+    dispatch(updateHostState({ page: page, limit: limit, searchText: value }));
     clearTimeout(delayTimerRef.current);
     delayTimerRef.current = setTimeout(() => {
       searchData();
@@ -56,43 +54,36 @@ const UserPick = ({ setIsModalOpen, selectHandler }) => {
 
   const handlePagination = (page, pageSize) => {
     setSearchParams({ page: page, limit: pageSize });
+    dispatch(updateHostState({ page, limit: pageSize }));
     searchData();
   };
 
   const columns = [
     {
-      title: "first_name",
-      dataIndex: "first_name",
+      title: "First Name",
+      dataIndex: "firstName",
+      key: "firstName",
     },
-
     {
-      title: "last_name",
-      dataIndex: "last_name",
+      title: "Last Name",
+      dataIndex: "lastName",
+      key: "lastName",
     },
-
     {
-      title: "email",
+      title: "Email",
       dataIndex: "email",
+      key: "email",
     },
-
     {
-      title: "role",
+      title: "Phone",
+      dataIndex: "phone",
+      key: "phone",
+    },
+    {
+      title: "Role",
       dataIndex: "role",
-    },
-
-    {
-      title: "phone_number",
-      dataIndex: "phone_number",
-    },
-
-    {
-      title: "driver_license",
-      dataIndex: "driver_license",
-    },
-
-    {
-      title: "national_id",
-      dataIndex: "national_id",
+      key: "role",
+      render: (role) => role?.name || "-",
     },
   ];
 
@@ -109,9 +100,9 @@ const UserPick = ({ setIsModalOpen, selectHandler }) => {
 
       <CommonTable
         rowSelectionType={"radio"}
-        data={userData}
+        data={hostData}
         columns={columns}
-        setSelection={setUserSelection}
+        setSelection={setHostSelection}
         handlePagination={handlePagination}
         total={total}
         loadding={loading}
@@ -121,9 +112,9 @@ const UserPick = ({ setIsModalOpen, selectHandler }) => {
       <ButtonStyle>
         <button onClick={() => setIsModalOpen(false)}>cancel</button>
         <button
-          disabled={userSelection.length == 0}
-          className={userSelection.length > 0 ? "" : "disable"}
-          onClick={() => selectHandler(userSelection[0])}
+          disabled={hostSelection.length == 0}
+          className={hostSelection.length > 0 ? "" : "disable"}
+          onClick={() => selectHandler(hostSelection[0])}
         >
           Return
         </button>
@@ -132,4 +123,4 @@ const UserPick = ({ setIsModalOpen, selectHandler }) => {
   );
 };
 
-export default UserPick;
+export default StaffPick;

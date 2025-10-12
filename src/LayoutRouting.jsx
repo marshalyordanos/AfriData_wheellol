@@ -17,6 +17,10 @@ import CarsList from "./views/cars/CarsList";
 import CarsDetails from "./views/cars/CarsDetails";
 import BookingList from "./views/bookings/BookingList";
 import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
+import StaffList from "./views/staff/StaffList";
+import StaffDetail from "./views/staff/StaffDetails";
+import GustList from "./views/gust/GustList";
+import GustDetail from "./views/gust/GustDetails";
 
 const LayoutRouting = () => {
   return (
@@ -29,8 +33,10 @@ const LayoutRouting = () => {
         <Route path="brands/:id" element={<BrandsDetail />} />
 
         <Route path="host" element={<HostList />} />
-
         <Route path="host/details/:id" element={<HostDetail />} />
+
+        <Route path="staff" element={<StaffList />} />
+        <Route path="staff/details/:id" element={<StaffDetail />} />
 
         <Route path="models" element={<CarModelsList />} />
         <Route path="models/:id" element={<CarModelsDetail />} />
@@ -44,6 +50,9 @@ const LayoutRouting = () => {
         <Route path="roles" element={<RoleList />} />
 
         <Route path="/change-password" element={<ChangePassword />} />
+
+        <Route path="gust" element={<GustList />} />
+        <Route path="gust/details/:id" element={<GustDetail />} />
 
         <Route path="*" element={<h1>Page Not Found Inside Dashboard</h1>} />
       </Route>
