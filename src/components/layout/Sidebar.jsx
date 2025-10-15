@@ -37,8 +37,7 @@ const Sidebar = ({ collapsed }) => {
   const { t, i18n } = useTranslation();
 
   const onClick = (e) => {
-    console.log("click ", e);
-    setCurrent(e.key);
+    setCurrent([e.key]);
 
     navigate(e.key);
     setOpenKeys(e.keyPath);
@@ -61,11 +60,24 @@ const Sidebar = ({ collapsed }) => {
     getItems();
   }, []);
   useEffect(() => {
-    const x = [...path.split("/")];
-    console.log("ppppppppppppp", x);
-    setCurrent(x.length > 2 ? x[x.length - 1] : "");
-    const y = JSON.parse(localStorage.getItem("keyPath")) || [];
+    const p = path.toLowerCase();
+    let sel = "";
+    if (p.startsWith("/dash/host")) sel = "host";
+    else if (p.startsWith("/dash/staff")) sel = "staff";
+    else if (p.startsWith("/dash/cars")) sel = "cars";
+    else if (p.startsWith("/dash/gust")) sel = "gust";
+    else if (p.startsWith("/dash/brands")) sel = "brands";
+    else if (p.startsWith("/dash/models")) sel = "models";
+    else if (p.startsWith("/dash/vehicle-types")) sel = "vehicle-types";
+    else if (p.startsWith("/dash/bookings")) sel = "bookings";
+    else if (p.startsWith("/dash/permissions")) sel = "permissions";
+    else if (p.startsWith("/dash/roles")) sel = "roles";
+    else if (p === "/dash" || p === "/dash/") sel = "/dash";
+    else sel = "dashboard";
 
+    setCurrent(sel ? [sel] : []);
+
+    const y = JSON.parse(localStorage.getItem("keyPath")) || [];
     setOpenKeys(y ? y[y.length - 1] : []);
   }, [path]);
 
@@ -105,7 +117,7 @@ const Sidebar = ({ collapsed }) => {
       getItem("Cars", "cars", <FaCar />),
       getItem("Staffs", "staff", <IdcardOutlined />),
       getItem("Hosts", "host", <FaUserTie />),
-      getItem("Gusts", "gust", <UserOutlined />),
+      getItem("Guests", "gust", <UserOutlined />),
       getItem("Brands", "brands", <SiBrandfolder />),
       getItem("Models", "models", <PiCubeFill />),
       getItem("Vehicle Types", "vehicle-types", <TbTruckDelivery />),

@@ -51,7 +51,7 @@ class GustService {
       params.push(`sort=${sortValue}`);
     }
 
-    const url = `users/gusts?${params.join("&")}`;
+    const url = `users/guests?${params.join("&")}`;
 
     return api.get(url).then((r) => ({
       data: r.data.data,

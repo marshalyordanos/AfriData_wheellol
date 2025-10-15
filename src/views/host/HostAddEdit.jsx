@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Divider, Form, Input, Upload } from "antd";
+import { Button, Divider, Form, Input, Upload, message } from "antd";
 import { ButtonStyle } from "../../components/commons/CommonStyles";
 import styled from "styled-components";
 import userService from "./HostService";
@@ -38,7 +38,6 @@ const HostAddEdit = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
-
   const handleReset = () => {
     form.resetFields();
   };
@@ -48,13 +47,19 @@ const HostAddEdit = ({
     try {
       const formData = new FormData();
 
-      // iterate keys and handle file lists
+      // Only send allowed fields
+      const allowedFields = [
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "profilePhotoFile",
+      ];
       Object.entries(values).forEach(([key, value]) => {
-        // Upload returns fileListAttach first file's originFileObj if present
+        if (!allowedFields.includes(key)) return;
         if (Array.isArray(value) && value.length && value[0]?.originFileObj) {
           formData.append(key, value[0].originFileObj);
         } else if (Array.isArray(value) && value.length && value[0]?.url) {
-          // if the user already had an uploaded url send the url or skip
           formData.append(key, value[0].url);
         } else if (typeof value === "object" && value !== null) {
           formData.append(key, String(value));
@@ -64,10 +69,12 @@ const HostAddEdit = ({
       });
 
       await userService.createHost(formData);
+      message.success("Host created successfully");
       setIsModalOpen(false);
       searchData && searchData();
     } catch (err) {
       console.error(err);
+      message.error("Failed to create host");
     } finally {
       setLoading(false);
     }
@@ -112,17 +119,6 @@ const HostAddEdit = ({
         </Form.Item>
 
         <Form.Item
-          name="password"
-          label="Password"
-          rules={[
-            { required: true, message: "Password is required!" },
-            { min: 6, message: "Password must be at least 6 characters!" },
-          ]}
-        >
-          <Input.Password />
-        </Form.Item>
-
-        <Form.Item
           name="phone"
           label="Phone Number"
           rules={[{ required: true }]}
@@ -143,38 +139,6 @@ const HostAddEdit = ({
             beforeUpload={() => false}
           >
             <Button>Upload Profile Photo</Button>
-          </Upload>
-        </Form.Item>
-
-        <Form.Item
-          name="driverLicenseFile"
-          label="Driver License File"
-          valuePropName="fileList"
-          getValueFromEvent={normFile}
-        >
-          <Upload
-            name="driverLicenseFile"
-            listType="picture"
-            maxCount={1}
-            beforeUpload={() => false}
-          >
-            <Button>Upload Driver License</Button>
-          </Upload>
-        </Form.Item>
-
-        <Form.Item
-          name="nationalIdFile"
-          label="National ID File"
-          valuePropName="fileList"
-          getValueFromEvent={normFile}
-        >
-          <Upload
-            name="nationalIdFile"
-            listType="picture"
-            maxCount={1}
-            beforeUpload={() => false}
-          >
-            <Button>Upload National ID</Button>
           </Upload>
         </Form.Item>
 

@@ -1,19 +1,8 @@
 import React, { useEffect, useState } from "react";
-import {
-  Button,
-  Form,
-  Input,
-  Select,
-  Spin,
-  Upload,
-} from "antd";
+import { Button, Form, Input, Select, Spin, Upload, message } from "antd";
 import styled from "styled-components";
-import {
-  ButtonStyle,
-  FormStyle,
-} from "../../components/commons/CommonStyles";
+import { ButtonStyle, FormStyle } from "../../components/commons/CommonStyles";
 import userService from "./HostService";
-
 
 const { Option } = Select;
 
@@ -37,7 +26,6 @@ const HostEdit = ({
   searchData,
 }) => {
   const [form] = Form.useForm();
-  const [switch2, setSwitch2] = useState("");
   const [loading, setLoading] = useState("");
 
   useEffect(() => {
@@ -49,8 +37,6 @@ const HostEdit = ({
           email: userData.email || "",
           phone_number: userData.phone || "",
           profilePhotoFile: userData.profilePhotoFile || [],
-          driverLicenseFile: userData.driverLicenseFile || [],
-          nationalIdFile: userData.nationalIdFile || [],
         },
       });
     }
@@ -84,15 +70,16 @@ const HostEdit = ({
         email: datas.use.email,
         phone: datas.use.phone_number,
         profilePhotoFile: datas.use.profilePhotoFile,
-        driverLicenseFile: datas.use.driverLicenseFile,
-        nationalIdFile: datas.use.nationalIdFile,
       };
 
-      await userService.updateHost(payload, userData.id);
+      const id = userData._id || userData.id;
+      await userService.updateHost(payload, id);
+      message.success("Host updated successfully");
       searchData();
       setIsModalOpen(false);
     } catch (err) {
       console.error("Update failed", err);
+      message.error("Failed to update host");
     } finally {
       setLoading(false);
     }
@@ -143,17 +130,6 @@ const HostEdit = ({
         >
           <Input className="border-gray-400 py-2" />
         </Form.Item>
-        {/* <Form.Item
-          className=" flex-1"
-          name={["use", "password"]}
-          label="Password"
-          rules={[
-            { required: true, message: "Password is required!" },
-            { min: 6, message: "Password must be at least 6 characters!" },
-          ]}
-        >
-          <Input.Password className="border-gray-400 py-2" />
-        </Form.Item> */}
         <Form.Item
           className=" flex-1"
           name={["use", "phone_number"]}
@@ -176,38 +152,6 @@ const HostEdit = ({
             beforeUpload={() => false}
           >
             <Button>Upload Profile Photo</Button>
-          </Upload>
-        </Form.Item>
-        <Form.Item
-          className=" flex-1"
-          name={["use", "driverLicenseFile"]}
-          label="Driver License File"
-          valuePropName="fileList"
-          getValueFromEvent={(e) => (Array.isArray(e) ? e : e && e.fileList)}
-        >
-          <Upload
-            name="driverLicenseFile"
-            listType="picture"
-            maxCount={1}
-            beforeUpload={() => false}
-          >
-            <Button>Upload Driver License</Button>
-          </Upload>
-        </Form.Item>
-        <Form.Item
-          className=" flex-1"
-          name={["use", "nationalIdFile"]}
-          label="National ID File"
-          valuePropName="fileList"
-          getValueFromEvent={(e) => (Array.isArray(e) ? e : e && e.fileList)}
-        >
-          <Upload
-            name="nationalIdFile"
-            listType="picture"
-            maxCount={1}
-            beforeUpload={() => false}
-          >
-            <Button>Upload National ID</Button>
           </Upload>
         </Form.Item>
       </FormStyle>

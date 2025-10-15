@@ -8,7 +8,7 @@ const HostDetail = () => {
   const { id } = useParams();
   const [host, setHost] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false); 
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -32,6 +32,60 @@ const HostDetail = () => {
     }
   }, [id]);
 
+  const refreshHost = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      const data = await HostService.getHost(id);
+      setHost(data);
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message || "Failed to load host details"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      const res = await HostService.verifyHost(id);
+      message.success(res?.message || "Host verified successfully");
+      await refreshHost();
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message || err?.message || "Failed to verify host"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleActive = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      let res;
+      if (host?.isActive) {
+        res = await HostService.deactivateHost(id);
+      } else {
+        res = await HostService.activateHost(id);
+      }
+      message.success(res?.message || "Host status updated successfully");
+      await refreshHost();
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to change host active status"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   //  Show nothing until first fetch starts
   if (!initialized) {
     return null;
@@ -53,6 +107,36 @@ const HostDetail = () => {
 
   return (
     <DetailStyle>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <button
+          disabled={host?.hostProfile?.isVerified}
+          onClick={handleVerify}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 6,
+            border: "1px solid #1D9BF0",
+            background: host?.hostProfile?.isVerified ? "#ddd" : "#1D9BF0",
+            color: host?.hostProfile?.isVerified ? "#666" : "#fff",
+            cursor: host?.hostProfile?.isVerified ? "not-allowed" : "pointer",
+          }}
+        >
+          {host?.hostProfile?.isVerified ? "Verified" : "Verify Host"}
+        </button>
+
+        <button
+          onClick={handleToggleActive}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 6,
+            border: "1px solid #3BB66E",
+            background: host?.isActive ? "#f44336" : "#3BB66E",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          {host?.isActive ? "Deactivate" : "Activate"}
+        </button>
+      </div>
       <h1>Host Details</h1>
       <Divider style={{ margin: "15px 0 25px 0" }} />
 
@@ -73,7 +157,9 @@ const HostDetail = () => {
 
       <div className="detail_child">
         <p className="detail_key">Verified:</p>
-        <p className="detail_value">{host?.isVerified ? "true" : "false"}</p>
+        <p className="detail_value">
+          {host?.hostProfile?.isVerified ? "true" : "false"}
+        </p>
       </div>
 
       <div className="detail_child">

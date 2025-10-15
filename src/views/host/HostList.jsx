@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, Select } from "antd";
+import { Button, Dropdown, Input, Select, message, Modal } from "antd";
 import styled from "styled-components";
 import CommonModal from "../../components/commons/CommonModel";
 
@@ -11,33 +11,31 @@ import HostAddEdit from "./HostAddEdit";
 import { NavLink, useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 //import { HeaderStyle, SearchInputStyle } from '../../components/commons/CommonStyles';
-import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import { useDispatch, useSelector } from "react-redux";
 import { searchHost, updateHostState, hostSearchText } from "./HostRedux";
 
 const UserList = () => {
   const navigate = useNavigate();
-  const handleDelete = async (id) => {
-    await HostService.deleteHost(id);
-    setIsDeleteModalOpen(false);
-  };
   const [userData, setUserData] = useState([]);
   const [total, setTotal] = useState();
 
   const searchText = useSelector(hostSearchText);
+  const page = useSelector((state) => state.host.query.page);
+  const limit = useSelector((state) => state.host.query.limit);
   const [loading, setLoading] = useState();
   const [userSelection, setUserSelection] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const [modeID, setModeID] = useState("");
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [openModalFor, setOpenModalFor] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const delayTimerRef = useRef(null);
   const dispatch = useDispatch();
 
   const getPaginationInfo = () => {
-    return [searchParams.get("page") || 1, searchParams.get("limit") || 5];
+    return [searchParams.get("page") || 1, searchParams.get("limit") || 10];
   };
 
   useEffect(() => {
@@ -71,61 +69,74 @@ const UserList = () => {
     }, 500);
   };
 
-  const handlePagination = async (page, pageSize) => {
-    const columns = [
-      {
-        title: "First Name",
-        dataIndex: "firstName",
-        key: "firstName",
-      },
-      {
-        title: "Last Name",
-        dataIndex: "lastName",
-        key: "lastName",
-      },
-      {
-        title: "Email",
-        dataIndex: "email",
-        key: "email",
-      },
-      {
-        title: "Phone",
-        dataIndex: "phone",
-        key: "phone",
-      },
-      {
-        title: "Role",
-        dataIndex: "role",
-        key: "role",
-        render: (role) => role?.name || "-",
-      },
-      {
-        title: "Created At",
-        dataIndex: "createdAt",
-        key: "createdAt",
-        render: (date) => (date ? new Date(date).toLocaleString() : "-"),
-      },
-    ];
+  const handlePagination = async (p, pageSize) => {
+    // update redux query and fetch
+    dispatch(updateHostState({ page: p, limit: pageSize }));
+    await searchData();
   };
 
-  const onClick = ({ key }, record) => {
-    if (key == "edit") {
-      setIsModalOpen(true);
-    } else if (key === "delete") {
-      setIsDeleteModalOpen(true);
+  const onClick = async ({ key }, record) => {
+    const id = record?._id || record?.id;
+    setModeID(id);
+    setSelectedRecord(record);
+    if (key === "edit") {
+      setOpenModalFor("edit");
+      return;
+    }
+
+    if (key === "verify") {
+      if (record?.hostProfile?.isVerified) {
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await HostService.verifyHost(id);
+        message.success(res?.message || "Host verified successfully");
+        await searchData();
+      } catch (err) {
+        console.error(err);
+        const msg =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to verify host";
+        message.error(msg);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (key === "toggleActive") {
+      const action = record.isActive ? "Deactivate" : "Activate";
+      Modal.confirm({
+        title: `${action} Host`,
+        content: `Are you sure you want to ${action.toLowerCase()} this host?`,
+        onOk: async () => {
+          try {
+            setLoading(true);
+            let res;
+            if (record.isActive) {
+              res = await HostService.deactivateHost(id);
+            } else {
+              res = await HostService.activateHost(id);
+            }
+            message.success(res?.message || "Host status updated successfully");
+            await searchData();
+          } catch (err) {
+            console.error(err);
+            const msg =
+              err?.response?.data?.message ||
+              err?.message ||
+              "Failed to change host active status";
+            message.error(msg);
+          } finally {
+            setLoading(false);
+          }
+        },
+      });
+      return;
     }
   };
-
-  const items = [
-    {
-      key: "edit",
-      label: <Button type="text">Edit</Button>,
-    },
-    {
-      key: "delete",
-      label: <Button type="text"> Delete</Button>,
-    },
-  ];
 
   const columns = [
     {
@@ -135,7 +146,34 @@ const UserList = () => {
         return (
           <Dropdown
             menu={{
-              items,
+              items: [
+                {
+                  key: "edit",
+                  label: <Button type="text">Edit</Button>,
+                },
+                {
+                  key: "verify",
+                  label: record?.hostProfile?.isVerified ? (
+                    <Button
+                      type="text"
+                      style={{ color: "#3BB66E", fontWeight: 600 }}
+                      disabled
+                    >
+                      Verified
+                    </Button>
+                  ) : (
+                    <Button type="text">Verify</Button>
+                  ),
+                },
+                {
+                  key: "toggleActive",
+                  label: (
+                    <Button type="text">
+                      {record.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                  ),
+                },
+              ],
               onClick: (value) => onClick(value, record),
             }}
             trigger={["click"]}
@@ -144,9 +182,6 @@ const UserList = () => {
             <Button
               type="text"
               icon={<MoreOutlined style={{ fontSize: 20 }} />}
-              onClick={() => {
-                setModeID(record._id);
-              }}
             ></Button>
           </Dropdown>
         );
@@ -170,21 +205,19 @@ const UserList = () => {
           key === "role"
             ? (role) => role?.name || "-"
             : key === "verified"
-            ? (verified) => (verified ? "true" : "false")
+            ? (_, record) =>
+                record?.hostProfile?.isVerified ? "true" : "false"
             : undefined,
       })
     ),
   ];
 
   const handleReload = () => {
-    if (typeof fetchUsers === "function") {
-      fetchUsers();
-    } else {
-      window.location.reload();
-    }
+    const resetPage = 1;
+    dispatch(updateHostState({ page: resetPage }));
+    searchData();
   };
 
-  // Add tableChange function to fix ReferenceError
   const tableChange = (pagination, filters, sorter) => {
     // Extract sort field and order
     let sortField = sorter.field;
@@ -204,45 +237,52 @@ const UserList = () => {
 
   return (
     <div>
-      {isModalOpen ? (
+      {openModalFor === "edit" || openModalFor === "add" ? (
         <CommonModal
           width={1000}
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
+          isModalOpen={true}
+          setIsModalOpen={(open) => {
+            if (!open) {
+              setOpenModalFor(null);
+              setSelectedRecord(null);
+              setModeID("");
+            }
+          }}
         >
-          {modeID === "" ? (
+          {openModalFor === "add" ? (
             <HostAddEdit
+              key={"host-add"}
               userData={userData}
               searchData={searchData}
               setMode={setModeID}
-              mode={modeID}
-              isModelOpen={isModalOpen}
-              setIsModalOpen={setIsModalOpen}
+              mode={""}
+              isModelOpen={true}
+              setIsModalOpen={(open) => {
+                if (!open) {
+                  setOpenModalFor(null);
+                  setSelectedRecord(null);
+                }
+              }}
             />
           ) : (
             <HostEdit
-              userData={userData.find((u) => u._id === modeID) || {}}
+              key={selectedRecord?._id || modeID || "host-edit"}
+              userData={
+                selectedRecord || userData.find((u) => u._id === modeID) || {}
+              }
               searchData={searchData}
               setMode={setModeID}
               mode={modeID}
-              isModelOpen={isModalOpen}
-              setIsModalOpen={setIsModalOpen}
+              isModelOpen={true}
+              setIsModalOpen={(open) => {
+                if (!open) {
+                  setOpenModalFor(null);
+                  setSelectedRecord(null);
+                }
+              }}
             />
           )}
         </CommonModal>
-      ) : (
-        ""
-      )}
-
-      {isDeleteModalOpen ? (
-        <CommonDeleteModal
-          setIsModalOpen={setIsDeleteModalOpen}
-          handleDelete={handleDelete}
-          loading={loading}
-          isModalOpen={isDeleteModalOpen}
-        >
-          <h1 className=" text-2xl">Are you sure?</h1>
-        </CommonDeleteModal>
       ) : (
         ""
       )}
@@ -259,7 +299,6 @@ const UserList = () => {
               style={{ borderRadius: "0px 0px 0px 0px" }}
               className=" drop-shadow-sm rounded-r  py-2"
             />
-            
           </div>
         </div>
         <span className="flex ml-6 mb-6 md:mr-6">
@@ -276,7 +315,7 @@ const UserList = () => {
             className="px-4  py-2 border border-[#3BB66E] 
             text-white bg-[#3BB66E] rounded"
             onClick={() => {
-              setIsModalOpen(true);
+              setOpenModalFor("add");
               setModeID("");
             }}
           >
@@ -298,6 +337,8 @@ const UserList = () => {
         loadding={loading}
         tableChange={tableChange}
         rowKey={(r) => r?._id || r?.id}
+        currentPage={parseInt(page) || 1}
+        pageSize={parseInt(limit) || 10}
       />
     </div>
   );

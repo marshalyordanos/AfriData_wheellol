@@ -2,7 +2,7 @@ import api from "../../api/api";
 
 class HostService {
   createHost(data) {
-    return api.post("/auth/register", data).then((response) => {
+    return api.post("/users/hosts", data).then((response) => {
       return response.data.data;
     });
   }
@@ -29,7 +29,7 @@ class HostService {
 
     // Search
     if (search) {
-      params.push(`search=${encodeURIComponent(search)}`);
+      params.push(`search=all:${encodeURIComponent(search)}`);
     }
 
     // Filter
@@ -37,7 +37,7 @@ class HostService {
       const filterParams = Object.entries(filter)
         .map(([key, value]) => {
           if (Array.isArray(value)) {
-            return `${key}:[${value.join(",")}]`;
+            return `${key}:[${value.join(",")} ]`;
           }
           return `${key}:${value}`;
         })
@@ -65,10 +65,33 @@ class HostService {
     });
   }
 
-  deleteHost(id) {
-    return api.delete("/users/" + id).then((response) => {
-      return response.data.data;
+  verifyHost(id) {
+    const data = {
+      isVerified: true,
+    };
+    return api.patch("/users/host-verify/" + id, data).then((response) => {
+      return response.data;
     });
+  }
+  activateHost(id) {
+    const data = {
+      isActive: true,
+    };
+    return api
+      .patch("users/update-active-satus/" + id, data)
+      .then((response) => {
+        return response.data;
+      });
+  }
+  deactivateHost(id) {
+    const data = {
+      isActive: false,
+    };
+    return api
+      .patch("users/update-active-satus/" + id, data)
+      .then((response) => {
+        return response.data;
+      });
   }
 }
 

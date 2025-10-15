@@ -193,7 +193,7 @@ const GustList = () => {
 
       <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
         <div className="flex flex-col md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Gusts</h1>
+          <h1 className="text-2xl font-bold pb-4">Guests</h1>
           <Input
             onChange={searchHandler}
             placeholder="Search"
@@ -216,7 +216,7 @@ const GustList = () => {
               setModeID("");
             }}
           >
-            <PlusOutlined className="mr-2" /> Add Gust
+            <PlusOutlined className="mr-2" /> Add Guest
           </button>
         </div>
       </div>

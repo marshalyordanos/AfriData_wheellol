@@ -29,7 +29,7 @@ class StaffService {
 
     // Search
     if (search) {
-      params.push(`search=${encodeURIComponent(search)}`);
+      params.push(`search=all:${encodeURIComponent(search)}`);
     }
 
     // Filter
@@ -66,7 +66,7 @@ class StaffService {
   }
 
   deleteStaff(id) {
-    return api.delete("/users/" + id).then((response) => {
+    return api.delete("/users/update-active-satus/" + id).then((response) => {
       return response.data.data;
     });
   }

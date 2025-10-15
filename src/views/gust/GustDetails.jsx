@@ -52,7 +52,7 @@ const GustDetail = () => {
 
   return (
     <DetailStyle>
-      <h1>Gust Details</h1>
+      <h1>Guest Details</h1>
       <Divider style={{ margin: "15px 0 25px 0" }} />
 
       <div className="detail_child">
