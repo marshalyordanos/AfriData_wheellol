@@ -19,8 +19,8 @@ class PermissionsService {
   search({
     page = 1,
     limit = 10,
-    search = null, 
-    filter = null, 
+    search = null,
+    filter = null,
     sort = null,
   } = {}) {
     let params = [];
@@ -31,10 +31,7 @@ class PermissionsService {
 
     // Search
     if (search) {
-      const searchParams = Object.entries(search)
-        .map(([key, value]) => `${key}:${value}`)
-        .join(",");
-      params.push(`search=${encodeURIComponent(searchParams)}`);
+      params.push(`search=${encodeURIComponent(search)}`);
     }
 
     // Filter
@@ -60,10 +57,18 @@ class PermissionsService {
 
     const url = `access-control/permissions?${params.join("&")}`;
 
-    return api.get(url).then((r) => ({
-      data: r.data.data,
-      total: r.data.total,
-    }));
+    return api.get(url).then((r) => {
+      // backend may send pagination object: { pagination: { total, page, pageSize, totalPages } }
+      const resp = r.data || {};
+      const data = resp.data || [];
+      const total =
+        resp.pagination && typeof resp.pagination.total === "number"
+          ? resp.pagination.total
+          : typeof resp.total === "number"
+          ? resp.total
+          : data.length;
+      return { data, total };
+    });
   }
 
   // Single fetch

@@ -8,8 +8,9 @@ import BrandsDetail from "./views/brands/BrandsDetails";
 
 import DashboardPage from "./views/Dashboard/DashboardPage";
 import ChangePassword from "./views/auth/ChangePassword";
-import UserList from "./views/user/UserList";
-import UserDetail from "./views/user/UserDetails";
+import HostList from "./views/host/HostList";
+import HostDetail from "./views/host/HostDetails";
+
 import CarModelsList from "./views/carModels/CarModelsList";
 import CarModelsDetails from "./views/carModels/CarModelsDetails";
 import CarsList from "./views/cars/CarsList";
@@ -18,6 +19,10 @@ import BookingList from "./views/bookings/BookingList";
 import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
 import BrandModelsList from "./views/brands/BrandModelsList";
 import CarInsurancePage from "./views/cars/CarInsurancePage";
+import StaffList from "./views/staff/StaffList";
+import StaffDetail from "./views/staff/StaffDetails";
+import GustList from "./views/gust/GustList";
+import GustDetail from "./views/gust/GustDetails";
 
 const LayoutRouting = () => {
   return (
@@ -31,8 +36,11 @@ const LayoutRouting = () => {
 
         <Route path="brands/:id" element={<BrandsDetail />} />
 
-        <Route path="user" element={<UserList />} />
-        <Route path="user/:id" element={<UserDetail />} />
+        <Route path="host" element={<HostList />} />
+        <Route path="host/details/:id" element={<HostDetail />} />
+
+        <Route path="staff" element={<StaffList />} />
+        <Route path="staff/details/:id" element={<StaffDetail />} />
 
         <Route path="models" element={<CarModelsList />} />
         <Route path="models/:id" element={<CarModelsDetails />} />
@@ -48,6 +56,9 @@ const LayoutRouting = () => {
         <Route path="roles" element={<RoleList />} />
 
         <Route path="/change-password" element={<ChangePassword />} />
+
+        <Route path="gust" element={<GustList />} />
+        <Route path="gust/details/:id" element={<GustDetail />} />
 
         <Route path="*" element={<h1>Page Not Found Inside Dashboard</h1>} />
       </Route>

@@ -65,52 +65,41 @@ const UserList = () => {
   };
 
   const handlePagination = async (page, pageSize) => {
-    // permmission exmple
-
-    // if (!(await authService.checkPermmision('user', 'read'))) {
-    //     return message.error('You have not a permmission');
-    // }
-
-    setSearchParams({ page: page, limit: pageSize });
-    dispatch(updateUserState({ page: page, limit: pageSize }));
-
-    searchData();
-  };
-
-  const tableChange = (pagination, filters, sorter) => {
-    const { field, order } = sorter;
-    dispatch(updateUserState({ sort: field, order: order }));
-
-    searchData();
-  };
-
-  const handleReload = () => {
-    const [page, limit] = getPaginationInfo();
-
-    setSearchParams({ page: 1, limit: 5 });
-    dispatch(
-      updateUserState({
-        page: 1,
-        limit: 5,
-        sort: "",
-        order: "",
-        searchText: "",
-      })
-    );
-    searchData();
-  };
-
-  const handleDelete = async () => {
-    try {
-      setLoading(true);
-      const data = await userService.deleteUse(modeID);
-      setIsDeleteModalOpen(false);
-
-      searchData();
-      setLoading(false);
-    } catch (err) {
-      setLoading(false);
-    }
+   
+    const columns = [
+      {
+        title: "First Name",
+        dataIndex: "firstName",
+        key: "firstName",
+      },
+      {
+        title: "Last Name",
+        dataIndex: "lastName",
+        key: "lastName",
+      },
+      {
+        title: "Email",
+        dataIndex: "email",
+        key: "email",
+      },
+      {
+        title: "Phone",
+        dataIndex: "phone",
+        key: "phone",
+      },
+      {
+        title: "Role",
+        dataIndex: "role",
+        key: "role",
+        render: (role) => role?.name || "-",
+      },
+      {
+        title: "Created At",
+        dataIndex: "createdAt",
+        key: "createdAt",
+        render: (date) => (date ? new Date(date).toLocaleString() : "-"),
+      },
+    ];
   };
 
   const onClick = ({ key }, record) => {
@@ -171,36 +160,35 @@ const UserList = () => {
     },
 
     {
-      title: "First name",
-      dataIndex: "first_name",
-      render: (text, recored) => {
-        return <p>{text}</p>;
-      },
+      title: "First Name",
+      dataIndex: "firstName",
+      key: "firstName",
       sorter: true,
     },
-
     {
-      title: "Last name",
-      dataIndex: "last_name",
+      title: "Last Name",
+      dataIndex: "lastName",
+      key: "lastName",
       sorter: true,
     },
-
     {
       title: "Email",
       dataIndex: "email",
+      key: "email",
       sorter: true,
     },
-
+    {
+      title: "Phone",
+      dataIndex: "phone",
+      key: "phone",
+      sorter: true,
+    },
     {
       title: "Role",
       dataIndex: "role",
+      key: "role",
       sorter: true,
-    },
-
-    {
-      title: "Phone number",
-      dataIndex: "phone_number",
-      sorter: true,
+      render: (role) => role?.name || "-",
     },
 
     // {
@@ -215,6 +203,28 @@ const UserList = () => {
     //   sorter: true,
     // },
   ];
+
+  const handleReload = () => {
+    
+    if (typeof fetchUsers === "function") {
+      fetchUsers();
+    } else {
+      window.location.reload();
+    }
+  };
+
+  // Add tableChange function to fix ReferenceError
+  const tableChange = (pagination, filters, sorter) => {
+    // Extract sort field and order
+    let sortField = sorter.field;
+    let sortOrder = sorter.order;
+    // Convert Ant Design order to backend format
+    let order = sortOrder === "ascend" ? "asc" : sortOrder === "descend" ? "desc" : undefined;
+    // Update query state and refetch data
+    const [page, limit] = [pagination.current, pagination.pageSize];
+    dispatch(updateUserState({ page, limit, sort: sortField, order }));
+    searchData();
+  };
 
   return (
     <div>
@@ -290,7 +300,7 @@ const UserList = () => {
           >
             <ReloadOutlined className=" boder boder-red-900" />
           </button>
-          {/* 
+          
           <button
             className="px-4  py-2 border border-[#3BB66E] 
             text-white bg-[#3BB66E] rounded"
@@ -301,9 +311,9 @@ const UserList = () => {
           >
             <span className="flex flex-row">
               <PlusOutlined />
-              <p className="pl-2">Add Item</p>
+              <p className="pl-2">Add User</p>
             </span>
-          </button> */}
+          </button>
         </span>
       </span>
 
@@ -316,6 +326,7 @@ const UserList = () => {
         total={total}
         loadding={loading}
         tableChange={tableChange}
+        rowKey="id" 
       />
     </div>
   );

@@ -14,7 +14,7 @@ import {
 } from "./PermissionRedux"; //** */
 import { useDispatch, useSelector } from "react-redux"; /*** */
 
-const CategorysPick = ({ setIsModalOpen, selectHandler }) => {
+const PermissionsPick = ({ setIsModalOpen, selectHandler }) => {
   const [categorysData, setCategorysData] = useState([]);
   const [total, setTotal] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -113,4 +113,4 @@ const CategorysPick = ({ setIsModalOpen, selectHandler }) => {
   );
 };
 
-export default CategorysPick;
+export default PermissionsPick;

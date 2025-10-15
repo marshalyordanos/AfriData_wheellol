@@ -16,10 +16,11 @@ const CommonTable = React.memo(
     scroll,
     rowKey,
     onRow,
+    currentPage = 1,
+    pageSize = 10,
     ...rest
   }) => {
     const onShowSizeChange = (current, pageSize) => {
-      console.log(current, pageSize);
       handlePagination(current, pageSize);
     };
 
@@ -70,11 +71,12 @@ const CommonTable = React.memo(
           <div className="flex justify-end py-4">
             <Pagination
               total={total}
-              defaultPageSize={10}
-              defaultCurrent={1}
+              current={currentPage}
+              pageSize={pageSize}
               pageSizeOptions={["10", "20"]}
               showSizeChanger={true}
               onChange={onShowSizeChange}
+              onShowSizeChange={onShowSizeChange}
             />
           </div>
         )}
