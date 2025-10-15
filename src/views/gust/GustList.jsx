@@ -1,12 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Dropdown, Input } from "antd";
+import { Button, Dropdown, Input, message } from "antd";
 import { PlusOutlined, ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import CommonTable from "../../components/commons/CommonTable";
-import CommonModal from "../../components/commons/CommonModel";
-import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import GustService from "./GustService";
-import GustEdit from "./GustEdit";
-import GustAddEdit from "./GustAddEdit";
 import { useDispatch, useSelector } from "react-redux";
 import { searchGust, updateGustState, gustSearchText } from "./GustRedux";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -15,18 +11,18 @@ const GustList = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const searchText = useSelector(gustSearchText);
+  const page = useSelector((state) => state.gust.query.page);
+  const limit = useSelector((state) => state.gust.query.limit);
   const [gustData, setGustData] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [modeID, setModeID] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const delayTimerRef = useRef(null);
 
   const getPaginationInfo = () => [
     searchParams.get("page") || 1,
-    searchParams.get("limit") || 5,
+    searchParams.get("limit") || 10,
   ];
 
   useEffect(() => {
@@ -48,6 +44,11 @@ const GustList = () => {
     }
   }
 
+  const handlePagination = async (p, pageSize) => {
+    dispatch(updateGustState({ page: p, limit: pageSize }));
+    await searchData();
+  };
+
   const searchHandler = (e) => {
     const { value } = e.target;
     const [page, limit] = getPaginationInfo();
@@ -58,14 +59,24 @@ const GustList = () => {
     }, 500);
   };
 
-  const handleDelete = async (id) => {
+  const handleToggleActive = async (id, isActive) => {
     try {
       setLoading(true);
-      await GustService.deleteGust(id);
-      setIsDeleteModalOpen(false);
-      searchData();
+      let res;
+      if (isActive) {
+        res = await GustService.deactivateGuest(id);
+      } else {
+        res = await GustService.activateGuest(id);
+      }
+      message.success(res?.message || "Guest status updated successfully");
+      await searchData();
     } catch (err) {
       console.error(err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to change guest active status";
+      message.error(msg);
     } finally {
       setLoading(false);
     }
@@ -73,22 +84,24 @@ const GustList = () => {
 
   const handleReload = () => searchData();
 
-  const items = [
-    { key: "edit", label: <Button type="text">Edit</Button> },
+  const items = (record) => [
     {
-      key: "delete",
+      key: "toggleActive",
       label: (
-        <Button type="text" danger>
-          Delete
+        <Button type="text">
+          {record.isActive ? "Deactivate" : "Activate"}
         </Button>
       ),
     },
   ];
 
   const onClick = ({ key }, record) => {
-    setModeID(record._id);
-    if (key === "edit") setIsModalOpen(true);
-    else if (key === "delete") setIsDeleteModalOpen(true);
+    const id = record._id || record.id;
+    setModeID(id);
+    if (key === "toggleActive") {
+      handleToggleActive(id, record.isActive);
+      return;
+    }
   };
 
   const columns = [
@@ -98,7 +111,7 @@ const GustList = () => {
       render: (_, record) => (
         <Dropdown
           menu={{
-            items,
+            items: items(record),
             onClick: (value) => onClick(value, record),
           }}
           trigger={["click"]}
@@ -112,7 +125,7 @@ const GustList = () => {
         </Dropdown>
       ),
     },
-    ...["firstName", "lastName", "email", "phone", "role", "verified"].map(
+    ...["firstName", "lastName", "email", "phone", "role", "active"].map(
       (key) => ({
         title:
           key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1"),
@@ -129,8 +142,8 @@ const GustList = () => {
         render:
           key === "role"
             ? (role) => role?.name || "-"
-            : key === "verified"
-            ? (verified) => (verified ? "true" : "false")
+            : key === "active"
+            ? (_, record) => (record?.isActive ? "true" : "false")
             : undefined,
       })
     ),
@@ -153,43 +166,7 @@ const GustList = () => {
 
   return (
     <div>
-      {isModalOpen && (
-        <CommonModal
-          width={1000}
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
-        >
-          {modeID === "" ? (
-            <GustAddEdit
-              searchData={searchData}
-              setMode={setModeID}
-              mode={modeID}
-              isModelOpen={isModalOpen}
-              setIsModalOpen={setIsModalOpen}
-            />
-          ) : (
-            <GustEdit
-              userData={gustData.find((u) => u._id === modeID) || {}}
-              searchData={searchData}
-              setMode={setModeID}
-              mode={modeID}
-              isModelOpen={isModalOpen}
-              setIsModalOpen={setIsModalOpen}
-            />
-          )}
-        </CommonModal>
-      )}
-
-      {isDeleteModalOpen && (
-        <CommonDeleteModal
-          setIsModalOpen={setIsDeleteModalOpen}
-          handleDelete={() => handleDelete(modeID)}
-          loading={loading}
-          isModalOpen={isDeleteModalOpen}
-        >
-          <h1 className="text-2xl">Are you sure?</h1>
-        </CommonDeleteModal>
-      )}
+      
 
       <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
         <div className="flex flex-col md:w-[45vw] w-full">
@@ -209,15 +186,6 @@ const GustList = () => {
           >
             <ReloadOutlined />
           </button>
-          <button
-            className="px-4 py-2 border border-[#3BB66E] text-white bg-[#3BB66E] rounded"
-            onClick={() => {
-              setIsModalOpen(true);
-              setModeID("");
-            }}
-          >
-            <PlusOutlined className="mr-2" /> Add Guest
-          </button>
         </div>
       </div>
 
@@ -229,6 +197,9 @@ const GustList = () => {
         loadding={loading}
         rowKey={(r) => r?._id}
         tableChange={tableChange}
+        handlePagination={handlePagination}
+        currentPage={parseInt(page) || 1}
+        pageSize={parseInt(limit) || 10}
       />
     </div>
   );

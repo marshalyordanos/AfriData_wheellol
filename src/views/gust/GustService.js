@@ -29,7 +29,7 @@ class GustService {
 
     // Search
     if (search) {
-      params.push(`search=${encodeURIComponent(search)}`);
+      params.push(`search=all:${encodeURIComponent(search)}`);
     }
 
     // Filter
@@ -70,6 +70,27 @@ class GustService {
       return response.data.data;
     });
   }
+
+    activateGuest(id) {
+      const data = {
+        isActive: true,
+      };
+      return api
+        .patch("/users/update-active-satus/" + id, data)
+        .then((response) => {
+          return response.data;
+        });
+    }
+    deactivateGuest(id) {
+      const data = {
+        isActive: false,
+      };
+      return api
+        .patch("/users/update-active-satus/" + id, data)
+        .then((response) => {
+          return response.data;
+        });
+    }
 }
 
 export default new GustService();

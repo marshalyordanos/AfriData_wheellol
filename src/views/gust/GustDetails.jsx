@@ -3,11 +3,13 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import GustService from "./GustService";
+import ActiveStatus from "../../components/commons/ActiveStatus";
 
 const GustDetail = () => {
   const { id } = useParams();
   const [gust, setGust] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -32,6 +34,18 @@ const GustDetail = () => {
     }
   }, [id]);
 
+  const refreshGust = async () => {
+    if (!id) return;
+    try {
+      const data = await GustService.getGust(id);
+      setGust(data);
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message || "Failed to load Gust details"
+      );
+    }
+  };
+
   if (!initialized) {
     return null;
   }
@@ -50,8 +64,59 @@ const GustDetail = () => {
     );
   }
 
+  const handleToggleActive = async () => {
+    if (!id) return;
+    try {
+      setActionLoading(true);
+      let res;
+      if (gust?.isActive) {
+        res = await GustService.deactivateGuest(id);
+      } else {
+        res = await GustService.activateGuest(id);
+      }
+      message.success(res?.message || "Guest status updated successfully");
+      await refreshGust();
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to change guest active status"
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <DetailStyle>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          alignItems: "center",
+        }}
+      >
+        <button
+          onClick={handleToggleActive}
+          disabled={actionLoading}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 6,
+            border: "1px solid #3BB66E",
+            background: gust?.isActive ? "#f44336" : "#3BB66E",
+            color: "#fff",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          {gust?.isActive ? "Deactivate" : "Activate"}
+          {actionLoading && <Spin size="small" />}
+        </button>
+      </div>
+
       <h1>Guest Details</h1>
       <Divider style={{ margin: "15px 0 25px 0" }} />
 
@@ -71,8 +136,10 @@ const GustDetail = () => {
       </div>
 
       <div className="detail_child">
-        <p className="detail_key">Verified:</p>
-        <p className="detail_value">{gust?.isVerified ? "true" : "false"}</p>
+        <p className="detail_key">Active:</p>
+        <p className="detail_value">
+          <ActiveStatus isActive={!!gust?.isActive} />
+        </p>
       </div>
 
       <div className="detail_child">
