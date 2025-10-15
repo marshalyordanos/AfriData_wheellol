@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Divider, Form, Input, Upload } from "antd";
+import { Button, Divider, Form, Input, Upload, message } from "antd";
 import { ButtonStyle } from "../../components/commons/CommonStyles";
 import styled from "styled-components";
 import staffService from "./StaffService";
@@ -45,6 +45,9 @@ const StaffAddEdit = ({
   const onFinish = async (values) => {
     setLoading(true);
     try {
+      // defensively remove password if present — backend handles password creation
+      if (values && values.password) delete values.password;
+
       const formData = new FormData();
 
       // iterate keys and handle file lists
@@ -62,11 +65,15 @@ const StaffAddEdit = ({
         }
       });
 
-      await staffService.createStaff(formData);
+      const res = await staffService.createStaff(formData);
+      message.success(res?.message || "Staff created successfully");
       setIsModalOpen(false);
       searchData && searchData();
     } catch (err) {
       console.error(err);
+      message.error(
+        err?.response?.data?.message || err?.message || "Failed to create staff"
+      );
     } finally {
       setLoading(false);
     }
@@ -108,17 +115,6 @@ const StaffAddEdit = ({
           rules={[{ required: true, type: "email" }]}
         >
           <Input />
-        </Form.Item>
-
-        <Form.Item
-          name="password"
-          label="Password"
-          rules={[
-            { required: true, message: "Password is required!" },
-            { min: 6, message: "Password must be at least 6 characters!" },
-          ]}
-        >
-          <Input.Password />
         </Form.Item>
 
         <Form.Item

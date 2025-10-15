@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Form, Input, Upload, Spin } from "antd";
+import { Button, Form, Input, Upload, Spin, message } from "antd";
 import styled from "styled-components";
 import StaffService from "./StaffService";
 import { ButtonStyle, FormStyle } from "../../components/commons/CommonStyles";
@@ -25,16 +25,19 @@ const StaffEdit = ({
   //  Auto-fill form when editing existing staff
   useEffect(() => {
     if (userData && Object.keys(userData).length > 0) {
+      form.resetFields();
       form.setFieldsValue({
         staff: {
           first_name: userData.firstName || "",
           last_name: userData.lastName || "",
           email: userData.email || "",
           phone_number: userData.phone || "",
-          role: userData.role?.name || "",
+          role: userData.role?.name || userData.role || "",
           profilePhotoFile: userData.profilePhotoFile || [],
         },
       });
+    } else {
+      form.resetFields();
     }
   }, [userData]);
 
@@ -64,8 +67,15 @@ const StaffEdit = ({
         role: values.staff.role,
         profilePhotoFile: values.staff.profilePhotoFile,
       };
-      await StaffService.updateStaff(payload, userData._id);
-      searchData();
+      const id = userData?._id || userData?.id || mode;
+      if (!id) {
+        message.error("Missing staff id for update");
+        return;
+      }
+
+      const res = await StaffService.updateStaff(payload, id);
+      message.success(res?.message || "Staff updated successfully");
+      await searchData();
       setIsModalOpen(false);
     } catch (err) {
       console.error("Update failed", err);

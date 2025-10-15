@@ -14,17 +14,20 @@ const StaffList = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const searchText = useSelector(staffSearchText);
+  const page = useSelector((state) => state.staff.query.page);
+  const limit = useSelector((state) => state.staff.query.limit);
   const [staffData, setStaffData] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [modeID, setModeID] = useState("");
+  const [selectedRecord, setSelectedRecord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const delayTimerRef = useRef(null);
 
   const getPaginationInfo = () => [
     searchParams.get("page") || 1,
-    searchParams.get("limit") || 5,
+    searchParams.get("limit") || 10,
   ];
 
   useEffect(() => {
@@ -45,6 +48,11 @@ const StaffList = () => {
       setLoading(false);
     }
   }
+
+  const handlePagination = async (p, pageSize) => {
+    dispatch(updateStaffState({ page: p, limit: pageSize }));
+    await searchData();
+  };
 
   const searchHandler = (e) => {
     const { value } = e.target;
@@ -96,6 +104,7 @@ const StaffList = () => {
   const onClick = ({ key }, record) => {
     const id = record?._id || record?.id;
     setModeID(id);
+    setSelectedRecord(record);
     if (key === "edit") {
       setIsModalOpen(true);
       return;
@@ -176,10 +185,17 @@ const StaffList = () => {
         <CommonModal
           width={1000}
           isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
+          setIsModalOpen={(open) => {
+            setIsModalOpen(open);
+            if (!open) {
+              setSelectedRecord(null);
+              setModeID("");
+            }
+          }}
         >
           {modeID === "" ? (
             <StaffAddEdit
+              key={"staff-add"}
               searchData={searchData}
               setMode={setModeID}
               mode={modeID}
@@ -188,7 +204,10 @@ const StaffList = () => {
             />
           ) : (
             <StaffEdit
-              userData={staffData.find((u) => u._id === modeID) || {}}
+              key={modeID || "staff-edit"}
+              userData={
+                selectedRecord || staffData.find((u) => u._id === modeID) || {}
+              }
               searchData={searchData}
               setMode={setModeID}
               mode={modeID}
@@ -237,6 +256,9 @@ const StaffList = () => {
         loadding={loading}
         rowKey={(r) => r?._id}
         tableChange={tableChange}
+        handlePagination={handlePagination}
+        currentPage={parseInt(page) || 1}
+        pageSize={parseInt(limit) || 10}
       />
     </div>
   );
