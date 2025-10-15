@@ -3,11 +3,13 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import StaffService from "./StaffService";
+import ActiveStatus from "../../components/commons/ActiveStatus";
 
 const StaffDetail = () => {
   const { id } = useParams();
   const [staff, setStaff] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -32,11 +34,49 @@ const StaffDetail = () => {
     }
   }, [id]);
 
+  const refreshStaff = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      const data = await StaffService.getStaff(id);
+      setStaff(data);
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message || "Failed to load staff details"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleActive = async () => {
+    if (!id) return;
+    try {
+      setActionLoading(true);
+      let res;
+      if (staff?.isActive) {
+        res = await StaffService.deactivateStaff(id);
+      } else {
+        res = await StaffService.activateStaff(id);
+      }
+      message.success(res?.message || "Staff status updated successfully");
+      await refreshStaff();
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to change staff active status"
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (!initialized) {
     return null;
   }
 
-  if (loading) {
+  if (loading && !staff) {
     return (
       <div style={{ textAlign: "center", marginTop: 100 }}>
         <Spin size="large" />
@@ -52,6 +92,34 @@ const StaffDetail = () => {
 
   return (
     <DetailStyle>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          alignItems: "center",
+        }}
+      >
+        <button
+          onClick={handleToggleActive}
+          disabled={actionLoading}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 6,
+            border: "1px solid #3BB66E",
+            background: staff?.isActive ? "#f44336" : "#3BB66E",
+            color: "#fff",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          {staff?.isActive ? "Deactivate" : "Activate"}
+          {actionLoading && <Spin size="small" />}
+        </button>
+      </div>
+
       <h1>Staff Details</h1>
       <Divider style={{ margin: "15px 0 25px 0" }} />
 
@@ -71,8 +139,10 @@ const StaffDetail = () => {
       </div>
 
       <div className="detail_child">
-        <p className="detail_key">Verified:</p>
-        <p className="detail_value">{staff?.isVerified ? "true" : "false"}</p>
+        <p className="detail_key">Active:</p>
+        <p className="detail_value">
+          <ActiveStatus isActive={!!staff?.isActive} />
+        </p>
       </div>
 
       <div className="detail_child">

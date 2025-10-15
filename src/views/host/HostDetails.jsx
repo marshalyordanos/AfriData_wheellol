@@ -3,11 +3,14 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import HostService from "./HostService";
+import ActiveStatus from "../../components/commons/ActiveStatus";
 
 const HostDetail = () => {
   const { id } = useParams();
   const [host, setHost] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -50,7 +53,7 @@ const HostDetail = () => {
   const handleVerify = async () => {
     if (!id) return;
     try {
-      setLoading(true);
+      setVerifyLoading(true);
       const res = await HostService.verifyHost(id);
       message.success(res?.message || "Host verified successfully");
       await refreshHost();
@@ -59,14 +62,14 @@ const HostDetail = () => {
         err?.response?.data?.message || err?.message || "Failed to verify host"
       );
     } finally {
-      setLoading(false);
+      setVerifyLoading(false);
     }
   };
 
   const handleToggleActive = async () => {
     if (!id) return;
     try {
-      setLoading(true);
+      setToggleLoading(true);
       let res;
       if (host?.isActive) {
         res = await HostService.deactivateHost(id);
@@ -82,7 +85,7 @@ const HostDetail = () => {
           "Failed to change host active status"
       );
     } finally {
-      setLoading(false);
+      setToggleLoading(false);
     }
   };
 
@@ -91,7 +94,7 @@ const HostDetail = () => {
     return null;
   }
 
-  if (loading) {
+  if (loading && !host) {
     return (
       <div style={{ textAlign: "center", marginTop: 100 }}>
         <Spin size="large" />
@@ -109,7 +112,7 @@ const HostDetail = () => {
     <DetailStyle>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
         <button
-          disabled={host?.hostProfile?.isVerified}
+          disabled={host?.hostProfile?.isVerified || verifyLoading}
           onClick={handleVerify}
           style={{
             padding: "8px 12px",
@@ -118,13 +121,18 @@ const HostDetail = () => {
             background: host?.hostProfile?.isVerified ? "#ddd" : "#1D9BF0",
             color: host?.hostProfile?.isVerified ? "#666" : "#fff",
             cursor: host?.hostProfile?.isVerified ? "not-allowed" : "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
           }}
         >
           {host?.hostProfile?.isVerified ? "Verified" : "Verify Host"}
+          {verifyLoading && <Spin size="small" />}
         </button>
 
         <button
           onClick={handleToggleActive}
+          disabled={toggleLoading}
           style={{
             padding: "8px 12px",
             borderRadius: 6,
@@ -132,9 +140,13 @@ const HostDetail = () => {
             background: host?.isActive ? "#f44336" : "#3BB66E",
             color: "#fff",
             cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
           }}
         >
           {host?.isActive ? "Deactivate" : "Activate"}
+          {toggleLoading && <Spin size="small" />}
         </button>
       </div>
       <h1>Host Details</h1>
@@ -159,6 +171,13 @@ const HostDetail = () => {
         <p className="detail_key">Verified:</p>
         <p className="detail_value">
           {host?.hostProfile?.isVerified ? "true" : "false"}
+        </p>
+      </div>
+
+      <div className="detail_child">
+        <p className="detail_key">Active:</p>
+        <p className="detail_value">
+          <ActiveStatus isActive={!!host?.isActive} />
         </p>
       </div>
 

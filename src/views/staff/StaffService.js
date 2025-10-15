@@ -37,7 +37,7 @@ class StaffService {
       const filterParams = Object.entries(filter)
         .map(([key, value]) => {
           if (Array.isArray(value)) {
-            return `${key}:[${value.join(",")}]`;
+            return `${key}:[${value.join(",")} ]`;
           }
           return `${key}:${value}`;
         })
@@ -65,10 +65,25 @@ class StaffService {
     });
   }
 
-  deleteStaff(id) {
-    return api.delete("/users/update-active-satus/" + id).then((response) => {
-      return response.data.data;
-    });
+  activateStaff(id) {
+    const data = {
+      isActive: true,
+    };
+    return api
+      .patch("/users/update-active-satus/" + id, data)
+      .then((response) => {
+        return response.data;
+      });
+  }
+  deactivateStaff(id) {
+    const data = {
+      isActive: false,
+    };
+    return api
+      .patch("/users/update-active-satus/" + id, data)
+      .then((response) => {
+        return response.data;
+      });
   }
 }
 

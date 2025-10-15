@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Dropdown, Input } from "antd";
+import { Button, Dropdown, Input, message } from "antd";
 import { PlusOutlined, ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import CommonTable from "../../components/commons/CommonTable";
 import CommonModal from "../../components/commons/CommonModel";
-import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import StaffService from "./StaffService";
 import StaffEdit from "./StaffEdit";
 import StaffAddEdit from "./StaffAddEdit";
@@ -20,7 +19,6 @@ const StaffList = () => {
   const [loading, setLoading] = useState(false);
   const [modeID, setModeID] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const delayTimerRef = useRef(null);
 
@@ -58,65 +56,86 @@ const StaffList = () => {
     }, 500);
   };
 
-  const handleDelete = async (id) => {
+  const handleReload = () => searchData();
+
+  const handleToggleActive = async (id, isActive) => {
     try {
       setLoading(true);
-      await StaffService.deleteStaff(id);
-      setIsDeleteModalOpen(false);
+      let res;
+      if (isActive) {
+        res = await StaffService.deactivateStaff(id);
+      } else {
+        res = await StaffService.activateStaff(id);
+      }
+      message.success(res?.message || "Staff status updated successfully");
       searchData();
     } catch (err) {
       console.error(err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to change staff active status";
+      message.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReload = () => searchData();
-
-  const items = [
+  const items = (record) => [
     { key: "edit", label: <Button type="text">Edit</Button> },
     {
-      key: "delete",
+      key: "toggleActive",
       label: (
-        <Button type="text" danger>
-          Delete
+        <Button type="text">
+          {record.isActive ? "Deactivate" : "Activate"}
         </Button>
       ),
     },
   ];
 
   const onClick = ({ key }, record) => {
-    setModeID(record._id);
-    if (key === "edit") setIsModalOpen(true);
-    else if (key === "delete") setIsDeleteModalOpen(true);
+    const id = record?._id || record?.id;
+    setModeID(id);
+    if (key === "edit") {
+      setIsModalOpen(true);
+      return;
+    }
+
+    if (key === "toggleActive") {
+      handleToggleActive(id, record.isActive);
+      return;
+    }
   };
 
   const columns = [
     {
       title: " ",
       dataIndex: "action",
-      render: (_, record) => (
-        <Dropdown
-          menu={{
-            items,
-            onClick: (value) => onClick(value, record),
-          }}
-          trigger={["click"]}
-          placement="bottomLeft"
-        >
-          <Button
-            type="text"
-            icon={<MoreOutlined style={{ fontSize: 20 }} />}
-            onClick={() => setModeID(record._id)}
-          />
-        </Dropdown>
-      ),
+      render: (_, record) => {
+        const menuItems = items(record);
+        return (
+          <Dropdown
+            menu={{
+              items: menuItems,
+              onClick: (value) => onClick(value, record),
+            }}
+            trigger={["click"]}
+            placement="bottomLeft"
+          >
+            <Button
+              type="text"
+              icon={<MoreOutlined style={{ fontSize: 20 }} />}
+              onClick={() => setModeID(record?._id || record?.id)}
+            />
+          </Dropdown>
+        );
+      },
     },
-    ...["firstName", "lastName", "email", "phone", "role", "verified"].map(
+    ...["firstName", "lastName", "email", "phone", "role", "active"].map(
       (key) => ({
         title:
           key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1"),
-        dataIndex: key,
+        dataIndex: key === "active" ? "isActive" : key,
         key,
         sorter: true,
         onCell: (record) => ({
@@ -129,8 +148,8 @@ const StaffList = () => {
         render:
           key === "role"
             ? (role) => role?.name || "-"
-            : key === "verified"
-            ? (verified) => (verified ? "true" : "false")
+            : key === "active"
+            ? (_, record) => (record?.isActive ? "true" : "false")
             : undefined,
       })
     ),
@@ -178,17 +197,6 @@ const StaffList = () => {
             />
           )}
         </CommonModal>
-      )}
-
-      {isDeleteModalOpen && (
-        <CommonDeleteModal
-          setIsModalOpen={setIsDeleteModalOpen}
-          handleDelete={() => handleDelete(modeID)}
-          loading={loading}
-          isModalOpen={isDeleteModalOpen}
-        >
-          <h1 className="text-2xl">Are you sure?</h1>
-        </CommonDeleteModal>
       )}
 
       <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
