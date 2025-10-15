@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Dropdown, Input, message } from "antd";
+import { Button, Dropdown, Input, message, Modal, Select } from "antd";
+import RolesService from "../roles/RoleService";
 import { PlusOutlined, ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import CommonTable from "../../components/commons/CommonTable";
 import CommonModal from "../../components/commons/CommonModel";
@@ -23,6 +24,9 @@ const StaffList = () => {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [roles, setRoles] = useState([]);
+  const [selectedRoleId, setSelectedRoleId] = useState(null);
   const delayTimerRef = useRef(null);
 
   const getPaginationInfo = () => [
@@ -91,6 +95,7 @@ const StaffList = () => {
 
   const items = (record) => [
     { key: "edit", label: <Button type="text">Edit</Button> },
+    { key: "assignRole", label: <Button type="text">Assign Role</Button> },
     {
       key: "toggleActive",
       label: (
@@ -107,6 +112,13 @@ const StaffList = () => {
     setSelectedRecord(record);
     if (key === "edit") {
       setIsModalOpen(true);
+      return;
+    }
+
+    if (key === "assignRole") {
+      // open assign role modal and preload roles
+      setAssignModalOpen(true);
+      fetchRoles();
       return;
     }
 
@@ -179,6 +191,34 @@ const StaffList = () => {
     searchData();
   };
 
+  const fetchRoles = async () => {
+    try {
+      const res = await RolesService.search({ page: 1, limit: 100 });
+      setRoles(res.data || []);
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to load roles");
+    }
+  };
+
+  const handleAssignRole = async () => {
+    if (!selectedRoleId || !modeID) {
+      message.error("Select a role first");
+      return;
+    }
+    try {
+      const payload = { userId: modeID, roleId: selectedRoleId };
+      const res = await StaffService.assignRoleToStaff(payload);
+      message.success(res?.message || "Role assigned successfully");
+      setAssignModalOpen(false);
+      setSelectedRoleId(null);
+      searchData();
+    } catch (err) {
+      console.error(err);
+      message.error(err?.response?.data?.message || "Failed to assign role");
+    }
+  };
+
   return (
     <div>
       {isModalOpen && (
@@ -217,6 +257,34 @@ const StaffList = () => {
           )}
         </CommonModal>
       )}
+
+      <Modal
+        title={`Assign Role${
+          selectedRecord ? " to " + (selectedRecord.firstName || "") : ""
+        }`}
+        open={assignModalOpen}
+        onCancel={() => {
+          setAssignModalOpen(false);
+          setSelectedRoleId(null);
+        }}
+        onOk={handleAssignRole}
+        okText="Assign"
+      >
+        <div>
+          <Select
+            style={{ width: "100%" }}
+            placeholder="Select a role"
+            value={selectedRoleId}
+            onChange={(v) => setSelectedRoleId(v)}
+          >
+            {roles.map((r) => (
+              <Select.Option key={r.id || r._id} value={r.id || r._id}>
+                {r.name}
+              </Select.Option>
+            ))}
+          </Select>
+        </div>
+      </Modal>
 
       <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
         <div className="flex flex-col md:w-[45vw] w-full">

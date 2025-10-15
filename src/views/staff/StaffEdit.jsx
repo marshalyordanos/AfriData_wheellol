@@ -137,7 +137,7 @@ const StaffEdit = ({
         </Form.Item>
 
         <Form.Item name={["staff", "role"]} label="Role">
-          <Input className="border-gray-400 py-2" />
+          <Input className="border-gray-400 py-2" disabled />
         </Form.Item>
 
         <Form.Item

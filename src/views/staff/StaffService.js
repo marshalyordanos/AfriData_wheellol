@@ -85,6 +85,13 @@ class StaffService {
         return response.data;
       });
   }
+  assignRoleToStaff(data) {
+    return api
+      .patch("/access-control/assign-user-role", data)
+      .then((response) => {
+        return response.data;
+      });
+  }
 }
 
 export default new StaffService();
