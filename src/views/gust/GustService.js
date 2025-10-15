@@ -65,32 +65,26 @@ class GustService {
     });
   }
 
-  deleteGust(id) {
-    return api.delete("/users/" + id).then((response) => {
-      return response.data.data;
-    });
+  activateGuest(id) {
+    const data = {
+      isActive: true,
+    };
+    return api
+      .patch("/users/update-active-satus/" + id, data)
+      .then((response) => {
+        return response.data;
+      });
   }
-
-    activateGuest(id) {
-      const data = {
-        isActive: true,
-      };
-      return api
-        .patch("/users/update-active-satus/" + id, data)
-        .then((response) => {
-          return response.data;
-        });
-    }
-    deactivateGuest(id) {
-      const data = {
-        isActive: false,
-      };
-      return api
-        .patch("/users/update-active-satus/" + id, data)
-        .then((response) => {
-          return response.data;
-        });
-    }
+  deactivateGuest(id) {
+    const data = {
+      isActive: false,
+    };
+    return api
+      .patch("/users/update-active-satus/" + id, data)
+      .then((response) => {
+        return response.data;
+      });
+  }
 }
 
 export default new GustService();

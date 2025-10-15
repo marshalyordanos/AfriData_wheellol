@@ -55,10 +55,17 @@ class RolesService {
 
     const url = `access-control/roles?${params.join("&")}`;
 
-    return api.get(url).then((r) => ({
-      data: r.data.data,
-      total: r.data.total,
-    }));
+    return api.get(url).then((r) => {
+      const resp = r.data || {};
+      const data = resp.data || [];
+      const total =
+        resp.pagination && typeof resp.pagination.total === "number"
+          ? resp.pagination.total
+          : typeof resp.total === "number"
+          ? resp.total
+          : data.length;
+      return { data, total };
+    });
   }
 
   // Single fetch

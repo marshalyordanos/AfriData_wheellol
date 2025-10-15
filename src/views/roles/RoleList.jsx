@@ -217,6 +217,7 @@ const RoleList = () => {
   };
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -231,7 +232,7 @@ const RoleList = () => {
         setLoading(true);
         const res = await RolesService.search({
           page: opts.page || page,
-          limit: PAGE_SIZE,
+          limit: opts.limit || limit || PAGE_SIZE,
           search: opts.searchText !== undefined ? opts.searchText : searchText,
         });
         setData(res.data || []);
@@ -590,8 +591,10 @@ const RoleList = () => {
         <div className="flex ml-6 mb-6 md:mr-6">
           <button
             onClick={() => {
+              // reset to first page and re-fetch using current limit
               setPage(1);
-              fetchList({ page: 1 });
+              setLimit(PAGE_SIZE);
+              fetchList({ page: 1, limit: PAGE_SIZE });
             }}
             className="border border-[#1D9BF0] py-2 px-3 text-[#1D9BF0] rounded mr-4 flex items-center justify-center"
           >
@@ -615,10 +618,18 @@ const RoleList = () => {
         loading={loading}
         pagination={{
           current: page,
-          pageSize: PAGE_SIZE,
+          pageSize: limit || PAGE_SIZE,
           total,
-          onChange: (p) => setPage(p),
+          onChange: (p, ps) => {
+            // if pageSize changed, update limit
+            if (ps && ps !== limit) setLimit(ps);
+            setPage(p);
+            fetchList({ page: p, limit: ps || limit });
+          },
           showTotal: (t) => `${t} item${t === 1 ? "" : "s"}`,
+          showSizeChanger: true,
+          pageSizeOptions: ["10", "20"],
+          showQuickJumper: false,
         }}
         locale={{
           emptyText: loading ? "" : <Empty description="No roles" />,

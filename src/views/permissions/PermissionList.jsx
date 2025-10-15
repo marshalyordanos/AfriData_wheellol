@@ -18,13 +18,23 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import PermissionService from "./PermissionService";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  updateVehicleTypesState,
+  permissionsPage,
+  permissionsLimit,
+  permissionsSearchText,
+} from "./PermissionRedux";
 
 const PAGE_SIZE = 10;
 
 const PermissionList = () => {
   const [data, setData] = useState([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const dispatch = useDispatch();
+  const page = useSelector(permissionsPage);
+  const limit = useSelector(permissionsLimit);
+  const reduxSearchText = useSelector(permissionsSearchText);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -39,10 +49,12 @@ const PermissionList = () => {
         setLoading(true);
         const searchVal =
           opts.searchText !== undefined ? opts.searchText : searchText;
-        const pageVal = opts.page !== undefined ? opts.page : page;
+        const pageVal = opts.page !== undefined ? opts.page : page || 1;
+        const limitVal =
+          opts.limit !== undefined ? opts.limit : limit || PAGE_SIZE;
         const res = await PermissionService.search({
           page: pageVal,
-          limit: PAGE_SIZE,
+          limit: limitVal,
           search: searchVal,
         });
         setData(res.data);
@@ -52,7 +64,7 @@ const PermissionList = () => {
         setLoading(false);
       }
     },
-    [searchText, page]
+    [searchText, page, limit]
   );
 
   const handleSearchChange = (e) => {
@@ -60,8 +72,9 @@ const PermissionList = () => {
     setSearchText(val);
     clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
-      setPage(1);
-      fetchList({ page: 1, searchText: val });
+      // reset to first page in redux and fetch
+      dispatch(updateVehicleTypesState({ page: 1 }));
+      fetchList({ page: 1, searchText: val, limit: limit || PAGE_SIZE });
     }, 400);
   };
 
@@ -87,8 +100,9 @@ const PermissionList = () => {
       setData((prev) => prev.filter((r) => r.id !== id));
       setTotal((t) => t - 1);
       if (data.length === 1 && page > 1) {
-        setPage((p) => p - 1);
-        fetchList({ page: page - 1 });
+        const newPage = (page || 1) - 1;
+        dispatch(updateVehicleTypesState({ page: newPage }));
+        fetchList({ page: newPage, limit: limit || PAGE_SIZE });
       }
     } catch (e) {
       message.error(e?.response?.data?.message || "Delete failed");
@@ -130,7 +144,7 @@ const PermissionList = () => {
       title: "#",
       dataIndex: "index",
       width: 60,
-      render: (_, __, i) => (page - 1) * PAGE_SIZE + i + 1,
+      render: (_, __, i) => ((page || 1) - 1) * (limit || PAGE_SIZE) + i + 1,
     },
     {
       title: "Resource",
@@ -172,9 +186,11 @@ const PermissionList = () => {
   ];
 
   useEffect(() => {
+    dispatch(
+      updateVehicleTypesState({ page: page || 1, limit: limit || PAGE_SIZE })
+    );
     fetchList();
-    // eslint-disable-next-line
-  }, [page, searchText]);
+  }, [page, limit, searchText]);
 
   return (
     <div className="p-4">
@@ -194,8 +210,8 @@ const PermissionList = () => {
         <div className="flex ml-6 mb-6 md:mr-6">
           <button
             onClick={() => {
-              setPage(1);
-              fetchList({ page: 1 });
+              dispatch(updateVehicleTypesState({ page: 1 }));
+              fetchList({ page: 1, limit: limit || PAGE_SIZE, searchText });
             }}
             className="border border-[#1D9BF0] py-2 px-3 text-[#1D9BF0] rounded mr-4 flex items-center justify-center"
           >
@@ -220,10 +236,16 @@ const PermissionList = () => {
         loading={loading}
         pagination={{
           current: page,
-          pageSize: PAGE_SIZE,
+          pageSize: limit || PAGE_SIZE,
           total,
-          onChange: (p) => setPage(p),
+          onChange: (p, ps) => {
+            dispatch(updateVehicleTypesState({ page: p, limit: ps }));
+            fetchList({ page: p, limit: ps, searchText });
+          },
           showTotal: (t) => `${t} item${t === 1 ? "" : "s"}`,
+          showSizeChanger: true,
+          pageSizeOptions: ["10", "20"],
+          showQuickJumper: false,
         }}
         locale={{
           emptyText: loading ? "" : <Empty description="No permissions" />,
