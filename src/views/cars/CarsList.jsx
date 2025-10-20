@@ -370,6 +370,24 @@ const CarsList = () => {
         );
       },
     },
+    {
+      title: "Reviews",
+      key: "reviews",
+      render: (_, record) => {
+        const id = record._id || record.id;
+        return (
+          <Button
+            type="link"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/dash/cars/reviews/${id}`, { state: record });
+            }}
+          >
+            View Reviews
+          </Button>
+        );
+      },
+    },
   ];
 
   return (

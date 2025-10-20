@@ -23,6 +23,9 @@ import StaffList from "./views/staff/StaffList";
 import StaffDetail from "./views/staff/StaffDetails";
 import GustList from "./views/gust/GustList";
 import GustDetail from "./views/gust/GustDetails";
+import GuestReview from "./views/gust/Review";
+import HostReview from "./views/host/Review";
+import CartReview from "./views/cars/Review";
 
 const LayoutRouting = () => {
   return (
@@ -59,6 +62,9 @@ const LayoutRouting = () => {
 
         <Route path="gust" element={<GustList />} />
         <Route path="gust/details/:id" element={<GustDetail />} />
+        <Route path="gust/reviews/:id" element={<GuestReview />} />
+        <Route path="host/reviews/:id" element={<HostReview />} />
+        <Route path="cars/reviews/:id" element={<CartReview />} />
 
         <Route path="*" element={<h1>Page Not Found Inside Dashboard</h1>} />
       </Route>

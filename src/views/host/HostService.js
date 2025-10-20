@@ -93,6 +93,29 @@ class HostService {
         return response.data;
       });
   }
+
+  //REVIEWS SERVICES
+  getReviewByUserId(id) {
+    return api.get("/reviews/user/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
+  getReviewByCarId(id) {
+    return api.get("/reviews/car/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
+  getReviewByReviewId(id) {
+    return api.get("/reviews/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
+  deleteReview(id) {
+    return api.delete("/reviews/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
+  /////////////
 }
 
 export default new HostService();

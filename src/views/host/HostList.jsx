@@ -210,6 +210,23 @@ const UserList = () => {
             : undefined,
       })
     ),
+    {
+      title: "Reviews",
+      dataIndex: "reviews",
+      key: "reviews",
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={(e) => {
+            e.stopPropagation();
+            const id = record?._id || record?.id;
+            if (id) navigate(`/dash/host/reviews/${id}`);
+          }}
+        >
+          View Reviews
+        </Button>
+      ),
+    },
   ];
 
   const handleReload = () => {

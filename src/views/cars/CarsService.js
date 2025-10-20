@@ -160,6 +160,29 @@ class CarsService {
   deleteCarInsurance(id) {
     return api.delete(`/cars/insurance/${id}`).then((res) => res.data.data);
   }
+
+  //REVIEWS SERVICES
+  getReviewByUserId(id) {
+    return api.get("/reviews/user/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
+  getReviewByCarId(id) {
+    return api.get("/reviews/car/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
+  getReviewByReviewId(id) {
+    return api.get("/reviews/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
+  deleteReview(id) {
+    return api.delete("/reviews/" + id).then((response) => {
+      return response.data.data;
+    });
+  }
+  /////////////
 }
 
 export default new CarsService();

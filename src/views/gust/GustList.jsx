@@ -147,6 +147,23 @@ const GustList = () => {
             : undefined,
       })
     ),
+    {
+      title: "Reviews",
+      dataIndex: "reviews",
+      key: "reviews",
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={(e) => {
+            e.stopPropagation();
+            const id = record._id || record.id;
+            if (id) navigate(`/dash/gust/reviews/${id}`);
+          }}
+        >
+          View Reviews
+        </Button>
+      ),
+    },
   ];
 
   // handle table sort and pagination
@@ -166,8 +183,6 @@ const GustList = () => {
 
   return (
     <div>
-      
-
       <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
         <div className="flex flex-col md:w-[45vw] w-full">
           <h1 className="text-2xl font-bold pb-4">Guests</h1>
