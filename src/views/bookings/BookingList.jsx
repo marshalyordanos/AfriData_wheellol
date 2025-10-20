@@ -39,6 +39,7 @@ const BookingList = () => {
   const [loading, setLoading] = useState(false);
   const [bookingData, setBookingData] = useState([]);
   const [total, setTotal] = useState(0);
+  const [localSearch, setLocalSearch] = useState(searchText || "");
 
   const getPaginationInfo = () => [
     Number(searchParams.get("page") || 1),
@@ -49,8 +50,25 @@ const BookingList = () => {
     setLoading(true);
     try {
       const { payload } = await dispatch(fetchBookingsThunk({ ...bookingQ }));
-      setBookingData(payload.data || []);
-      setTotal(payload.total || 0);
+      const rawList = payload?.data?.bookings || payload?.data || payload || [];
+      const raw = Array.isArray(rawList) ? rawList : rawList.bookings || [];
+      const mapped = (Array.isArray(raw) ? raw : [raw]).map((b) => ({
+        
+        id: b.id || b._id,
+        ...b,
+        car: b.car || {},
+        guest: b.guest || b.renter || {},
+        rental_price_per_day:
+          b.car?.rentalPricePerDay ||
+          b.car?.rental_price_per_day ||
+          b.car?.dailyRate ||
+          b.rentalPricePerDay ||
+          0,
+        status: (b.status || "").toString(),
+      }));
+
+      setBookingData(mapped);
+      setTotal(payload?.data?.total || payload?.total || mapped.length || 0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -61,8 +79,43 @@ const BookingList = () => {
   useEffect(() => {
     const [pg, lm] = getPaginationInfo();
     dispatch(updateBookingState({ page: pg, limit: lm }));
-    loadBookings();
+    searchData();
   }, []);
+
+  useEffect(() => {
+    setLocalSearch(searchText || "");
+  }, [searchText]);
+
+  async function searchData(val = "") {
+    try {
+      setLoading(true);
+      const params = { ...bookingQ, searchText: val };
+      const { payload } = await dispatch(fetchBookingsThunk(params));
+      const rawList = payload?.data?.bookings || payload?.data || payload || [];
+      const raw = Array.isArray(rawList) ? rawList : rawList.bookings || [];
+      const mapped = (Array.isArray(raw) ? raw : [raw]).map((b) => ({
+        _id: b.id || b._id,
+        id: b.id || b._id,
+        ...b,
+        car: b.car || {},
+        guest: b.guest || b.renter || {},
+        rental_price_per_day:
+          b.car?.rentalPricePerDay ||
+          b.car?.rental_price_per_day ||
+          b.car?.dailyRate ||
+          b.rentalPricePerDay ||
+          0,
+        status: (b.status || "").toString(),
+      }));
+
+      setBookingData(mapped);
+      setTotal(payload?.data?.total || payload?.total || mapped.length || 0);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleSearch = (e) => {
     const { value } = e.target;
@@ -120,55 +173,15 @@ const BookingList = () => {
 
   const columns = [
     {
-      title: "Brand",
-      dataIndex: ["car_id", "brand", "name"],
-      sorter: true,
-      render: (text) => text || "Unknown",
-    },
-    {
-      title: "Model",
-      dataIndex: ["car_id", "model", "name"],
-      sorter: true,
-      render: (text) => text || "Unknown",
-    },
-    { title: "Year", dataIndex: ["car_id", "year"], sorter: true },
-    {
-      title: "Price / Day",
-      dataIndex: ["car_id", "rental_price_per_day"],
-      sorter: true,
-      render: (val) => (val ? `$${val}` : "N/A"),
-    },
-    {
-      title: "Renter",
-      dataIndex: ["renter_id", "first_name"],
-      render: (_, record) =>
-        record?.renter_id
-          ? `${record.renter_id.first_name || ""} ${
-              record.renter_id.last_name || ""
-            }`
-          : "N/A",
-    },
-    { title: "Renter Email", dataIndex: ["renter_id", "email"] },
-    {
-      title: "Status",
-      dataIndex: "status",
-      sorter: true,
-      render: (status) => {
-        const colors = {
-          Pending: "orange",
-          Confirmed: "blue",
-          Cancelled: "red",
-          Completed: "green",
-        };
-        return <Tag color={colors[status] || "default"}>{status}</Tag>;
-      },
-    },
-    {
       title: "Action",
       dataIndex: "action",
       render: (_, record) => {
         const actions = [{ key: "view", label: <Button>View</Button> }];
-        if (!["Cancelled", "Completed"].includes(record.status)) {
+        if (
+          !["CANCELLED", "COMPLETED"].includes(
+            (record.status || "").toString().toUpperCase()
+          )
+        ) {
           actions.push({ key: "edit", label: <Button>Edit</Button> });
           actions.push({
             key: "cancel",
@@ -211,6 +224,113 @@ const BookingList = () => {
         );
       },
     },
+    // 1. Car (make + model or fallback to carType)
+    {
+      title: "Car",
+      dataIndex: "car",
+      render: (_, record) =>
+        `${
+          record.car?.makeId ||
+          record.car?.make?.name ||
+          record.car?.makeName ||
+          ""
+        } ${
+          record.car?.modelId ||
+          record.car?.model?.name ||
+          record.car?.modelName ||
+          record.car?.carType ||
+          ""
+        }`.trim() || "-",
+    },
+    // 2. Host Name
+    {
+      title: "Host",
+      dataIndex: "host",
+      render: (_, record) =>
+        record.host
+          ? `${record.host.firstName || ""} ${
+              record.host.lastName || ""
+            }`.trim()
+          : "-",
+    },
+    // 3. Guest Name
+    {
+      title: "Guest",
+      dataIndex: "guest",
+      render: (_, record) =>
+        record.guest
+          ? `${record.guest.firstName || ""} ${
+              record.guest.lastName || ""
+            }`.trim()
+          : "-",
+    },
+    // 4. Start Date
+    {
+      title: "Start Date",
+      dataIndex: "startDate",
+      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+    },
+    // 5. End Date
+    {
+      title: "End Date",
+      dataIndex: "endDate",
+      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+    },
+    // 6. Pickup Location (clean formatted)
+    {
+      title: "Pickup",
+      dataIndex: "pickupLocation",
+      render: (loc) => {
+        if (!loc) return "-";
+        // expected format: "lat+*+lon+*+Place Name"
+        return String(loc).split("+*+").slice(-1)[0] || loc;
+      },
+    },
+    // 7. Dropoff Location
+    {
+      title: "Dropoff",
+      dataIndex: "dropoffLocation",
+      render: (loc) => {
+        if (!loc) return "-";
+        return String(loc).split("+*+").slice(-1)[0] || loc;
+      },
+    },
+    // 8. With Driver
+    {
+      title: "With Driver",
+      dataIndex: "withDriver",
+      render: (v) => (v ? "Yes" : "No"),
+    },
+    // 9. Total Price
+    {
+      title: "Total Price",
+      dataIndex: "totalPrice",
+      render: (p) => (p ? `${p}` : "-"),
+    },
+    // 10. Payment Status
+    {
+      title: "Payment Status",
+      dataIndex: ["payment", "status"],
+      render: (s) => s || "-",
+    },
+    // 11. Booking Status
+    {
+      title: "Booking Status",
+      dataIndex: "status",
+      render: (s) => s || "-",
+    },
+    // 12. Created At
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+    },
+    // 13. Dispute
+    {
+      title: "Dispute",
+      dataIndex: "dispute",
+      render: (d) => (d ? "Yes" : "No"),
+    },
   ];
 
   return (
@@ -220,7 +340,7 @@ const BookingList = () => {
         <CommonModal
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
-          width={600}
+          width={1000}
           title="Edit Booking"
         >
           <BookingEditForm
@@ -242,7 +362,7 @@ const BookingList = () => {
         <CommonModal
           isModalOpen={isViewModalOpen}
           setIsModalOpen={setIsViewModalOpen}
-          width={700}
+          width={1000}
           title="Booking Details"
         >
           <BookingViewForm
@@ -256,7 +376,7 @@ const BookingList = () => {
         <CommonModal
           isModalOpen={isCreateModalOpen}
           setIsModalOpen={setIsCreateModalOpen}
-          width={600}
+          width={1000}
           title="Create Booking"
         >
           <BookingCreateForm
@@ -286,25 +406,57 @@ const BookingList = () => {
         </CommonDeleteModal>
       )}
 
-      {/* Top Actions */}
-      <div className="flex justify-between items-center p-4">
-        <Input
-          placeholder="Search"
-          value={searchText}
-          onChange={handleSearch}
-          allowClear
-        />
-        <div className="flex gap-2">
-          <Button icon={<ReloadOutlined />} onClick={handleReload} />
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
+      <span className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700">
+        <div className="flex flex-col p-6 md:w-[45vw] w-full">
+          <h1 className="text-2xl font-bold pb-4">Bookings</h1>
+          <div className="flex">
+            <Input
+              onChange={(e) => {
+                const v = e.target.value;
+                setLocalSearch(v);
+                clearTimeout(delayTimerRef.current);
+                delayTimerRef.current = setTimeout(() => {
+                  const [pg, lm] = getPaginationInfo();
+                  dispatch(
+                    updateBookingState({
+                      page: 1,
+                      limit: lm,
+                      searchText: v || "",
+                    })
+                  );
+                  searchData(v || "");
+                }, 500);
+              }}
+              placeholder="Search"
+              value={localSearch}
+              allowClear
+              style={{ borderRadius: "0px 0px 0px 0px" }}
+              className=" drop-shadow-sm rounded-r  py-2"
+            />
+          </div>
+        </div>
+        <span className="flex ml-6 mb-6 md:mr-6">
+          <button
+            onClick={handleReload}
+            className="
+             border border-[#1D9BF0] py-2 px-3
+             text-[#1D9BF0] rounded mr-4 flex items-center justify-center"
+          >
+            <ReloadOutlined className=" boder boder-red-900" />
+          </button>
+
+          <button
+            className="px-4  py-2 border border-[#3BB66E] 
+            text-white bg-[#3BB66E] rounded"
             onClick={() => setIsCreateModalOpen(true)}
           >
-            Create Booking
-          </Button>
-        </div>
-      </div>
+            <span className="flex flex-row">
+              <PlusOutlined />
+              <p className="pl-2">Create Booking</p>
+            </span>
+          </button>
+        </span>
+      </span>
 
       {/* Table */}
       <CommonTable

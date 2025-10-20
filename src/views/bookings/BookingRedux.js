@@ -6,8 +6,8 @@ export const fetchBookingsThunk = createAsyncThunk(
   "bookings/fetchBookings",
   async (params, { rejectWithValue }) => {
     try {
-      const data = await bookingService.fetchBookings(params);
-      return data;
+      const data = await bookingService.searchBookings(params);
+      return data; // { data: [...], total }
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -29,7 +29,7 @@ export const createBookingThunk = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await bookingService.createBooking(data);
-      return response;
+      return response; // created booking object
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
@@ -40,8 +40,8 @@ export const updateBookingThunk = createAsyncThunk(
   "bookings/update",
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await bookingService.updateBooking(id, data);
-      return response.data;
+      const response = await bookingService.updateBooking(data, id);
+      return response; // updated booking object
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
@@ -53,7 +53,7 @@ export const cancelBookingThunk = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const data = await bookingService.cancelBooking(id);
-      return data;
+      return data; 
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -115,7 +115,7 @@ const bookingSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Create booking ✅
+      // Create booking 
       .addCase(createBookingThunk.fulfilled, (state, action) => {
         state.bookings = [action.payload.data, ...state.bookings];
         state.total += 1;
