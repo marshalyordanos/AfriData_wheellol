@@ -7,23 +7,13 @@ export const fetchBookingsThunk = createAsyncThunk(
   async (params, { rejectWithValue }) => {
     try {
       const data = await bookingService.searchBookings(params);
-      return data; // { data: [...], total }
+      return data; 
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
   }
 );
-// export const createBookingThunk = createAsyncThunk(
-//   "bookings/createBooking",
-//   async (data, { rejectWithValue }) => {
-//     try {
-//       const response = await bookingService.createBooking(data);
-//       return response; // should return the created booking object
-//     } catch (err) {
-//       return rejectWithValue(err.response?.data || err.message);
-//     }
-//   }
-// );
+
 export const createBookingThunk = createAsyncThunk(
   "bookings/create",
   async (data, { rejectWithValue }) => {
@@ -89,7 +79,7 @@ const bookingSlice = createSlice({
   name: "booking",
   initialState: {
     bookings: [],
-    query: { page: 1, limit: 5, searchText: "", sort: "", order: "" },
+    query: { page: 1, limit: 10, searchText: "", sort: "", order: "" },
     loading: false,
     error: null,
     total: 0,

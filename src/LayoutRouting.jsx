@@ -8,6 +8,7 @@ import BrandsDetail from "./views/brands/BrandsDetails";
 
 import DashboardPage from "./views/Dashboard/DashboardPage";
 import ChangePassword from "./views/auth/ChangePassword";
+import ProfileDetails from "./views/profile/ProfileDetails";
 import HostList from "./views/host/HostList";
 import HostDetail from "./views/host/HostDetails";
 
@@ -16,6 +17,7 @@ import CarModelsDetails from "./views/carModels/CarModelsDetails";
 import CarsList from "./views/cars/CarsList";
 import CarsDetails from "./views/cars/CarsDetails";
 import BookingList from "./views/bookings/BookingList";
+import BookingDetails from "./views/bookings/BookingDetails";
 import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
 import BrandModelsList from "./views/brands/BrandModelsList";
 import CarInsurancePage from "./views/cars/CarInsurancePage";
@@ -26,6 +28,8 @@ import GustDetail from "./views/gust/GustDetails";
 import GuestReview from "./views/gust/Review";
 import HostReview from "./views/host/Review";
 import CartReview from "./views/cars/Review";
+import ChatsList from "./views/messages/ChatsList";
+import ChatDetails from "./views/messages/ChatDetails";
 
 const LayoutRouting = () => {
   return (
@@ -53,6 +57,10 @@ const LayoutRouting = () => {
         <Route path="/cars/:carId/insurance" element={<CarInsurancePage />} />
 
         <Route path="bookings" element={<BookingList />} />
+        <Route path="bookings/:id" element={<BookingDetails />} />
+        <Route path="messages" element={<ChatsList />} />
+        <Route path="messages/:id" element={<ChatDetails />} />
+        <Route path="profile/:id" element={<ProfileDetails />} />
         <Route path="vehicle-types" element={<VehicleTypesList />} />
 
         <Route path="permissions" element={<PermissionList />} />

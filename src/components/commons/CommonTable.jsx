@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Divider, Empty, Pagination, Radio, Table } from "antd";
+import React from "react";
+import { Empty, Pagination, Table } from "antd";
 import styled from "styled-components";
 
 const CommonTable = React.memo(
@@ -13,7 +13,6 @@ const CommonTable = React.memo(
     loadding,
     tableChange,
     type,
-    scroll,
     rowKey,
     onRow,
     currentPage = 1,
@@ -24,14 +23,9 @@ const CommonTable = React.memo(
       handlePagination(current, pageSize);
     };
 
-    let rowSelection = {
+    const rowSelection = {
       onChange: (selectedRowKeys, selectedRows) => {
         setSelection(selectedRows);
-        console.log(
-          `selectedRowKeys: ${selectedRowKeys}`,
-          "selectedRows: ",
-          selectedRows
-        );
       },
       getCheckboxProps: (record) => ({
         disabled: type,
@@ -39,17 +33,16 @@ const CommonTable = React.memo(
       }),
     };
 
-    console.log("common table");
-
     return (
-      <div className="mx-6 border-[1px] border-[#F0F0F0] rounded">
+      <TableContainer>
         <div className="common_table">
           <Table
-            scroll={{ x: "full" }}
-            rowSelection={{
-              type: rowSelectionType,
-              ...rowSelection,
-            }}
+            scroll={{ x: "max-content" }} 
+            rowSelection={
+              rowSelectionType
+                ? { type: rowSelectionType, ...rowSelection }
+                : undefined
+            }
             loading={loadding}
             rowKey={rowKey || "_id"}
             locale={{
@@ -59,52 +52,56 @@ const CommonTable = React.memo(
             dataSource={data}
             onChange={tableChange}
             pagination={false}
-            className=" text-base"
+            className="text-base nowrap-table"
             onRow={onRow}
             {...rest}
           />
         </div>
 
-        {type ? (
-          ""
-        ) : (
-          <div className="flex justify-end py-4">
+        {!type && (
+          <div className="common_pagination">
             <Pagination
               total={total}
               current={currentPage}
               pageSize={pageSize}
               pageSizeOptions={["10", "20"]}
-              showSizeChanger={true}
+              showSizeChanger
               onChange={onShowSizeChange}
               onShowSizeChange={onShowSizeChange}
             />
           </div>
         )}
-      </div>
+      </TableContainer>
     );
   }
 );
 
-export const TableStyle = styled.div`
-  border: 1px solid whitesmoke;
-
+export const TableContainer = styled.div`
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fff;
   margin: 0 24px;
   margin-top: 20px;
-  background-color: #ffffff;
-  border-radius: 10px;
+  overflow-x: auto;
+
   .common_table {
     width: 100%;
-    overflow-x: auto;
   }
-  .common_pagination {
-    margin: 40px 15px;
-    display: flex;
-    justify-content: flex-end;
+
+  /* Prevent column names and cell text from wrapping */
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    white-space: nowrap;
+  }
+
+  /* ✅ Optional: Add ellipsis if content is too long */
+  .ant-table-thead > tr > th {
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
   th {
     font-size: 15px;
-
     background-color: #fafafa !important;
   }
 
@@ -112,9 +109,10 @@ export const TableStyle = styled.div`
     font-size: 15px;
   }
 
-  tr:n {
-    font-size: 15px;
-    background-color: #ffffff;
+  .common_pagination {
+    margin: 16px 24px;
+    display: flex;
+    justify-content: flex-end;
   }
 `;
 

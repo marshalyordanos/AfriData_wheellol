@@ -11,6 +11,7 @@ import {
   SafetyOutlined,
   LockOutlined,
   IdcardOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 
 import { FaUserTie } from "react-icons/fa";
@@ -70,6 +71,7 @@ const Sidebar = ({ collapsed }) => {
     else if (p.startsWith("/dash/models")) sel = "models";
     else if (p.startsWith("/dash/vehicle-types")) sel = "vehicle-types";
     else if (p.startsWith("/dash/bookings")) sel = "bookings";
+    else if (p.startsWith("/dash/messages")) sel = "messages";
     else if (p.startsWith("/dash/permissions")) sel = "permissions";
     else if (p.startsWith("/dash/roles")) sel = "roles";
     else if (p === "/dash" || p === "/dash/") sel = "/dash";
@@ -122,6 +124,7 @@ const Sidebar = ({ collapsed }) => {
       getItem("Models", "models", <PiCubeFill />),
       getItem("Vehicle Types", "vehicle-types", <TbTruckDelivery />),
       getItem("Bookings", "bookings", <SiBookstack />),
+      getItem("Messages", "messages", <MessageOutlined />),
       getItem("Permissions", "permissions", <LockOutlined />),
       getItem("Roles", "roles", <SafetyOutlined />),
     ];

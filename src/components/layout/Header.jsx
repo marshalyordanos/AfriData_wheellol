@@ -56,15 +56,21 @@ const LayoutHeader = ({
     window.location.reload();
   };
 
-  const onClickProfile = ({ key }) => {
-    if (key == "logout") {
-      authService.logout();
-      dispatch(logout());
-      navigate("/login");
-    } else if (key == "change_password") {
-      navigate("/dash/change-password");
-    }
-  };
+const onClickProfile = ({ key }) => {
+  if (key === "logout") {
+    authService.logout();
+    dispatch(logout());
+    message.success("You have been logged out");
+    setTimeout(() => navigate("/login"), 300);
+  } else if (key === "change_password") {
+    navigate("/dash/change-password");
+  } else if (key === "profile") {
+    const uid =
+      currentUser?.user?.id || currentUser?.id || currentUser?._id || "me";
+    navigate(`/dash/profile/${uid}`);
+  }
+};
+
 
   const {
     token: { colorBgContainer },
@@ -111,6 +117,10 @@ const LayoutHeader = ({
     },
   ];
   const profiles = [
+    {
+      key: "profile",
+      label: "Profile",
+    },
     {
       key: "change_password",
       label: "Change Password",
@@ -232,10 +242,15 @@ const LayoutHeader = ({
             >
               <span className="header__right">
                 <Avatar
-                  className=" bg-gray-700"
-                  size="45"
-                  icon={<UserOutlined className="text-white" />}
+                  size={45}
+                  src={
+                    currentUser?.user?.profilePhoto ||
+                    currentUser?.profilePhoto ||
+                    null
+                  }
+                  icon={<UserOutlined />}
                 />
+
                 <p className="text-black">{currentUser?.fullName}</p>
               </span>
             </Dropdown>

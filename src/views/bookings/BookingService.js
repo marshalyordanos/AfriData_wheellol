@@ -67,10 +67,89 @@ class BookingService {
   }
 
   cancelBooking(id) {
-    return api.patch("/booking/cancel" + id, data).then((response) => {
+    return api.patch("/bookings/" + id + "/cancel-host").then((response) => {
       return response.data;
     });
   }
+  confirmBooking(id) {
+    return api.patch("/bookings/" + id + "/confirm-host").then((response) => {
+      return response.data;
+    });
+  }
+  rejectBooking(id) {
+    return api.patch("/bookings/" + id + "/reject-host").then((response) => {
+      return response.data;
+    });
+  }
+  completeBooking(id) {
+    return api.patch("/bookings/" + id + "/complete-host").then((response) => {
+      return response.data;
+    });
+  }
+  pickupInspection(data) {
+    return api.post("/bookings/inspection",data).then((response) => {
+      return response.data;
+    });
+  }
+  updatePickupInspection(id,data) {
+    return api.patch("/bookings/inspection/"+id,data).then((response) => {
+      return response.data;
+    });
+  }
+
+
+  dropoffInspection(data) {
+    return api.post("/bookings/inspection",data).then((response) => {
+      return response.data;
+    });
+  }
+
+  updatedDopoffInspection(id,data) {
+    return api.patch("/bookings/inspection/"+id,data).then((response) => {
+      return response.data;
+    });
+  }
+
+  approveDopoffInspection(id) {
+    return api.patch("/bookings/inspection/approve/"+id).then((response) => {
+      return response.data;
+    });
+  }
+  createDispute(data) {
+    return api.post("/disputes",data).then((response) => {
+      return response.data;
+    });
+  }
+  
+  /////////////////////////////////////////////////////
+  //messages services
+  sendMessage(data) {
+    return api.post("/messages", data).then((response) => {
+      return response.data;
+    });
+  }
+  markAsRead(data) {
+    return api.post("/messages/mark-as-read", data).then((response) => {
+      return response.data;
+    });
+  }
+  getAllMessagesOfABooking(id) {
+    return api.patch("/messages/booking/" + id).then((response) => {
+      return response.data;
+    });
+  }
+  getAllMessageChatsOfAUser(id) {
+    return api.patch("/messages/chats/user/" + id).then((response) => {
+      return response.data;
+    });
+  }
+  getAllUnreadMessagesOfAUser(userid) {
+    return api.patch("/messages/unread-count/" + userid).then((response) => {
+      return response.data;
+    });
+  }
+// ///////////////////////////////////////////
+
 }
 
 export default new BookingService();

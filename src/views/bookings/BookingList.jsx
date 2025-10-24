@@ -32,6 +32,7 @@ const BookingList = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [modeID, setModeID] = useState("");
   const delayTimerRef = useRef(null);
+  const navigate = useNavigate();
 
   const bookingQ = useSelector(bookingQuery);
   const searchText = useSelector(bookingSearchText);
@@ -46,14 +47,14 @@ const BookingList = () => {
     Number(searchParams.get("limit") || limit),
   ];
 
-  const loadBookings = async () => {
+  const loadBookings = async (overrides = {}) => {
     setLoading(true);
     try {
-      const { payload } = await dispatch(fetchBookingsThunk({ ...bookingQ }));
+      const params = { ...bookingQ, ...overrides };
+      const { payload } = await dispatch(fetchBookingsThunk(params));
       const rawList = payload?.data?.bookings || payload?.data || payload || [];
       const raw = Array.isArray(rawList) ? rawList : rawList.bookings || [];
       const mapped = (Array.isArray(raw) ? raw : [raw]).map((b) => ({
-        
         id: b.id || b._id,
         ...b,
         car: b.car || {},
@@ -68,7 +69,7 @@ const BookingList = () => {
       }));
 
       setBookingData(mapped);
-      setTotal(payload?.data?.total || payload?.total || mapped.length || 0);
+      setTotal(payload?.total || payload?.data?.total || mapped.length || 0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -79,37 +80,36 @@ const BookingList = () => {
   useEffect(() => {
     const [pg, lm] = getPaginationInfo();
     dispatch(updateBookingState({ page: pg, limit: lm }));
-    searchData();
+    loadBookings({ page: pg, limit: lm });
   }, []);
 
   useEffect(() => {
     setLocalSearch(searchText || "");
   }, [searchText]);
 
-  async function searchData(val = "") {
+  async function searchData(val = "", overrides = {}) {
     try {
       setLoading(true);
-      const params = { ...bookingQ, searchText: val };
+      const params = { ...bookingQ, ...overrides, searchText: val };
       const { payload } = await dispatch(fetchBookingsThunk(params));
       const rawList = payload?.data?.bookings || payload?.data || payload || [];
       const raw = Array.isArray(rawList) ? rawList : rawList.bookings || [];
       const mapped = (Array.isArray(raw) ? raw : [raw]).map((b) => ({
-        _id: b.id || b._id,
-        id: b.id || b._id,
+        _id: b._id || b.id,
+        id: b._id || b.id,
         ...b,
         car: b.car || {},
         guest: b.guest || b.renter || {},
         rental_price_per_day:
           b.car?.rentalPricePerDay ||
           b.car?.rental_price_per_day ||
-          b.car?.dailyRate ||
           b.rentalPricePerDay ||
           0,
         status: (b.status || "").toString(),
       }));
 
       setBookingData(mapped);
-      setTotal(payload?.data?.total || payload?.total || mapped.length || 0);
+      setTotal(payload?.total || payload?.data?.total || mapped.length || 0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -121,15 +121,16 @@ const BookingList = () => {
     const { value } = e.target;
     clearTimeout(delayTimerRef.current);
     delayTimerRef.current = setTimeout(() => {
+      const [pg, lm] = getPaginationInfo();
       dispatch(updateBookingState({ page: 1, searchText: value || "" }));
-      loadBookings();
+      loadBookings({ page: 1, limit: lm, searchText: value || "" });
     }, 500);
   };
 
   const handlePagination = (pg, pageSize) => {
     setSearchParams({ page: pg, limit: pageSize });
     dispatch(updateBookingState({ page: pg, limit: pageSize }));
-    loadBookings();
+    loadBookings({ page: pg, limit: pageSize });
   };
 
   const tableChange = (pagination, filters, sorter) => {
@@ -140,18 +141,28 @@ const BookingList = () => {
     loadBookings();
   };
 
+  const onRowClick = (record) => {
+    if (record && (record.id || record._id)) {
+      const bookingId = record.id || record._id;
+      navigate(`/dash/bookings/${bookingId}`);
+      return;
+    }
+    setModeID(record?._id || record?.id);
+    setIsViewModalOpen(true);
+  };
+
   const handleReload = () => {
-    setSearchParams({ page: 1, limit: 5 });
+    setSearchParams({ page: 1, limit: 10 });
     dispatch(
       updateBookingState({
         page: 1,
-        limit: 5,
+        limit: 10,
         sort: "",
         order: "",
         searchText: "",
       })
     );
-    loadBookings();
+    loadBookings({ page: 1, limit: 10, sort: "", order: "", searchText: "" });
   };
 
   const handleAction = async (action, id) => {
@@ -195,32 +206,34 @@ const BookingList = () => {
         actions.push({ key: "delete", label: <Button danger>Delete</Button> });
 
         return (
-          <Dropdown
-            menu={{
-              items: actions,
-              onClick: async (e) => {
-                const { key } = e;
-                if (key === "view") {
-                  setModeID(record._id);
-                  setIsViewModalOpen(true);
-                } else if (key === "edit") {
-                  setModeID(record._id);
-                  setIsModalOpen(true);
-                } else if (key === "delete") {
-                  setModeID(record._id);
-                  setIsDeleteModalOpen(true);
-                } else {
-                  const confirm =
-                    key === "cancel" ? window.confirm("Are you sure?") : true;
-                  if (confirm) await handleAction(key, record._id);
-                }
-              },
-            }}
-            trigger={["click"]}
-            placement="bottomLeft"
-          >
-            <Button icon={<MoreOutlined />} />
-          </Dropdown>
+          <div onClick={(e) => e.stopPropagation()}>
+            <Dropdown
+              menu={{
+                items: actions,
+                onClick: async (e) => {
+                  const { key } = e;
+                  if (key === "view") {
+                    setModeID(record._id);
+                    setIsViewModalOpen(true);
+                  } else if (key === "edit") {
+                    setModeID(record.__id);
+                    setIsModalOpen(true);
+                  } else if (key === "delete") {
+                    setModeID(record._id);
+                    setIsDeleteModalOpen(true);
+                  } else {
+                    const confirm =
+                      key === "cancel" ? window.confirm("Are you sure?") : true;
+                    if (confirm) await handleAction(key, record._id);
+                  }
+                },
+              }}
+              trigger={["click"]}
+              placement="bottomLeft"
+            >
+              <Button icon={<MoreOutlined />} />
+            </Dropdown>
+          </div>
         );
       },
     },
@@ -229,17 +242,8 @@ const BookingList = () => {
       title: "Car",
       dataIndex: "car",
       render: (_, record) =>
-        `${
-          record.car?.makeId ||
-          record.car?.make?.name ||
-          record.car?.makeName ||
-          ""
-        } ${
-          record.car?.modelId ||
-          record.car?.model?.name ||
-          record.car?.modelName ||
-          record.car?.carType ||
-          ""
+        `${record.car.make?.name || ""} ${
+          record.car.model?.name || ""
         }`.trim() || "-",
     },
     // 2. Host Name
@@ -324,6 +328,23 @@ const BookingList = () => {
       title: "Created At",
       dataIndex: "createdAt",
       render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+    },
+    // 13. Chat link
+    {
+      title: "Chat",
+      dataIndex: "chat",
+      render: (_, record) => (
+        <Button
+          onClick={(e) => {
+            e.stopPropagation();
+            const bookingId = record.id || record._id;
+            if (bookingId)
+              navigate(`/dash/messages/${bookingId}`, { state: record });
+          }}
+        >
+          Chat
+        </Button>
+      ),
     },
     // 13. Dispute
     {
@@ -465,7 +486,15 @@ const BookingList = () => {
         handlePagination={handlePagination}
         total={total}
         loading={loading}
+        loadding={loading}
         tableChange={tableChange}
+        onRow={(record) => ({
+          onClick: () => onRowClick(record),
+          style: { cursor: "pointer" },
+        })}
+        rowKey={(r) => r?.id}
+        currentPage={Number(page) || 1}
+        pageSize={Number(limit) || 10}
       />
     </div>
   );

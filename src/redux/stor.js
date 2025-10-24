@@ -11,6 +11,8 @@ import rolesReducer from "../views/roles/RoleRedux";
 import hostReducer from "../views/host/HostRedux";
 import staffReducer from "../views/staff/StaffRedux";
 import gustReducer from "../views/gust/GustRedux";
+import profileReducer from "../views/profile/ProfileRedux";
+import messagesReducer from "../views/messages/messageRedux";
 
 export const store = configureStore({
   reducer: {
@@ -21,6 +23,8 @@ export const store = configureStore({
     vehicleTypes: vehicleTypesReducer, // add the vehicle types here
     cars: carsReducer, // add the cars here
     booking: bookingReducer,
+    profile: profileReducer,
+    messages: messagesReducer,
     permissions: permissionsReducer,
     roles: rolesReducer,
     host: hostReducer,
