@@ -4,7 +4,7 @@ import {
   fetchChatsForUser,
   selectChats,
   selectChatsLoading,
-} from "./messageRedux";
+} from "./MessageRedux";
 import { List, Avatar, Badge, Empty, Spin, Input } from "antd";
 import MessagesService from "./MessagesService";
 import { useNavigate } from "react-router-dom";

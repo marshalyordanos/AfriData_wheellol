@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, Select, message, Modal } from "antd";
+import { Button, Dropdown, Input, Select, message, Modal, Tag } from "antd";
 import styled from "styled-components";
 import CommonModal from "../../components/commons/CommonModel";
 
@@ -206,7 +206,11 @@ const UserList = () => {
             ? (role) => role?.name || "-"
             : key === "verified"
             ? (_, record) =>
-                record?.hostProfile?.isVerified ? "true" : "false"
+                record?.hostProfile?.isVerified ? (
+                  <Tag color="green">{"Verified"}</Tag>
+                ) : (
+                  <Tag color="red"> Not Verified</Tag>
+                )
             : undefined,
       })
     ),

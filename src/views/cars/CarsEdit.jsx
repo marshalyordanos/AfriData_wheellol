@@ -13,6 +13,8 @@ import {
 import { PlusOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import carsService from "./CarsService";
+import { selectCurrentUser } from "../../redux/auth/authSlice";
+import { useSelector } from "react-redux";
 
 const { Option } = Select;
 
@@ -35,6 +37,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
   const [brandLoading, setBrandLoading] = useState(false);
   const [hostId, setHostId] = useState(null); // ✅ dynamic hostId
   const isEdit = !!carId;
+  const userData = useSelector(selectCurrentUser);
 
   // Load brands and car data (if editing)
   useEffect(() => {
@@ -50,6 +53,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
             setHostId(carData.hostId); // ✅ set dynamic hostId
 
             form.setFieldsValue({
+              hostId: userData?.user?.id,
               makeId: carData.makeId,
               modelId: carData.modelId,
               year: carData.year,

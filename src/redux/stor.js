@@ -12,7 +12,7 @@ import hostReducer from "../views/host/HostRedux";
 import staffReducer from "../views/staff/StaffRedux";
 import gustReducer from "../views/gust/GustRedux";
 import profileReducer from "../views/profile/ProfileRedux";
-import messagesReducer from "../views/messages/messageRedux";
+import messagesReducer from "../views/messages/MessageRedux";
 
 export const store = configureStore({
   reducer: {

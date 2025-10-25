@@ -6,7 +6,7 @@ import {
   sendMessage,
   selectMessagesForBooking,
   selectMessagesLoading,
-} from "./messageRedux";
+} from "./MessageRedux";
 import { Avatar, Input, Button, Spin } from "antd";
 const { TextArea } = Input;
 
