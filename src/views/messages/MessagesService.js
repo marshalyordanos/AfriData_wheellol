@@ -12,9 +12,11 @@ class MessagesService {
     });
   }
   getAllMessagesOfABooking(id) {
-    return api.get("/messages/booking/" + id).then((response) => {
-      return response.data;
-    });
+    return api
+      .get("/messages/booking/" + id + "?pageSize=50")
+      .then((response) => {
+        return response.data;
+      });
   }
   getAllMessageChatsOfAUser(id) {
     return api.get("/messages/chats/user/" + id).then((response) => {
@@ -26,7 +28,6 @@ class MessagesService {
       return response.data;
     });
   }
-  
 }
 
 export default new MessagesService();

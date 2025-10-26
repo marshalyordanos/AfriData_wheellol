@@ -62,7 +62,6 @@ const BookingList = () => {
         rental_price_per_day:
           b.car?.rentalPricePerDay ||
           b.car?.rental_price_per_day ||
-          b.car?.dailyRate ||
           b.rentalPricePerDay ||
           0,
         status: (b.status || "").toString(),
@@ -333,18 +332,23 @@ const BookingList = () => {
     {
       title: "Chat",
       dataIndex: "chat",
-      render: (_, record) => (
-        <Button
-          onClick={(e) => {
-            e.stopPropagation();
-            const bookingId = record.id || record._id;
-            if (bookingId)
-              navigate(`/dash/messages/${bookingId}`, { state: record });
-          }}
-        >
-          Chat
-        </Button>
-      ),
+      render: (_, record) =>
+        // show chat for confirmed or completed bookings
+        record &&
+        ["confirmed", "completed"].includes(
+          String(record.status || "").toLowerCase()
+        ) ? (
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              const bookingId = record.id || record._id;
+              if (bookingId)
+                navigate(`/dash/messages/${bookingId}`, { state: record });
+            }}
+          >
+            Chat
+          </Button>
+        ) : null,
     },
     // 13. Dispute
     {

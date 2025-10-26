@@ -48,6 +48,7 @@ const BookingDetail = () => {
   const [dropoffInspection, setDropoffInspection] = useState(null);
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [disputeForm] = Form.useForm();
+  const [viewDisputeOpen, setViewDisputeOpen] = useState(false);
   const authUser = useSelector(selectCurrentUser);
 
   const loadBooking = async () => {
@@ -87,6 +88,7 @@ const BookingDetail = () => {
       reader.onload = () => resolve(reader.result);
       reader.onerror = (error) => reject(error);
     });
+
   const handleAction = async (type) => {
     if (!id) return;
     try {
@@ -155,6 +157,12 @@ const BookingDetail = () => {
 
   const isDropoffApproved =
     dropoffInspection && dropoffInspection.approved === true;
+
+  // current user id for permission checks
+  const currentUserId = authUser?.user?.id || authUser?.id || null;
+  const dropoffSubmitterId = dropoffInspection?.submittedById || null;
+  const canActOnDropoff =
+    !!dropoffInspection && String(dropoffSubmitterId) !== String(currentUserId);
 
   return (
     <div style={{ padding: 20 }}>
@@ -256,19 +264,58 @@ const BookingDetail = () => {
                       </Button>
                     )}
                   {/* If dropoff inspection exists, show a button to view details */}
-                  {dropoffInspection && (
-                    <Button
-                      onClick={() => {
-                        dropoffForm.setFieldsValue({
-                          fuelLevel: dropoffInspection.fuelLevel,
-                          mileage: dropoffInspection.mileage,
-                        });
-                        setDropoffModalOpen(true);
-                      }}
-                    >
-                      View Dropoff
-                    </Button>
-                  )}
+                  {dropoffInspection &&
+                    // If there is a dispute attached to booking or dropoff, show 'View Dispute'
+                    (booking?.dispute || dropoffInspection?.dispute ? (
+                      <Button
+                        loading={actionLoading.dispute}
+                        onClick={async () => {
+                          // find dispute id from booking or dropoff
+                          const disp =
+                            booking?.dispute || dropoffInspection?.dispute;
+                          const disputeId = disp?.id || disp?._id || disp;
+                          if (!disputeId) {
+                            message.error("Dispute id not found");
+                            return;
+                          }
+                          try {
+                            setActionLoading((s) => ({ ...s, dispute: true }));
+                            const res = await BookingService.getDisputeById(
+                              disputeId
+                            );
+                            const disputeData = res?.data || res;
+                            // show view-dispute modal with dispute details
+                            setViewDisputeOpen(true);
+                            // store fetched data so the modal can show more fields
+                            setBooking((b) => ({
+                              ...b,
+                              _fetchedDispute: disputeData,
+                            }));
+                          } catch (err) {
+                            message.error(
+                              err?.response?.data?.message ||
+                                "Failed to fetch dispute"
+                            );
+                          } finally {
+                            setActionLoading((s) => ({ ...s, dispute: false }));
+                          }
+                        }}
+                      >
+                        View Dispute
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          dropoffForm.setFieldsValue({
+                            fuelLevel: dropoffInspection.fuelLevel,
+                            mileage: dropoffInspection.mileage,
+                          });
+                          setDropoffModalOpen(true);
+                        }}
+                      >
+                        View Dropoff
+                      </Button>
+                    ))}
                 </>
               )}
             </>
@@ -300,8 +347,7 @@ const BookingDetail = () => {
                 setActionLoading((s) => ({ ...s, pickup: true }));
                 try {
                   if (pickupInspection) {
-                    const inspectionId =
-                      pickupInspection.id || pickupInspection._id;
+                    const inspectionId = pickupInspection.id;
                     await BookingService.updatePickupInspection(inspectionId, {
                       type: "PICKUP",
                       fuelLevel: Number(values.fuelLevel),
@@ -310,7 +356,7 @@ const BookingDetail = () => {
                     message.success("Pickup inspection updated");
                   } else {
                     await BookingService.pickupInspection({
-                      bookingId: booking.id || booking._id,
+                      bookingId: booking.id,
                       type: "PICKUP",
                       fuelLevel: Number(values.fuelLevel),
                       mileage: Number(values.mileage),
@@ -334,7 +380,7 @@ const BookingDetail = () => {
               <Form.Item
                 label="Fuel Level"
                 name="fuelLevel"
-                rules={[{ required: true, type: "number", min: 0 }]}
+                rules={[{ type: "number", min: 0 }]}
               >
                 <InputNumber
                   min={0}
@@ -345,7 +391,7 @@ const BookingDetail = () => {
               <Form.Item
                 label="Mileage"
                 name="mileage"
-                rules={[{ required: true, type: "number", min: 0 }]}
+                rules={[{ type: "number", min: 0 }]}
               >
                 <InputNumber
                   min={0}
@@ -368,58 +414,69 @@ const BookingDetail = () => {
               dropoffForm.resetFields();
             }}
             footer={
-              dropoffInspection
-                ? [
-                    <Button
-                      key="approve"
-                      type="primary"
-                      loading={actionLoading.dropoffApprove}
-                      onClick={async () => {
-                        const inspectionId =
-                          dropoffInspection.id || dropoffInspection._id;
-                        try {
-                          setActionLoading((s) => ({
-                            ...s,
-                            dropoffApprove: true,
-                          }));
-                          await BookingService.approveDopoffInspection(
-                            inspectionId
-                          );
-                          message.success("Dropoff approved");
-                          setDropoffModalOpen(false);
-                          await loadBooking();
-                        } catch (err) {
-                          message.error(
-                            err?.response?.data?.message || "Failed to approve"
-                          );
-                        } finally {
-                          setActionLoading((s) => ({
-                            ...s,
-                            dropoffApprove: false,
-                          }));
-                        }
-                      }}
-                    >
-                      Approve
-                    </Button>,
-                    <Button
-                      key="dispute"
-                      danger
-                      loading={actionLoading.dropoffDispute}
-                      onClick={() => {
-                        // open dispute modal to collect reason/photos
-                        disputeForm.resetFields();
-                        setDisputeModalOpen(true);
-                      }}
-                    >
-                      Dispute
-                    </Button>,
-                  ]
+              dropoffInspection && canActOnDropoff
+                ? (() => {
+                    const showDisputeBtn = !(
+                      booking?.dispute || dropoffInspection?.dispute
+                    );
+                    const items = [
+                      <Button
+                        key="approve"
+                        type="primary"
+                        loading={actionLoading.dropoffApprove}
+                        onClick={async () => {
+                          const inspectionId =
+                            dropoffInspection.id ;
+                          try {
+                            setActionLoading((s) => ({
+                              ...s,
+                              dropoffApprove: true,
+                            }));
+                            await BookingService.approveDopoffInspection(
+                              inspectionId
+                            );
+                            message.success("Dropoff approved");
+                            setDropoffModalOpen(false);
+                            await loadBooking();
+                          } catch (err) {
+                            message.error(
+                              err?.response?.data?.message ||
+                                "Failed to approve"
+                            );
+                          } finally {
+                            setActionLoading((s) => ({
+                              ...s,
+                              dropoffApprove: false,
+                            }));
+                          }
+                        }}
+                      >
+                        Approve
+                      </Button>,
+                    ];
+                    if (showDisputeBtn) {
+                      items.push(
+                        <Button
+                          key="dispute"
+                          danger
+                          loading={actionLoading.dropoffDispute}
+                          onClick={() => {
+                            // open dispute modal to collect reason/photos
+                            disputeForm.resetFields();
+                            setDisputeModalOpen(true);
+                          }}
+                        >
+                          Dispute
+                        </Button>
+                      );
+                    }
+                    return items;
+                  })()
                 : undefined
             }
             onOk={() => dropoffForm.submit()}
-            okText={dropoffInspection ? "Save" : "Submit"}
-            confirmLoading={actionLoading.pickup}
+            okText={dropoffInspection ? "Update" : "Submit"}
+            confirmLoading={actionLoading.dropoff}
           >
             <Form
               form={dropoffForm}
@@ -466,7 +523,7 @@ const BookingDetail = () => {
               <Form.Item
                 label="Fuel Level"
                 name="fuelLevel"
-                rules={[{ required: true, type: "number", min: 0 }]}
+                rules={[{ type: "number", min: 0 }]}
               >
                 <InputNumber
                   min={0}
@@ -477,7 +534,7 @@ const BookingDetail = () => {
               <Form.Item
                 label="Mileage"
                 name="mileage"
-                rules={[{ required: true, type: "number", min: 0 }]}
+                rules={[{ type: "number", min: 0 }]}
               >
                 <InputNumber
                   min={0}
@@ -510,11 +567,11 @@ const BookingDetail = () => {
                     photos.push(b64);
                   }
                   const payload = {
-                    bookingId: booking.id || booking._id,
+                    bookingId: booking.id || "",
                     paymentId:
-                      booking.payment?.id || booking.payment?._id || "",
-                    userId: authUser?.user?.id || authUser?.id || "",
-                    carId: booking.car?.id || booking.car?._id || "",
+                      booking.payment?.id || "",
+                    userId: authUser?.user?.id || "",
+                    carId: booking.car?.id || "",
                     reason: values.reason || "",
                     photos,
                   };
@@ -534,7 +591,7 @@ const BookingDetail = () => {
               <Form.Item
                 name="reason"
                 label="Reason"
-                rules={[{ required: true, message: "Please enter a reason" }]}
+                rules={[{ message: "Please enter a reason" }]}
               >
                 <Input.TextArea rows={4} />
               </Form.Item>
@@ -557,6 +614,88 @@ const BookingDetail = () => {
                 </Upload>
               </Form.Item>
             </Form>
+          </Modal>
+
+          {/* View Dispute Modal (shows fetched dispute details) */}
+          <Modal
+            title="Dispute Details"
+            open={viewDisputeOpen}
+            onCancel={() => {
+              setViewDisputeOpen(false);
+              // clear temp dispute data
+              setBooking((b) => {
+                if (!b) return b;
+                const copy = { ...b };
+                delete copy._fetchedDispute;
+                return copy;
+              });
+            }}
+            footer={null}
+          >
+            {booking?._fetchedDispute ? (
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              >
+                <div>
+                  <strong>Reason</strong>
+                  <div style={{ marginTop: 6 }}>
+                    {booking._fetchedDispute.reason}
+                  </div>
+                </div>
+                <div>
+                  <strong>Status</strong>
+                  <div style={{ marginTop: 6 }}>
+                    {booking._fetchedDispute.status}
+                  </div>
+                </div>
+                <div>
+                  <strong>Created At</strong>
+                  <div style={{ marginTop: 6 }}>
+                    {new Date(
+                      booking._fetchedDispute.createdAt
+                    ).toLocaleString()}
+                  </div>
+                </div>
+                <Divider />
+                <div>
+                  <strong>User</strong>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      marginTop: 8,
+                    }}
+                  >
+                    <Avatar src={booking._fetchedDispute.user?.profilePhoto} />
+                    <div>
+                      <div style={{ fontWeight: 700 }}>
+                        {booking._fetchedDispute.user?.firstName}{" "}
+                        {booking._fetchedDispute.user?.lastName}
+                      </div>
+                      <div style={{ color: "#666" }}>
+                        {booking._fetchedDispute.user?.email}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Divider />
+                <div>
+                  <strong>Booking</strong>
+                  <div style={{ marginTop: 6 }}>
+                    Booking ID:{" "}
+                    {booking._fetchedDispute.booking?.id ||
+                      booking._fetchedDispute.bookingId}
+                  </div>
+                  <div>
+                    Payment Status: {booking._fetchedDispute.payment?.status}
+                  </div>
+                  <div>Amount: {booking._fetchedDispute.payment?.amount}</div>
+                </div>
+              </div>
+            ) : (
+              <div>No dispute data</div>
+            )}
           </Modal>
           {!isDropoffApproved && booking.status === "COMPLETED" && (
             <Tag color="green" style={{ fontSize: 16, padding: "4px 12px" }}>

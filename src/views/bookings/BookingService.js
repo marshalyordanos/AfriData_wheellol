@@ -87,40 +87,39 @@ class BookingService {
     });
   }
   pickupInspection(data) {
-    return api.post("/bookings/inspection",data).then((response) => {
+    return api.post("/bookings/inspection", data).then((response) => {
       return response.data;
     });
   }
-  updatePickupInspection(id,data) {
-    return api.patch("/bookings/inspection/"+id,data).then((response) => {
+  updatePickupInspection(id, data) {
+    return api.patch("/bookings/inspection/" + id, data).then((response) => {
       return response.data;
     });
   }
-
 
   dropoffInspection(data) {
-    return api.post("/bookings/inspection",data).then((response) => {
+    return api.post("/bookings/inspection", data).then((response) => {
       return response.data;
     });
   }
 
-  updatedDopoffInspection(id,data) {
-    return api.patch("/bookings/inspection/"+id,data).then((response) => {
+  updatedDopoffInspection(id, data) {
+    return api.patch("/bookings/inspection/" + id, data).then((response) => {
       return response.data;
     });
   }
 
   approveDopoffInspection(id) {
-    return api.patch("/bookings/inspection/approve/"+id).then((response) => {
+    return api.patch("/bookings/inspection/approve/" + id).then((response) => {
       return response.data;
     });
   }
   createDispute(data) {
-    return api.post("/disputes",data).then((response) => {
+    return api.post("/disputes", data).then((response) => {
       return response.data;
     });
   }
-  
+
   /////////////////////////////////////////////////////
   //messages services
   sendMessage(data) {
@@ -134,22 +133,35 @@ class BookingService {
     });
   }
   getAllMessagesOfABooking(id) {
-    return api.patch("/messages/booking/" + id).then((response) => {
+    return api.get("/messages/booking/" + id).then((response) => {
       return response.data;
     });
   }
   getAllMessageChatsOfAUser(id) {
-    return api.patch("/messages/chats/user/" + id).then((response) => {
+    return api.get("/messages/chats/user/" + id).then((response) => {
       return response.data;
     });
   }
   getAllUnreadMessagesOfAUser(userid) {
-    return api.patch("/messages/unread-count/" + userid).then((response) => {
+    return api.get("/messages/unread-count/" + userid).then((response) => {
       return response.data;
     });
   }
-// ///////////////////////////////////////////
+  // ///////////////////////////////////////////
 
+  //diputes
+
+  getDisputeById(id) {
+    return api.get("/disputes/" + id).then((response) => {
+      return response.data;
+    });
+  }
+
+  createDispute(data) {
+    return api.post("/disputes/", data).then((response) => {
+      return response.data;
+    });
+  }
 }
 
 export default new BookingService();
