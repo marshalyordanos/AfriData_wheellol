@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Dropdown, Input, message, Modal, Select } from "antd";
+import { Button, Dropdown, Input, message, Modal, Select, Tag } from "antd";
 import RolesService from "../roles/RoleService";
 import { PlusOutlined, ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import CommonTable from "../../components/commons/CommonTable";
@@ -170,7 +170,12 @@ const StaffList = () => {
           key === "role"
             ? (role) => role?.name || "-"
             : key === "active"
-            ? (_, record) => (record?.isActive ? "true" : "false")
+            ? (_, record) =>
+                record?.isActive ? (
+                  <Tag color="green">Active</Tag>
+                ) : (
+                  <Tag color="red">Inactive</Tag>
+                )
             : undefined,
       })
     ),

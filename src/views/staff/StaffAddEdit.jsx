@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Divider, Form, Input, Upload, message } from "antd";
+import { Button, Divider, Form, Input, message } from "antd";
 import { ButtonStyle } from "../../components/commons/CommonStyles";
 import styled from "styled-components";
 import staffService from "./StaffService";
@@ -21,12 +21,6 @@ const FormWrapper = styled.div`
   /* you can copy styles from your FormStyle here */
 `;
 
-// helper to normalize Upload's event to fileList
-const normFile = (e) => {
-  if (Array.isArray(e)) return e;
-  return e && e.fileList;
-};
-
 const StaffAddEdit = ({
   setIsModalOpen,
   isModelOpen,
@@ -45,27 +39,8 @@ const StaffAddEdit = ({
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      // defensively remove password if present — backend handles password creation
       if (values && values.password) delete values.password;
-
-      const formData = new FormData();
-
-      // iterate keys and handle file lists
-      Object.entries(values).forEach(([key, value]) => {
-        // Upload returns fileListAttach first file's originFileObj if present
-        if (Array.isArray(value) && value.length && value[0]?.originFileObj) {
-          formData.append(key, value[0].originFileObj);
-        } else if (Array.isArray(value) && value.length && value[0]?.url) {
-          // if the user already had an uploaded url send the url or skip
-          formData.append(key, value[0].url);
-        } else if (typeof value === "object" && value !== null) {
-          formData.append(key, String(value));
-        } else if (value !== undefined && value !== null) {
-          formData.append(key, value);
-        }
-      });
-
-      const res = await staffService.createStaff(formData);
+      const res = await staffService.createStaff(values);
       message.success(res?.message || "Staff created successfully");
       setIsModalOpen(false);
       searchData && searchData();
@@ -125,21 +100,6 @@ const StaffAddEdit = ({
           <Input />
         </Form.Item>
 
-        <Form.Item
-          name="profilePhotoFile"
-          label="Profile Photo"
-          valuePropName="fileList"
-          getValueFromEvent={normFile}
-        >
-          <Upload
-            name="profilePhotoFile"
-            listType="picture"
-            maxCount={1}
-            beforeUpload={() => false}
-          >
-            <Button>Upload Profile Photo</Button>
-          </Upload>
-        </Form.Item>
 
         <Divider />
 

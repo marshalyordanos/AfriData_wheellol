@@ -1,19 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Input, Button, Dropdown, Tag } from "antd";
-import { ReloadOutlined, MoreOutlined, PlusOutlined } from "@ant-design/icons";
+import { Input, Button, Tag, Dropdown, Select, DatePicker } from "antd";
+import { ReloadOutlined, PlusOutlined, MoreOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import CommonTable from "../../components/commons/CommonTable";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
-import BookingEditForm from "../../components/Forms/BookingEditForm";
 import BookingCreateForm from "../../components/Forms/BookingCreateForm";
-import BookingViewForm from "../../components/Forms/BookingViewForm";
 
 import {
   fetchBookingsThunk,
-  createBookingThunk,
+  // createBookingThunk,
   updateBookingThunk,
   cancelBookingThunk,
   completeBookingThunk,
@@ -22,15 +20,13 @@ import {
   bookingQuery,
   bookingSearchText,
 } from "./BookingRedux";
+import BookingService from "./BookingService";
+import BookingUpdateForm from "../../components/Forms/BookingUpdateForm";
 
 const BookingList = () => {
   const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [modeID, setModeID] = useState("");
   const delayTimerRef = useRef(null);
   const navigate = useNavigate();
 
@@ -40,7 +36,14 @@ const BookingList = () => {
   const [loading, setLoading] = useState(false);
   const [bookingData, setBookingData] = useState([]);
   const [total, setTotal] = useState(0);
+  const [filters, setFilters] = useState({
+    status: null,
+    withDriver: null,
+    dateRange: null,
+  });
   const [localSearch, setLocalSearch] = useState(searchText || "");
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   const getPaginationInfo = () => [
     Number(searchParams.get("page") || 1),
@@ -94,19 +97,14 @@ const BookingList = () => {
       const rawList = payload?.data?.bookings || payload?.data || payload || [];
       const raw = Array.isArray(rawList) ? rawList : rawList.bookings || [];
       const mapped = (Array.isArray(raw) ? raw : [raw]).map((b) => ({
-        _id: b._id || b.id,
-        id: b._id || b.id,
+        id: b.id,
         ...b,
         car: b.car || {},
-        guest: b.guest || b.renter || {},
+        guest: b.guest || {},
         rental_price_per_day:
-          b.car?.rentalPricePerDay ||
-          b.car?.rental_price_per_day ||
-          b.rentalPricePerDay ||
-          0,
+          b.car?.rentalPricePerDay || b.car?.rental_price_per_day || 0,
         status: (b.status || "").toString(),
       }));
-
       setBookingData(mapped);
       setTotal(payload?.total || payload?.data?.total || mapped.length || 0);
     } catch (err) {
@@ -124,6 +122,27 @@ const BookingList = () => {
       dispatch(updateBookingState({ page: 1, searchText: value || "" }));
       loadBookings({ page: 1, limit: lm, searchText: value || "" });
     }, 500);
+  };
+
+  const handleFilterChange = (newFilters) => {
+    const merged = { ...filters, ...newFilters };
+    setFilters(merged);
+
+    // build `filter` object 
+    const filter = {};
+    if (merged.status) filter.status = merged.status;
+    // with driver filtering
+    if (merged.withDriver !== null && merged.withDriver !== undefined)
+      filter.withDriver = merged.withDriver;
+    if (merged.dateRange && merged.dateRange.length === 2) {
+      filter.startDate = merged.dateRange[0].toISOString();
+      filter.endDate = merged.dateRange[1].toISOString();
+    }
+
+    const [pg, lm] = getPaginationInfo();
+    dispatch(updateBookingState({ page: 1 }));
+    setSearchParams({ page: 1, limit: lm });
+    loadBookings({ page: 1, limit: lm, filter });
   };
 
   const handlePagination = (pg, pageSize) => {
@@ -144,10 +163,15 @@ const BookingList = () => {
     if (record && (record.id || record._id)) {
       const bookingId = record.id || record._id;
       navigate(`/dash/bookings/${bookingId}`);
-      return;
     }
-    setModeID(record?._id || record?.id);
-    setIsViewModalOpen(true);
+  };
+
+  const onActionClick = (value, record) => {
+    const key = value?.key || (value && value.key);
+    if (key === "edit") {
+      setSelectedBooking(record);
+      setIsUpdateModalOpen(true);
+    }
   };
 
   const handleReload = () => {
@@ -164,75 +188,38 @@ const BookingList = () => {
     loadBookings({ page: 1, limit: 10, sort: "", order: "", searchText: "" });
   };
 
-  const handleAction = async (action, id) => {
-    switch (action) {
-      case "cancel":
-        await dispatch(cancelBookingThunk(id));
-        break;
-      case "complete":
-        await dispatch(completeBookingThunk(id));
-        break;
-      case "delete":
-        await dispatch(deleteBookingThunk(id));
-        break;
-      default:
-        break;
-    }
-    loadBookings();
-  };
-
   const columns = [
     {
-      title: "Action",
+      title: " ",
       dataIndex: "action",
       render: (_, record) => {
-        const actions = [{ key: "view", label: <Button>View</Button> }];
-        if (
-          !["CANCELLED", "COMPLETED"].includes(
-            (record.status || "").toString().toUpperCase()
-          )
-        ) {
-          actions.push({ key: "edit", label: <Button>Edit</Button> });
-          actions.push({
-            key: "cancel",
-            label: <Button danger>Cancel</Button>,
-          });
-          actions.push({
-            key: "complete",
-            label: <Button type="primary">Complete</Button>,
-          });
-        }
-        actions.push({ key: "delete", label: <Button danger>Delete</Button> });
-
         return (
-          <div onClick={(e) => e.stopPropagation()}>
-            <Dropdown
-              menu={{
-                items: actions,
-                onClick: async (e) => {
-                  const { key } = e;
-                  if (key === "view") {
-                    setModeID(record._id);
-                    setIsViewModalOpen(true);
-                  } else if (key === "edit") {
-                    setModeID(record.__id);
-                    setIsModalOpen(true);
-                  } else if (key === "delete") {
-                    setModeID(record._id);
-                    setIsDeleteModalOpen(true);
-                  } else {
-                    const confirm =
-                      key === "cancel" ? window.confirm("Are you sure?") : true;
-                    if (confirm) await handleAction(key, record._id);
-                  }
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: "edit",
+                  label: <Button type="text">Update</Button>,
                 },
-              }}
-              trigger={["click"]}
-              placement="bottomLeft"
-            >
-              <Button icon={<MoreOutlined />} />
-            </Dropdown>
-          </div>
+              ],
+              onClick: (info) => {
+                try {
+                  info?.domEvent?.stopPropagation();
+                } catch (err) {
+                  // ignore
+                }
+                onActionClick(info, record);
+              },
+            }}
+            trigger={["click"]}
+            placement="bottomLeft"
+          >
+            <Button
+              type="text"
+              icon={<MoreOutlined style={{ fontSize: 18 }} />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
         );
       },
     },
@@ -356,46 +343,11 @@ const BookingList = () => {
       dataIndex: "dispute",
       render: (d) => (d ? "Yes" : "No"),
     },
+    // (actions column kept earlier)
   ];
 
   return (
     <div>
-      {/* Edit Modal */}
-      {isModalOpen && (
-        <CommonModal
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
-          width={1000}
-          title="Edit Booking"
-        >
-          <BookingEditForm
-            booking={bookingData.find((b) => b._id === modeID)}
-            onSave={async (updatedValues) => {
-              await dispatch(
-                updateBookingThunk({ id: modeID, data: updatedValues })
-              );
-              setIsModalOpen(false);
-              loadBookings();
-            }}
-            onCancel={() => setIsModalOpen(false)}
-          />
-        </CommonModal>
-      )}
-
-      {/* View Modal */}
-      {isViewModalOpen && (
-        <CommonModal
-          isModalOpen={isViewModalOpen}
-          setIsModalOpen={setIsViewModalOpen}
-          width={1000}
-          title="Booking Details"
-        >
-          <BookingViewForm
-            booking={bookingData.find((b) => b._id === modeID)}
-          />
-        </CommonModal>
-      )}
-
       {/* Create Modal */}
       {isCreateModalOpen && (
         <CommonModal
@@ -406,35 +358,49 @@ const BookingList = () => {
         >
           <BookingCreateForm
             onSave={async (newBooking) => {
-              await dispatch(createBookingThunk(newBooking));
-              setIsCreateModalOpen(false);
-              loadBookings();
+              try {
+                // newBooking is expected to match the backend payload shape.
+                await BookingService.createBooking(newBooking);
+                setIsCreateModalOpen(false);
+                loadBookings();
+              } catch (err) {
+                console.error("Failed to create booking:", err);
+              }
             }}
             onCancel={() => setIsCreateModalOpen(false)}
           />
         </CommonModal>
       )}
 
-      {/* Delete Modal */}
-      {isDeleteModalOpen && (
-        <CommonDeleteModal
-          isModalOpen={isDeleteModalOpen}
-          setIsModalOpen={setIsDeleteModalOpen}
-          handleDelete={async () => {
-            await handleAction("delete", modeID);
-            setIsDeleteModalOpen(false);
-            setModeID("");
-          }}
-          loading={loading}
+      {isUpdateModalOpen && (
+        <CommonModal
+          isModalOpen={isUpdateModalOpen}
+          setIsModalOpen={setIsUpdateModalOpen}
+          width={1000}
+          title="Update Booking"
         >
-          <h1>Are you sure?</h1>
-        </CommonDeleteModal>
+          <BookingUpdateForm
+            booking={selectedBooking}
+            onSave={async (updated) => {
+              try {
+                const id = selectedBooking.id ;
+                await BookingService.updateBooking(updated, id);
+                setIsUpdateModalOpen(false);
+                setSelectedBooking(null);
+                loadBookings();
+              } catch (err) {
+                console.error("Update failed:", err);
+              }
+            }}
+            onCancel={() => setIsUpdateModalOpen(false)}
+          />
+        </CommonModal>
       )}
 
       <span className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700">
         <div className="flex flex-col p-6 md:w-[45vw] w-full">
           <h1 className="text-2xl font-bold pb-4">Bookings</h1>
-          <div className="flex">
+          <div className="flex gap-3 flex-wrap items-center">
             <Input
               onChange={(e) => {
                 const v = e.target.value;
@@ -457,6 +423,32 @@ const BookingList = () => {
               allowClear
               style={{ borderRadius: "0px 0px 0px 0px" }}
               className=" drop-shadow-sm rounded-r  py-2"
+            />
+
+            <Select
+              placeholder="Status"
+              allowClear
+              style={{ width: 160 }}
+              onChange={(val) => handleFilterChange({ status: val })}
+            >
+              <Select.Option value="PENDING">PENDING</Select.Option>
+              <Select.Option value="CONFIRMED">CONFIRMED</Select.Option>
+              <Select.Option value="COMPLETED">COMPLETED</Select.Option>
+              <Select.Option value="CANCELLED">CANCELLED</Select.Option>
+            </Select>
+
+            <Select
+              placeholder="With Driver"
+              allowClear
+              style={{ width: 140 }}
+              onChange={(val) => handleFilterChange({ withDriver: val })}
+            >
+              <Select.Option value={true}>Yes</Select.Option>
+              <Select.Option value={false}>No</Select.Option>
+            </Select>
+
+            <DatePicker.RangePicker
+              onChange={(dates) => handleFilterChange({ dateRange: dates })}
             />
           </div>
         </div>
@@ -484,22 +476,24 @@ const BookingList = () => {
       </span>
 
       {/* Table */}
-      <CommonTable
-        data={bookingData}
-        columns={columns}
-        handlePagination={handlePagination}
-        total={total}
-        loading={loading}
-        loadding={loading}
-        tableChange={tableChange}
-        onRow={(record) => ({
-          onClick: () => onRowClick(record),
-          style: { cursor: "pointer" },
-        })}
-        rowKey={(r) => r?.id}
-        currentPage={Number(page) || 1}
-        pageSize={Number(limit) || 10}
-      />
+      <div style={{ fontSize: 3 }}>
+        <CommonTable
+          data={bookingData}
+          columns={columns}
+          handlePagination={handlePagination}
+          total={total}
+          loading={loading}
+          loadding={loading}
+          tableChange={tableChange}
+          onRow={(record) => ({
+            onClick: () => onRowClick(record),
+            style: { cursor: "pointer" },
+          })}
+          rowKey={(r) => r?.id}
+          currentPage={Number(page) || 1}
+          pageSize={Number(limit) || 10}
+        />
+      </div>
     </div>
   );
 };

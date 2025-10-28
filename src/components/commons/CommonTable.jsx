@@ -37,7 +37,7 @@ const CommonTable = React.memo(
       <TableContainer>
         <div className="common_table">
           <Table
-            scroll={{ x: "max-content" }} 
+            scroll={{ x: "max-content" }}
             rowSelection={
               rowSelectionType
                 ? { type: rowSelectionType, ...rowSelection }
@@ -52,7 +52,7 @@ const CommonTable = React.memo(
             dataSource={data}
             onChange={tableChange}
             pagination={false}
-            className="text-base nowrap-table"
+            className="text-base nowrap-table common-table--small"
             onRow={onRow}
             {...rest}
           />
@@ -100,13 +100,15 @@ export const TableContainer = styled.div`
     overflow: hidden;
   }
 
-  th {
-    font-size: 15px;
-    background-color: #fafafa !important;
+  /* Reduce table header & cell font-size for compact tables */
+  .common-table--small .ant-table-thead > tr > th,
+  .common-table--small .ant-table-tbody > tr > td {
+    font-size: 13px;
+    padding: 8px 12px;
   }
 
-  tr {
-    font-size: 15px;
+  .common-table--small .ant-table-thead > tr > th {
+    background-color: #fafafa !important;
   }
 
   .common_pagination {

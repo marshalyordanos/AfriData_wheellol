@@ -12,6 +12,7 @@ import {
   LockOutlined,
   IdcardOutlined,
   MessageOutlined,
+  CreditCardOutlined,
 } from "@ant-design/icons";
 
 import { FaUserTie } from "react-icons/fa";
@@ -21,7 +22,6 @@ import Logo from "../../assets/logo1.png";
 import { FaCar } from "react-icons/fa";
 import { SiBrandfolder } from "react-icons/si";
 import { SiBookstack } from "react-icons/si";
-import { TbTruckDelivery } from "react-icons/tb"; // icon for Vehicle Types
 import { PiCubeFill } from "react-icons/pi"; // distinct icon for Models
 
 import { useTranslation } from "react-i18next";
@@ -69,8 +69,8 @@ const Sidebar = ({ collapsed }) => {
     else if (p.startsWith("/dash/gust")) sel = "gust";
     else if (p.startsWith("/dash/brands")) sel = "brands";
     else if (p.startsWith("/dash/models")) sel = "models";
-    else if (p.startsWith("/dash/vehicle-types")) sel = "vehicle-types";
     else if (p.startsWith("/dash/bookings")) sel = "bookings";
+    else if (p.startsWith("/dash/payments")) sel = "payments";
     else if (p.startsWith("/dash/messages")) sel = "messages";
     else if (p.startsWith("/dash/permissions")) sel = "permissions";
     else if (p.startsWith("/dash/roles")) sel = "roles";
@@ -120,11 +120,12 @@ const Sidebar = ({ collapsed }) => {
       getItem("Staffs", "staff", <IdcardOutlined />),
       getItem("Hosts", "host", <FaUserTie />),
       getItem("Guests", "gust", <UserOutlined />),
+      getItem("Bookings", "bookings", <SiBookstack />),
+      getItem("Payments", "payments", <CreditCardOutlined />),
+      getItem("Messages", "messages", <MessageOutlined />),
       getItem("Brands", "brands", <SiBrandfolder />),
       getItem("Models", "models", <PiCubeFill />),
-      getItem("Vehicle Types", "vehicle-types", <TbTruckDelivery />),
-      getItem("Bookings", "bookings", <SiBookstack />),
-      getItem("Messages", "messages", <MessageOutlined />),
+      // getItem("Vehicle Types", "vehicle-types", <TbTruckDelivery />),
       getItem("Permissions", "permissions", <LockOutlined />),
       getItem("Roles", "roles", <SafetyOutlined />),
     ];

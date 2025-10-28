@@ -23,6 +23,7 @@ const ChatDetails = () => {
     null;
 
   const [text, setText] = useState("");
+  const [optimistic, setOptimistic] = useState([]);
   const messagesRef = React.useRef(null);
   const [sending, setSending] = useState(false);
 
@@ -39,80 +40,71 @@ const ChatDetails = () => {
     }
   }, [messages]);
 
-  // const handleSend = async () => {
-  //   if (!text.trim()) return;
-  //   try {
-  //     setSending(true);
-  //     const senderId = currentUserId;
-  //     // try location.state (chat) for receiverId;
-  //     const chatState = location.state || {};
-  //     console.log("chatState******************:-->", chatState);
-  //     let receiverId = chatState.receiverId || null;
+  console.log("Booking info in chatState : ^^^^^^^^^^^^^^^^^", location.state);
 
-  //     // fallback: find last message sender that's not current user
-  //     if (!receiverId && Array.isArray(messages) && messages.length > 0) {
-  //       const lastOther = [...messages]
-  //         .reverse()
-  //         .find((m) => String(m.senderId) !== String(senderId));
-  //       if (lastOther) receiverId = lastOther.senderId || null;
-  //     }
+ const handleSend = async () => {
+   if (!text.trim()) return;
+   if (!currentUserId) return console.error("Missing sender ID");
 
-  //     const payload = {
-  //       bookingId: id,
-  //       senderId: senderId,
-  //       receiverId: receiverId,
-  //       content: text,
-  //     };
+   try {
+     setSending(true);
+     const senderId = currentUserId;
+     const booking = location.state || {};
+     let receiverId = booking.receiverId || null;
 
-  //     await dispatch(sendMessage(payload));
-  //     setText("");
-  //     // refresh messages
-  //     await dispatch(fetchMessagesForBooking({ bookingId: id }));
-  //   } catch (e) {
-  //     console.error(e);
-  //   } finally {
-  //     setSending(false);
-  //   }
-  // };
-  const handleSend = async () => {
-    if (!text.trim()) return;
+     // Determine receiver
+     if (!receiverId && booking?.host?.id && booking?.guest?.id) {
+       receiverId =
+         String(booking.host.id) === String(senderId)
+           ? booking.guest.id
+           : booking.host.id;
+     }
 
-    try {
-      setSending(true);
-      const senderId = currentUserId;
-      const chatState = location.state || {};
-      let receiverId = chatState.receiverId || null;
+     if (!receiverId && Array.isArray(messages) && messages.length > 0) {
+       const lastMsg = messages[messages.length - 1];
+       receiverId =
+         String(lastMsg.senderId) === String(senderId)
+           ? lastMsg.receiverId
+           : lastMsg.senderId;
+     }
 
-      if (!receiverId && Array.isArray(messages) && messages.length > 0) {
-        const lastMessage = messages[messages.length - 1];
+     if (!receiverId)
+       return console.error("Receiver ID could not be determined");
 
-        if (String(lastMessage.senderId) === String(senderId)) {
-          receiverId = lastMessage.receiverId;
-        } else {
-          receiverId = lastMessage.senderId;
-        }
-      }
+     const payload = {
+       bookingId: id,
+       senderId,
+       receiverId,
+       content: text.trim(),
+     };
 
-      if (!receiverId && chatState.bookingSummary?.otherUserId) {
-        receiverId = chatState.bookingSummary.otherUserId;
-      }
+     const tempId = `temp-${Date.now()}`;
+     const tempMsg = {
+       id: tempId,
+       bookingId: id,
+       senderId,
+       receiverId,
+       content: text.trim(),
+       createdAt: new Date().toISOString(),
+       optimistic: true,
+     };
 
-      const payload = {
-        bookingId: id,
-        senderId,
-        receiverId,
-        content: text.trim(),
-      };
+     setOptimistic((prev) => [...prev, tempMsg]);
+     setText("");
 
-      await dispatch(sendMessage(payload));
-      setText("");
-      await dispatch(fetchMessagesForBooking({ bookingId: id }));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setSending(false);
-    }
-  };
+     const result = await dispatch(sendMessage(payload));
+     const serverMsg = result?.payload?.data ?? result?.payload ?? null;
+
+     if (serverMsg) {
+       setOptimistic((prev) => prev.filter((m) => m.id !== tempId));
+     }
+   } catch (err) {
+     console.error(err);
+   } finally {
+     setSending(false);
+   }
+ };
+
 
   const handleKeyDown = (e) => {
     if (sending) return;
@@ -177,7 +169,7 @@ const ChatDetails = () => {
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {messages?.map((m) => {
+          {[...(messages || []), ...optimistic]?.map((m) => {
             const mine =
               String(m.senderId || m.sender?._id || m.sender) ===
               String(currentUserId);

@@ -222,7 +222,6 @@ const BookingDetail = () => {
                     </Button>
                   </Popconfirm>
                   {booking.status === "CONFIRMED" &&
-                    String(payment.status).toLowerCase() === "completed" &&
                     !(
                       pickupInspection && pickupInspection.approved === true
                     ) && (
@@ -425,8 +424,7 @@ const BookingDetail = () => {
                         type="primary"
                         loading={actionLoading.dropoffApprove}
                         onClick={async () => {
-                          const inspectionId =
-                            dropoffInspection.id ;
+                          const inspectionId = dropoffInspection.id;
                           try {
                             setActionLoading((s) => ({
                               ...s,
@@ -568,8 +566,7 @@ const BookingDetail = () => {
                   }
                   const payload = {
                     bookingId: booking.id || "",
-                    paymentId:
-                      booking.payment?.id || "",
+                    paymentId: booking.payment?.id || "",
                     userId: authUser?.user?.id || "",
                     carId: booking.car?.id || "",
                     reason: values.reason || "",

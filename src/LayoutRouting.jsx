@@ -18,6 +18,8 @@ import CarsList from "./views/cars/CarsList";
 import CarsDetails from "./views/cars/CarsDetails";
 import BookingList from "./views/bookings/BookingList";
 import BookingDetails from "./views/bookings/BookingDetails";
+import PaymentList from "./views/payment/PaymentList";
+import PaymentDetails from "./views/payment/PaymentDetails";
 import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
 import BrandModelsList from "./views/brands/BrandModelsList";
 import CarInsurancePage from "./views/cars/CarInsurancePage";
@@ -58,6 +60,8 @@ const LayoutRouting = () => {
 
         <Route path="bookings" element={<BookingList />} />
         <Route path="bookings/:id" element={<BookingDetails />} />
+        <Route path="payments" element={<PaymentList />} />
+        <Route path="payments/:id" element={<PaymentDetails />} />
         <Route path="messages" element={<ChatsList />} />
         <Route path="messages/:id" element={<ChatDetails />} />
         <Route path="profile/:id" element={<ProfileDetails />} />

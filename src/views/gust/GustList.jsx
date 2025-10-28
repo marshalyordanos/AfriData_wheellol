@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Dropdown, Input, message } from "antd";
+import { Button, Dropdown, Input, message, Tag } from "antd";
 import { PlusOutlined, ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import CommonTable from "../../components/commons/CommonTable";
 import GustService from "./GustService";
@@ -143,7 +143,12 @@ const GustList = () => {
           key === "role"
             ? (role) => role?.name || "-"
             : key === "active"
-            ? (_, record) => (record?.isActive ? "true" : "false")
+            ? (_, record) =>
+                record?.isActive ? (
+                  <Tag color="green">Active</Tag>
+                ) : (
+                  <Tag color="red">Inactive</Tag>
+                )
             : undefined,
       })
     ),

@@ -3,6 +3,7 @@ import api from "../../api/api";
 
 class BookingService {
   createBooking(data) {
+
     return api.post("/bookings", data).then((response) => {
       return response.data.data;
     });
@@ -17,7 +18,7 @@ class BookingService {
   searchBookings({
     page = 1,
     limit = 10,
-    search = null,
+    searchText = null,
     filter = null,
     sort = null,
     order = null,
@@ -28,9 +29,9 @@ class BookingService {
     params.push(`page=${page}`);
     params.push(`pageSize=${limit}`);
 
-    // Search
-    if (search) {
-      params.push(`search=all:${encodeURIComponent(search)}`);
+    //search
+    if (searchText) {
+      params.push(`search=all:${encodeURIComponent(searchText)}`);
     }
 
     // Filter
@@ -86,6 +87,12 @@ class BookingService {
       return response.data;
     });
   }
+  deleteBooking(id) {
+    return api.delete("/bookings/" + id).then((response) => {
+      return response.data;
+    });
+  }
+
   pickupInspection(data) {
     return api.post("/bookings/inspection", data).then((response) => {
       return response.data;
