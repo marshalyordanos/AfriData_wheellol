@@ -59,8 +59,10 @@ const ChatsList = () => {
   const filtered = chats.filter((c) => {
     if (!query) return true;
     const summary = c.bookingSummary || {};
+    const partner = c.withUser || {};
     return (
       (summary.id || "").toLowerCase().includes(query.toLowerCase()) ||
+      (partner.fullName || "").toLowerCase().includes(query.toLowerCase()) ||
       (c.lastMessage?.content || "").toLowerCase().includes(query.toLowerCase())
     );
   });
@@ -110,7 +112,14 @@ const ChatsList = () => {
             >
               <List.Item.Meta
                 avatar={
-                  <Avatar size={48}>{(summary.status || "").charAt(0)}</Avatar>
+                  <Avatar
+                    size={48}
+                    src={chat.withUser?.profilePhoto || undefined}
+                  >
+                    {(!chat.withUser?.profilePhoto &&
+                      (chat.withUser?.fullName || "").charAt(0)) ||
+                      (summary.status || "").charAt(0)}
+                  </Avatar>
                 }
                 title={
                   <div
@@ -121,7 +130,7 @@ const ChatsList = () => {
                     }}
                   >
                     <div style={{ fontWeight: 600 }}>
-                      {summary.id || chat.bookingId}
+                      {chat.withUser?.fullName || summary.id || chat.bookingId}
                     </div>
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 8 }}

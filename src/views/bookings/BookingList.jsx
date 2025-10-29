@@ -128,7 +128,7 @@ const BookingList = () => {
     const merged = { ...filters, ...newFilters };
     setFilters(merged);
 
-    // build `filter` object 
+    // build `filter` object
     const filter = {};
     if (merged.status) filter.status = merged.status;
     // with driver filtering
@@ -157,6 +157,29 @@ const BookingList = () => {
     const order = sorter?.order || "";
     dispatch(updateBookingState({ sort: field || "", order }));
     loadBookings();
+  };
+
+  const paymentTag = (status) => {
+    if (!status) return <Tag color="default">N/A</Tag>;
+    const s = status.toString().toLowerCase();
+    if (s.includes("paid") || s.includes("completed") || s === "success")
+      return <Tag color="green">{status}</Tag>;
+    if (s.includes("pending") || s.includes("await"))
+      return <Tag color="orange">{status}</Tag>;
+    if (s.includes("failed") || s.includes("declined"))
+      return <Tag color="red">{status}</Tag>;
+    return <Tag color="blue">{status}</Tag>;
+  };
+
+  const bookingTag = (status) => {
+    if (!status) return <Tag color="default">N/A</Tag>;
+    const s = status.toString().toLowerCase();
+    if (s.includes("completed")) return <Tag color="green">{status}</Tag>;
+    if (s.includes("cancel")) return <Tag color="red">{status}</Tag>;
+    if (s.includes("pending") || s.includes("new") || s.includes("await"))
+      return <Tag color="orange">{status}</Tag>;
+    if (s.includes("confirmed")) return <Tag color="blue">{status}</Tag>;
+    return <Tag color="purple">{status}</Tag>;
   };
 
   const onRowClick = (record) => {
@@ -254,6 +277,23 @@ const BookingList = () => {
             }`.trim()
           : "-",
     },
+    {
+      title: "Total Price",
+      dataIndex: "totalPrice",
+      render: (p) => (p ? `${p}` : "-"),
+    },
+    // 10. Payment Status
+    {
+      title: "Payment Status",
+      dataIndex: ["payment", "status"],
+      render: (s, r) => paymentTag(s || r?.payment?.status),
+    },
+    // 11. Booking Status
+    {
+      title: "Booking Status",
+      dataIndex: "status",
+      render: (s) => bookingTag(s),
+    },
     // 4. Start Date
     {
       title: "Start Date",
@@ -292,23 +332,7 @@ const BookingList = () => {
       render: (v) => (v ? "Yes" : "No"),
     },
     // 9. Total Price
-    {
-      title: "Total Price",
-      dataIndex: "totalPrice",
-      render: (p) => (p ? `${p}` : "-"),
-    },
-    // 10. Payment Status
-    {
-      title: "Payment Status",
-      dataIndex: ["payment", "status"],
-      render: (s) => s || "-",
-    },
-    // 11. Booking Status
-    {
-      title: "Booking Status",
-      dataIndex: "status",
-      render: (s) => s || "-",
-    },
+
     // 12. Created At
     {
       title: "Created At",
@@ -383,7 +407,7 @@ const BookingList = () => {
             booking={selectedBooking}
             onSave={async (updated) => {
               try {
-                const id = selectedBooking.id ;
+                const id = selectedBooking.id;
                 await BookingService.updateBooking(updated, id);
                 setIsUpdateModalOpen(false);
                 setSelectedBooking(null);
