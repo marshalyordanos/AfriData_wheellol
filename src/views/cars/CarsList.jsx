@@ -25,6 +25,17 @@ import {
   carsQuery,
 } from "./CarsRedux";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import SummaryCard from "../../components/commons/SummaryCard";
+import {
+  FaBolt,
+  FaBook,
+  FaCar,
+  FaExclamationCircle,
+  FaLeaf,
+  FaMoneyBillWave,
+  FaUsers,
+} from "react-icons/fa";
+import { selectcarSummary } from "../../redux/auth/authSlice";
 
 // ✅ Helper: find brand/model name from ID
 const findNameById = (items, id) => {
@@ -51,6 +62,8 @@ const CarsList = () => {
 
   const searchText = useSelector(carsSearchText);
   const { notActiveOnly, notApprovedOnly } = useSelector(carsQuery);
+  const carSummary = useSelector(selectcarSummary);
+
   const [loading, setLoading] = useState(false);
 
   const [carsSelection, setCarsSelection] = useState([]);
@@ -80,6 +93,8 @@ const CarsList = () => {
 
   const loadBrandsAndModels = async () => {
     try {
+      setLoading(true);
+
       const [brandsData, modelsData] = await Promise.all([
         carsService.getBrands(),
         carsService.getModels(),
@@ -88,6 +103,8 @@ const CarsList = () => {
       setModels(modelsData);
       setFilteredModels(modelsData); // initialize filteredModels to all models
     } catch (err) {
+      setLoading(false);
+
       console.error("Failed to load brands/models", err);
     }
   };
@@ -428,6 +445,45 @@ const CarsList = () => {
         </CommonDeleteModal>
       )}
 
+      <div className="flex gap-2 mb-6 flex-wrap">
+        {/* Booking Cards */}
+
+        {/* Total Cars */}
+        <SummaryCard
+          title="Total Cars"
+          value={carSummary?.totalCars ?? 0}
+          Icon={FaCar}
+          iconBgColor="bg-indigo-100"
+          iconColor="text-indigo-500"
+          description="Available cars"
+        />
+
+        {/* Electric Cars */}
+        <SummaryCard
+          title="Electric Cars"
+          value={
+            carSummary?.byEco?.find((item) => item.ecoFriendly === "ELECTRIC")
+              ?.count ?? 0
+          }
+          Icon={FaBolt}
+          iconBgColor="bg-green-100"
+          iconColor="text-green-500"
+          description="Electric cars available"
+        />
+
+        {/* Hybrid Cars */}
+        <SummaryCard
+          title="Hybrid Cars"
+          value={
+            carSummary?.byEco?.find((item) => item.ecoFriendly === "HYBRID")
+              ?.count ?? 0
+          }
+          Icon={FaLeaf}
+          iconBgColor="bg-yellow-100"
+          iconColor="text-yellow-500"
+          description="Hybrid cars available"
+        />
+      </div>
       {/* ✅ Header with Add Car */}
       <div className="flex flex-col border-b border-gray-300 pb-4 mb-4">
         <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -492,7 +548,8 @@ const CarsList = () => {
           </Button>
 
           <Button
-            type="primary"
+            // type="primary"
+            style={{ backgroundColor: "#3bb66e" }}
             icon={<PlusOutlined />}
             onClick={() => {
               setCarId("");

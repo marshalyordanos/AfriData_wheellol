@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import LayoutApp from "./components/layout/LayoutApp";
 import PermissionList from "./views/permissions/PermissionList";
@@ -32,8 +32,27 @@ import HostReview from "./views/host/Review";
 import CartReview from "./views/cars/Review";
 import ChatsList from "./views/messages/ChatsList";
 import ChatDetails from "./views/messages/ChatDetails";
-
+import api from "./api/api";
+import { useDispatch } from "react-redux";
+import { setSummary } from "./redux/auth/authSlice";
 const LayoutRouting = () => {
+  const dispatch = useDispatch();
+
+  const fetchSummary = async () => {
+    try {
+      const res = await api.get("users/summary");
+      console.log("res.d:", res.data);
+
+      dispatch(setSummary(res.data?.data));
+    } catch (error) {
+      console.error("fetchSummary: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
+
   return (
     <Routes>
       <Route element={<LayoutApp />}>

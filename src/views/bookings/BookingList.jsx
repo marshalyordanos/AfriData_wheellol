@@ -22,6 +22,16 @@ import {
 } from "./BookingRedux";
 import BookingService from "./BookingService";
 import BookingUpdateForm from "../../components/Forms/BookingUpdateForm";
+import SummaryCard from "../../components/commons/SummaryCard";
+import {
+  FaCheckCircle,
+  FaClipboardList,
+  FaGavel,
+  FaHourglassHalf,
+  FaTimesCircle,
+  FaUserSlash,
+} from "react-icons/fa";
+import { selectbookingSummary } from "../../redux/auth/authSlice";
 
 const BookingList = () => {
   const dispatch = useDispatch();
@@ -44,7 +54,7 @@ const BookingList = () => {
   const [localSearch, setLocalSearch] = useState(searchText || "");
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
-
+  const bookingSummary = useSelector(selectbookingSummary);
   const getPaginationInfo = () => [
     Number(searchParams.get("page") || 1),
     Number(searchParams.get("limit") || limit),
@@ -421,6 +431,68 @@ const BookingList = () => {
         </CommonModal>
       )}
 
+      <div className="flex gap-2 mb-6 flex-wrap px-6 my-6">
+        {/* Booking Cards */}
+        {/* Total Bookings */}
+        <SummaryCard
+          title="Total Bookings"
+          value={bookingSummary?.totalBookings ?? 0}
+          Icon={FaClipboardList}
+          iconBgColor="bg-indigo-100"
+          iconColor="text-indigo-500"
+          description="All bookings"
+        />
+
+        {/* Pending */}
+        <SummaryCard
+          title="Pending Bookings"
+          value={bookingSummary?.pending ?? 0}
+          Icon={FaHourglassHalf}
+          iconBgColor="bg-yellow-100"
+          iconColor="text-yellow-500"
+          description="Bookings awaiting confirmation"
+        />
+
+        {/* Cancelled by Guest */}
+        <SummaryCard
+          title="Cancelled by Guest"
+          value={bookingSummary?.cancelledByGuest ?? 0}
+          Icon={FaUserSlash}
+          iconBgColor="bg-red-100"
+          iconColor="text-red-500"
+          description="Guest cancelled"
+        />
+
+        {/* Cancelled by Host */}
+        <SummaryCard
+          title="Cancelled by Host"
+          value={bookingSummary?.cancelledByHost ?? 0}
+          Icon={FaTimesCircle}
+          iconBgColor="bg-red-100"
+          iconColor="text-red-500"
+          description="Host cancelled"
+        />
+
+        {/* Cancelled by Admin */}
+        <SummaryCard
+          title="Cancelled by Admin"
+          value={bookingSummary?.cancelledByAdmin ?? 0}
+          Icon={FaGavel}
+          iconBgColor="bg-red-100"
+          iconColor="text-red-500"
+          description="Admin cancelled"
+        />
+
+        {/* Completed */}
+        <SummaryCard
+          title="Completed Bookings"
+          value={bookingSummary?.completed ?? 0}
+          Icon={FaCheckCircle}
+          iconBgColor="bg-green-100"
+          iconColor="text-green-500"
+          description="Successfully completed"
+        />
+      </div>
       <span className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700">
         <div className="flex flex-col p-6 md:w-[45vw] w-full">
           <h1 className="text-2xl font-bold pb-4">Bookings</h1>
