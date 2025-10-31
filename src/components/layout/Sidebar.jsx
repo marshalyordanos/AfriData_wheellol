@@ -13,6 +13,7 @@ import {
   IdcardOutlined,
   MessageOutlined,
   CreditCardOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 
 import { FaUserTie } from "react-icons/fa";
@@ -71,6 +72,7 @@ const Sidebar = ({ collapsed }) => {
     else if (p.startsWith("/dash/models")) sel = "models";
     else if (p.startsWith("/dash/bookings")) sel = "bookings";
     else if (p.startsWith("/dash/payments")) sel = "payments";
+    else if (p.startsWith("/dash/disputes")) sel = "disputes";
     else if (p.startsWith("/dash/messages")) sel = "messages";
     else if (p.startsWith("/dash/permissions")) sel = "permissions";
     else if (p.startsWith("/dash/roles")) sel = "roles";
@@ -122,10 +124,10 @@ const Sidebar = ({ collapsed }) => {
       getItem("Guests", "gust", <UserOutlined />),
       getItem("Bookings", "bookings", <SiBookstack />),
       getItem("Payments", "payments", <CreditCardOutlined />),
+      getItem("Disputes", "disputes", <WarningOutlined />),
       getItem("Messages", "messages", <MessageOutlined />),
       getItem("Brands", "brands", <SiBrandfolder />),
       getItem("Models", "models", <PiCubeFill />),
-      // getItem("Vehicle Types", "vehicle-types", <TbTruckDelivery />),
       getItem("Permissions", "permissions", <LockOutlined />),
       getItem("Roles", "roles", <SafetyOutlined />),
     ];

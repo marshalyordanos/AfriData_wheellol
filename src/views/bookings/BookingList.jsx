@@ -367,7 +367,6 @@ const BookingList = () => {
       dataIndex: "dispute",
       render: (d) => (d ? "Yes" : "No"),
     },
-    // (actions column kept earlier)
   ];
 
   return (
