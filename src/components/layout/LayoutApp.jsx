@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { Layout, theme } from "antd";
 import { debounce } from "lodash";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import LayoutHeader from "./Header";
 import SideDrawer from "../../utils/SideDrawer";
@@ -33,6 +33,17 @@ const LayoutApp = () => {
       window.removeEventListener("resize", handleWindowResize);
     };
   }, []);
+
+  const location = useLocation();
+  // Close the mobile drawer/sidebar when navigation happens
+  useEffect(() => {
+    try {
+      if (window.innerWidth < 900) {
+        setCollapsed(true);
+        setCollapsed2(true);
+      }
+    } catch (err) {}
+  }, [location.pathname]);
 
   return (
     <LayoutContainer>

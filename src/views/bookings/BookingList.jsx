@@ -354,7 +354,12 @@ const BookingList = () => {
               e.stopPropagation();
               const bookingId = record.id || record._id;
               if (bookingId)
-                navigate(`/dash/messages/${bookingId}`, { state: record });
+                navigate(`/dash/messages/${bookingId}`, {
+                  state: {
+                    from: "bookingList",
+                    chatPartner: record.guest,
+                  },
+                });
             }}
           >
             Chat

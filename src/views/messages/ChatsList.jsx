@@ -99,7 +99,10 @@ const ChatsList = () => {
           return (
             <List.Item
               onClick={() =>
-                navigate(`/dash/messages/${chat.bookingId}`, { state: chat })
+                navigate(`/dash/messages/${chat.bookingId}`, { state: {
+                  from:"chatsList",
+                  chatPartner: chat.withUser
+                } })
               }
               style={{
                 cursor: "pointer",
