@@ -20,6 +20,8 @@ import BookingList from "./views/bookings/BookingList";
 import BookingDetails from "./views/bookings/BookingDetails";
 import PaymentList from "./views/payment/PaymentList";
 import PaymentDetails from "./views/payment/PaymentDetails";
+import DisputeList from "./views/dispute/DisputeList";
+import DisputeDetails from "./views/dispute/DisputeDetails";
 import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
 import BrandModelsList from "./views/brands/BrandModelsList";
 import CarInsurancePage from "./views/cars/CarInsurancePage";
@@ -81,6 +83,10 @@ const LayoutRouting = () => {
         <Route path="bookings/:id" element={<BookingDetails />} />
         <Route path="payments" element={<PaymentList />} />
         <Route path="payments/:id" element={<PaymentDetails />} />
+
+        <Route path="disputes" element={<DisputeList />} />
+        <Route path="disputes/:id" element={<DisputeDetails />} />
+
         <Route path="messages" element={<ChatsList />} />
         <Route path="messages/:id" element={<ChatDetails />} />
         <Route path="profile/:id" element={<ProfileDetails />} />

@@ -13,6 +13,7 @@ import staffReducer from "../views/staff/StaffRedux";
 import gustReducer from "../views/gust/GustRedux";
 import profileReducer from "../views/profile/ProfileRedux";
 import messagesReducer from "../views/messages/MessageRedux";
+import disputeReducer from "../views/dispute/DisputetRedux";
 
 export const store = configureStore({
   reducer: {
@@ -25,6 +26,7 @@ export const store = configureStore({
     booking: bookingReducer,
     profile: profileReducer,
     messages: messagesReducer,
+    dispute: disputeReducer,
     permissions: permissionsReducer,
     roles: rolesReducer,
     host: hostReducer,
