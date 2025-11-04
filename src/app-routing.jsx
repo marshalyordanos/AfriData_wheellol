@@ -4,6 +4,7 @@ import PageNotFound from "./utils/PageNotFound";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import LayoutRouting from "./LayoutRouting";
 import LoginPage from "./views/auth/LoginPage";
+import RegistrationPage from "./views/auth/RegistrationPage";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "./redux/auth/authSlice";
 // import { Button, Result } from "antd";
@@ -17,6 +18,7 @@ const AppRoute = () => {
     <div>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegistrationPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/dash/*" element={<LayoutRouting />} />

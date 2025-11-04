@@ -42,7 +42,7 @@ class CarsService {
     }
 
     if (searchText) {
-      url = url + `&searchText=${encodeURIComponent(searchText)}`;
+      url = url + `&search=all:${encodeURIComponent(searchText)}`;
     }
 
     if (notActiveOnly) {

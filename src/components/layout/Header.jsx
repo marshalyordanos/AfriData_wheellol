@@ -1,148 +1,106 @@
-import { WrenchScrewdriverIcon } from "@heroicons/react/24/solid";
-import {
-  Avatar,
-  Button,
-  Dropdown,
-  Layout,
-  Space,
-  message,
-  Typography,
-  theme,
-} from "antd";
 import React from "react";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { Layout, Button, Dropdown, Avatar, Space, message, Badge } from "antd";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  UserOutlined,
   ArrowLeftOutlined,
   DownOutlined,
   GlobalOutlined,
+  BellOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { WrenchScrewdriverIcon } from "@heroicons/react/24/solid";
 import { logout, selectCurrentUser } from "../../redux/auth/authSlice";
 import authService from "../../api/auth.service";
 import { useTranslation } from "react-i18next";
+import NotificationsList from "../../views/notification/NotificationList";
+import {
+  fetchNotifications,
+  selectUnreadCount,
+} from "../../views/notification/NotificationRedux";
+
 const { Header } = Layout;
 
-const LayoutHeader = ({
-  collapsed,
-  collapsed2,
-  setCollapsed,
-  setOpen,
-  open,
-}) => {
+const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
   const navigate = useNavigate();
-  const currentUser = useSelector(selectCurrentUser);
   const dispatch = useDispatch();
-  const onClick = ({ key }) => {
-    navigate(key);
-  };
+  const currentUser = useSelector(selectCurrentUser);
+  const unreadCount = useSelector((state) => selectUnreadCount(state));
   const { t, i18n } = useTranslation();
 
-  const onClick2 = ({ key }) => {
-    if (key == "oromic") {
-      i18n.changeLanguage("OR");
-      localStorage.setItem("locale", "OR");
-    } else if (key == "amharic") {
-      i18n.changeLanguage("AM");
-      localStorage.setItem("locale", "AM");
-    } else {
-      // alert("EN");
-      i18n.changeLanguage("EN");
-      localStorage.setItem("locale", "EN");
+  const [notifOpen, setNotifOpen] = React.useState(false);
+
+  const handleBack = () => {
+    navigate(-1);
+    const pathHistory = JSON.parse(localStorage.getItem("keyPath"));
+    if (Array.isArray(pathHistory)) {
+      pathHistory.pop();
+      localStorage.setItem("keyPath", JSON.stringify(pathHistory));
     }
-    window.location.reload();
   };
 
-const onClickProfile = ({ key }) => {
-  if (key === "logout") {
-    authService.logout();
-    dispatch(logout());
-    message.success("You have been logged out");
-    setTimeout(() => navigate("/login"), 300);
-  } else if (key === "change_password") {
-    navigate("/dash/change-password");
-  } else if (key === "profile") {
-    const uid =
-      currentUser?.user?.id || currentUser?.id || currentUser?._id || "me";
-    navigate(`/dash/profile/${uid}`);
-  }
-};
+  //  Language change
+  const handleLocaleChange = ({ key }) => {
+    const langCode = key === "oromic" ? "OR" : key === "amharic" ? "AM" : "EN";
+    i18n.changeLanguage(langCode);
+    localStorage.setItem("locale", langCode);
+    message.success(`Language changed to ${langCode.toUpperCase()}`);
+  };
 
+  //  Profile menu actions
+  const handleProfileAction = ({ key }) => {
+    if (key === "logout") {
+      authService.logout();
+      dispatch(logout());
+      message.success("You have been logged out");
+      setTimeout(() => navigate("/login"), 300);
+    } else if (key === "change_password") {
+      navigate("/dash/change-password");
+    } else if (key === "profile") {
+      const uid =
+        currentUser?.user?.id || currentUser?.id || currentUser?._id || "me";
+      navigate(`/dash/profile/${uid}`);
+    }
+  };
 
-  const {
-    token: { colorBgContainer },
-  } = theme.useToken();
-
-  const items = [
-    {
-      key: "users",
-      label: t("User"),
-    },
-    {
-      //   key: 'access_controls',
-      //   label: 'Access Controls',
-      // },
-      // {
-      //   key: 'groups',
-      //   label: 'Group',
-      // },
-      // {
-      key: "roles",
-      label: t("Role"),
-    },
-    {
-      key: "permissions",
-      label: t("Permission"),
-    },
-    {
-      key: "settings",
-      label: t("Setting"),
-    },
+  // Admin dropdown items
+  const adminMenuItems = [
+    { key: "users", label: t("User") },
+    { key: "roles", label: t("Role") },
+    { key: "permissions", label: t("Permission") },
+    { key: "settings", label: t("Setting") },
   ];
-  const items2 = [
-    {
-      key: "oromic",
-      label: "Afaan oromo",
-    },
-    {
-      key: "english",
-      label: "English",
-    },
-    {
-      key: "amharic",
-      label: "Amharic",
-    },
+
+  //  Language menu items
+  const languageItems = [
+    { key: "oromic", label: "Afaan Oromo" },
+    { key: "english", label: "English" },
+    { key: "amharic", label: "Amharic" },
   ];
-  const profiles = [
-    {
-      key: "profile",
-      label: "Profile",
-    },
-    {
-      key: "change_password",
-      label: "Change Password",
-    },
-    {
-      key: "logout",
-      label: "Logout",
-    },
+
+  //  Profile dropdown items
+  const profileMenuItems = [
+    { key: "profile", label: "Profile" },
+    { key: "change_password", label: "Change Password" },
+    { key: "logout", label: "Logout" },
   ];
 
   return (
     <Header
       style={{
         padding: 0,
-        background: " #F9F9F9",
+        background: "#F9F9F9",
         position: "sticky",
         top: 0,
         zIndex: 100,
       }}
     >
-      <HeaderStyle>
-        <div className=" max-h-[40px] flex items-center ">
+      <HeaderContainer>
+        {/* Left Controls */}
+        <div className="left-controls">
           <Button
             type="text"
             icon={
@@ -152,97 +110,76 @@ const onClickProfile = ({ key }) => {
                 ) : (
                   <MenuFoldOutlined style={{ color: "black" }} />
                 )
-              ) : (
-                ""
-              )
+              ) : null
             }
-            onClick={() => {
-              setCollapsed(!collapsed);
-            }}
+            onClick={() => setCollapsed && setCollapsed(!collapsed)}
             style={{
-              fontSize: "16px",
+              fontSize: 16,
               width: 64,
               height: 30,
-              display: collapsed2 ? "" : "none",
+              display: collapsed2 ? undefined : "none",
             }}
           />
 
           <Button
             type="text"
             icon={<ArrowLeftOutlined style={{ color: "black" }} />}
-            onClick={() => {
-              navigate(-1);
-              const y = JSON.parse(localStorage.getItem("keyPath"));
-              if (Array.isArray(y)) {
-                y.pop();
-                localStorage.setItem("keyPath", JSON.stringify(y));
-              }
-            }}
-            style={{
-              fontSize: "16px",
-              width: 64,
-              height: 34,
-            }}
+            onClick={handleBack}
+            style={{ fontSize: 16, width: 64, height: 34 }}
           />
         </div>
 
-        <div className="  flex items-center gap-5 mr-5 ">
-          <div>
-            <p className=" ">
+        {/* Right Controls */}
+        <div className="right-controls">
+          {/*  Language Selector */}
+          <Dropdown
+            menu={{ items: languageItems, onClick: handleLocaleChange }}
+            trigger={["click"]}
+          >
+            <GlobalOutlined style={{ cursor: "pointer", fontSize: 18 }} />
+          </Dropdown>
+
+          {/*  System Admin Section */}
+          {currentUser?.isSystemAdmin && (
+            <div className="admin-dropdown">
               <Dropdown
-                onOpenChange={() => console.log("onOpenChange")}
                 menu={{
-                  items: items2,
-                  onClick: (value) => onClick2(value),
-                  selectable: true,
-                  defaultSelectedKeys: ["3"],
-                }}
-                className="bg-white px-5 py-4 max-h-[50px]"
-                trigger={["click"]}
-              >
-                <GlobalOutlined />
-              </Dropdown>
-            </p>
-          </div>
-          {currentUser?.isSystemAdmin ? (
-            <div className="max-h-[50px] flex items-center bg-white px-4 rounded-lg ">
-              <Dropdown
-                onOpenChange={() => console.log("onOpenChange")}
-                menu={{
-                  items,
-                  onClick,
-                  selectable: true,
-                  defaultSelectedKeys: ["3"],
+                  items: adminMenuItems,
+                  onClick: ({ key }) => navigate(key),
                 }}
                 trigger={["click"]}
               >
                 <span className="header__right">
                   <WrenchScrewdriverIcon className="h-5 w-5 text-gray-700" />
-
                   <Space>
-                    <p className="text-black">{t("System_Admin")}</p>
+                    <span className="text-black">{t("System_Admin")}</span>
                     <DownOutlined />
                   </Space>
-
-                  {/* */}
                 </span>
               </Dropdown>
             </div>
-          ) : (
-            ""
           )}
-          <div className="max-h-[50px] flex items-center bg-white px-4 rounded-lg ">
+
+          {/*  Notifications &  Profile */}
+          <div className="notif-profile">
+            <Badge count={unreadCount} size="small">
+              <Button
+                type="text"
+                icon={<BellOutlined style={{ fontSize: 18, color: "black" }} />}
+                onClick={() => {
+                  setNotifOpen(true);
+                  dispatch(fetchNotifications());
+                }}
+              />
+            </Badge>
+
             <Dropdown
-              onOpenChange={() => console.log("onOpenChange")}
-              menu={{
-                items: profiles,
-                onClick: (value) => onClickProfile(value),
-              }}
+              menu={{ items: profileMenuItems, onClick: handleProfileAction }}
               trigger={["click"]}
             >
               <span className="header__right">
                 <Avatar
-                  size={45}
+                  size={40}
                   src={
                     currentUser?.user?.profilePhoto ||
                     currentUser?.profilePhoto ||
@@ -250,39 +187,58 @@ const onClickProfile = ({ key }) => {
                   }
                   icon={<UserOutlined />}
                 />
-
-                <p className="text-black">{currentUser?.fullName}</p>
+                <span style={{ color: "black", marginLeft: 8 }}>
+                  {currentUser?.fullName}
+                </span>
               </span>
             </Dropdown>
           </div>
         </div>
-      </HeaderStyle>
+      </HeaderContainer>
+
+      {/*  Notifications Drawer */}
+      <NotificationsList open={notifOpen} onClose={() => setNotifOpen(false)} />
     </Header>
   );
 };
 
-const HeaderStyle = styled.div`
+const HeaderContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* border: 1px solid; */
   height: 70px;
   background-color: white;
   border-bottom: 1px solid lightgray;
-  .header_right_con {
+  padding: 0 16px;
+
+  .left-controls {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    margin-right: 20px;
-    gap: 20px;
-    padding: 0;
-
-    /* color: #2b2b2b; */
+    gap: 8px;
   }
+
+  .right-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .admin-dropdown {
+    background: white;
+    border-radius: 8px;
+    padding: 4px 8px;
+  }
+
+  .notif-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
   .header__right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     cursor: pointer;
   }
 `;

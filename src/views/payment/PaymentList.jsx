@@ -15,6 +15,17 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import CommonTable from "../../components/commons/CommonTable";
 import PaymentService from "./PaymentService";
 import { Form, InputNumber } from "antd";
+import SummaryCard from "../../components/commons/SummaryCard";
+import {
+  FaCheckCircle,
+  FaDollarSign,
+  FaHourglassHalf,
+  FaTimesCircle,
+  FaUndoAlt,
+  FaWallet,
+} from "react-icons/fa";
+import { useSelector } from "react-redux";
+import { selectpaymentSummary } from "../../redux/auth/authSlice";
 
 const { confirm } = Modal;
 
@@ -43,6 +54,7 @@ const PaymentList = () => {
     Number(searchParams.get("limit") || 10),
   ];
 
+  const paymentSummary = useSelector(selectpaymentSummary);
   const currentPage = Number(searchParams.get("page") || 1);
   const currentLimit = Number(searchParams.get("limit") || 10);
   const [page, setPage] = useState(currentPage);
@@ -288,9 +300,74 @@ const PaymentList = () => {
 
   return (
     <div>
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
+      <div className="flex gap-2 mb-6 flex-wrap px-6 my-3">
+        {/* Booking Cards */}
+
+        <SummaryCard
+          title="Total Payments"
+          value={paymentSummary?.totalPayments ?? 0}
+          Icon={FaWallet}
+          iconBgColor="bg-indigo-100"
+          iconColor="text-indigo-500"
+          description="All payments"
+        />
+
+        {/* Pending Payments */}
+        <SummaryCard
+          title="Pending Payments"
+          value={paymentSummary?.pending ?? 0}
+          Icon={FaHourglassHalf}
+          iconBgColor="bg-yellow-100"
+          iconColor="text-yellow-500"
+          description="Awaiting processing"
+        />
+
+        {/* Completed Payments */}
+        <SummaryCard
+          title="Completed Payments"
+          value={paymentSummary?.completed ?? 0}
+          Icon={FaCheckCircle}
+          iconBgColor="bg-green-100"
+          iconColor="text-green-500"
+          description="Successfully completed"
+        />
+
+        {/* Failed Payments */}
+        <SummaryCard
+          title="Failed Payments"
+          value={paymentSummary?.failed ?? 0}
+          Icon={FaTimesCircle}
+          iconBgColor="bg-red-100"
+          iconColor="text-red-500"
+          description="Payments failed"
+        />
+
+        {/* Refunded Payments */}
+        <SummaryCard
+          title="Refunded Payments"
+          value={paymentSummary?.refunded ?? 0}
+          Icon={FaUndoAlt}
+          iconBgColor="bg-purple-100"
+          iconColor="text-purple-500"
+          description="Refunded transactions"
+        />
+
+        {/* Total Amount */}
+        <SummaryCard
+          title="Total Amount"
+          value={`${(
+            paymentSummary?.totals?.amount ?? 0
+          ).toLocaleString()} ETB`}
+          Icon={FaDollarSign}
+          iconBgColor="bg-green-100"
+          iconColor="text-green-600"
+          description="Total collected"
+        />
+      </div>
+      <div className="flex md:flex-row flex-col justify-between items-start md:items-end px-6">
         <div className="flex flex-col md:w-[45vw] w-full">
           <h1 className="text-2xl font-bold pb-4">Payments</h1>
+
           <div className="flex gap-3 flex-wrap items-center">
             <Input
               placeholder="Search"

@@ -28,11 +28,23 @@ export const authSlice = createSlice({
     status: "idle",
     user: null,
     err: null,
+    bookingSummary: {},
+    carSummary: {},
+    userSummary: {},
+    paymentSummary: {},
   },
   reducers: {
     setCredential: (state, action) => {
       const { user } = action.payload;
       state.user = user;
+    },
+    setSummary: (state, action) => {
+      const { bookingSummary, paymentSummary, carSummary, userSummary } =
+        action.payload;
+      state.bookingSummary = bookingSummary;
+      state.paymentSummary = paymentSummary;
+      state.carSummary = carSummary;
+      state.userSummary = userSummary;
     },
     logout: (state) => {
       authService.logout();
@@ -61,7 +73,11 @@ export const authSlice = createSlice({
 });
 
 // Action creators are generated for each case reducer function
-export const { setCredential, logout } = authSlice.actions;
+export const { setCredential, logout, setSummary } = authSlice.actions;
 
 export default authSlice.reducer;
 export const selectCurrentUser = (state) => state.auth.user;
+export const selectbookingSummary = (state) => state.auth.bookingSummary;
+export const selectpaymentSummary = (state) => state.auth.paymentSummary;
+export const selectcarSummary = (state) => state.auth.carSummary;
+export const selectuserSummary = (state) => state.auth.userSummary;

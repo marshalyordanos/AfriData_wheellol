@@ -4,7 +4,7 @@ import TokenService from "./token.service";
 class AuthService {
   login(phone, password) {
     return api
-      .post("/auth/login", {
+      .post("/auth/login-admin", {
         phone,
         password,
       })
@@ -36,7 +36,7 @@ class AuthService {
   }
 
   register(formData) {
-    return api.post("/user/register", formData);
+    return api.post("/auth/register", formData);
   }
 
   getCurrentUser() {

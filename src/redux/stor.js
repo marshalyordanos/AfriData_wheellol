@@ -14,6 +14,8 @@ import gustReducer from "../views/gust/GustRedux";
 import profileReducer from "../views/profile/ProfileRedux";
 import messagesReducer from "../views/messages/MessageRedux";
 import disputeReducer from "../views/dispute/DisputetRedux";
+import notificationsReducer from "../views/notification/NotificationRedux";
+import cancellationPoliciesReducer from "../views/cancellation-policies/Cancellation-policiesRedux";
 
 export const store = configureStore({
   reducer: {
@@ -26,7 +28,9 @@ export const store = configureStore({
     booking: bookingReducer,
     profile: profileReducer,
     messages: messagesReducer,
+    notifications: notificationsReducer,
     dispute: disputeReducer,
+    cancellationPolicies: cancellationPoliciesReducer,
     permissions: permissionsReducer,
     roles: rolesReducer,
     host: hostReducer,

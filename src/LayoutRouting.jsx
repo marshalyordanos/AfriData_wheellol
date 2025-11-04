@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import LayoutApp from "./components/layout/LayoutApp";
 import PermissionList from "./views/permissions/PermissionList";
@@ -18,6 +18,7 @@ import CarsList from "./views/cars/CarsList";
 import CarsDetails from "./views/cars/CarsDetails";
 import BookingList from "./views/bookings/BookingList";
 import BookingDetails from "./views/bookings/BookingDetails";
+import CancellationPoliciesList from "./views/cancellation-policies/Cancellation-policiesList";
 import PaymentList from "./views/payment/PaymentList";
 import PaymentDetails from "./views/payment/PaymentDetails";
 import DisputeList from "./views/dispute/DisputeList";
@@ -34,8 +35,27 @@ import HostReview from "./views/host/Review";
 import CartReview from "./views/cars/Review";
 import ChatsList from "./views/messages/ChatsList";
 import ChatDetails from "./views/messages/ChatDetails";
-
+import api from "./api/api";
+import { useDispatch } from "react-redux";
+import { setSummary } from "./redux/auth/authSlice";
 const LayoutRouting = () => {
+  const dispatch = useDispatch();
+
+  const fetchSummary = async () => {
+    try {
+      const res = await api.get("users/summary");
+      console.log("res.d:", res.data);
+
+      dispatch(setSummary(res.data?.data));
+    } catch (error) {
+      console.error("fetchSummary: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
+
   return (
     <Routes>
       <Route element={<LayoutApp />}>
@@ -64,6 +84,12 @@ const LayoutRouting = () => {
         <Route path="bookings/:id" element={<BookingDetails />} />
         <Route path="payments" element={<PaymentList />} />
         <Route path="payments/:id" element={<PaymentDetails />} />
+
+        <Route
+          path="cancellation-policies"
+          element={<CancellationPoliciesList />}
+        />
+        {/* Cancellation policy details route removed - policies managed from list (update via edit route) */}
 
         <Route path="disputes" element={<DisputeList />} />
         <Route path="disputes/:id" element={<DisputeDetails />} />

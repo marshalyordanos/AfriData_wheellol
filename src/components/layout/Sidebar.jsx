@@ -70,6 +70,8 @@ const Sidebar = ({ collapsed }) => {
     else if (p.startsWith("/dash/gust")) sel = "gust";
     else if (p.startsWith("/dash/brands")) sel = "brands";
     else if (p.startsWith("/dash/models")) sel = "models";
+    else if (p.startsWith("/dash/cancellation-policies"))
+      sel = "cancellation-policies";
     else if (p.startsWith("/dash/bookings")) sel = "bookings";
     else if (p.startsWith("/dash/payments")) sel = "payments";
     else if (p.startsWith("/dash/disputes")) sel = "disputes";
@@ -127,6 +129,7 @@ const Sidebar = ({ collapsed }) => {
       getItem("Disputes", "disputes", <WarningOutlined />),
       getItem("Messages", "messages", <MessageOutlined />),
       getItem("Brands", "brands", <SiBrandfolder />),
+      getItem("Cancellation Policies", "cancellation-policies", <PiCubeFill />),
       getItem("Models", "models", <PiCubeFill />),
       getItem("Permissions", "permissions", <LockOutlined />),
       getItem("Roles", "roles", <SafetyOutlined />),

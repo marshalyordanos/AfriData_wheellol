@@ -53,7 +53,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
             setHostId(carData.hostId); // ✅ set dynamic hostId
 
             form.setFieldsValue({
-              hostId: userData?.user?.id,
+              hostId: userData?.id,
               makeId: carData.makeId,
               modelId: carData.modelId,
               year: carData.year,
@@ -71,6 +71,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
               ecoFriendly: carData.ecoFriendly,
               isActive: carData.isActive,
               description: carData.description || "",
+              location: carData.location || "",
             });
 
             if (carData.photos?.length) {
@@ -157,6 +158,10 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         }
       });
 
+      console.log("userDatauserData:", userData);
+
+      formData.append("hostId", userData?.id);
+
       // Append photos (only new ones)
       if (fileList.length > 0) {
         fileList.forEach((file) => {
@@ -184,11 +189,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
     }
   };
 
-  return loading ? (
-    <SpinStyle>
-      <Spin size="large" />
-    </SpinStyle>
-  ) : (
+  return (
     <Form form={form} layout="vertical" onFinish={onFinish}>
       {/* Brand */}
       <Form.Item
@@ -248,10 +249,13 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
       <Form.Item label="Mileage" name="mileage">
         <Input type="number" placeholder="Mileage" />
       </Form.Item>
-
-      <Form.Item label="Daily Rate" name="dailyRate">
-        <Input type="number" placeholder="Daily Rate" />
+      <Form.Item label="Location" name="location">
+        <Input placeholder="Location" />
       </Form.Item>
+
+      {/* <Form.Item label="Daily Rate" name="dailyRate">
+        <Input type="number" placeholder="Daily Rate" />
+      </Form.Item> */}
 
       <Form.Item label="Rental Price / Day" name="rentalPricePerDay">
         <Input type="number" placeholder="Rental Price per Day" />

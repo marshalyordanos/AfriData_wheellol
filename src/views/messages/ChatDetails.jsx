@@ -8,6 +8,7 @@ import {
   selectMessagesLoading,
 } from "./MessageRedux";
 import { Avatar, Input, Button, Spin } from "antd";
+import { LoadingOutlined, CheckOutlined } from "@ant-design/icons";
 const { TextArea } = Input;
 
 const ChatDetails = () => {
@@ -123,7 +124,6 @@ const ChatDetails = () => {
       setText("");
 
       const result = await dispatch(sendMessage(payload));
-
 
       const serverMsg = result?.payload?.data ?? result?.payload ?? null;
 
@@ -262,8 +262,23 @@ const ChatDetails = () => {
                       {m.content}
                     </div>
                   </div>
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 6 }}>
-                    {new Date(m.createdAt).toLocaleString()}
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "#888",
+                      marginTop: 6,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <div>{new Date(m.createdAt).toLocaleString()}</div>
+                    {mine && m.optimistic && (
+                      <LoadingOutlined style={{ color: "#bbb" }} />
+                    )}
+                    {mine && !m.optimistic && (
+                      <CheckOutlined style={{ color: "#bbb" }} />
+                    )}
                   </div>
                 </div>
 
