@@ -5,62 +5,62 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   DashboardOutlined,
   UserOutlined,
-  TeamOutlined,
-  KeyOutlined,
-  UserSwitchOutlined,
-  SafetyOutlined,
-  LockOutlined,
   IdcardOutlined,
   MessageOutlined,
   CreditCardOutlined,
   WarningOutlined,
+  LockOutlined,
+  SafetyOutlined,
 } from "@ant-design/icons";
-
-import { FaUserTie } from "react-icons/fa";
-
+import { FaUserTie, FaCar } from "react-icons/fa";
+import { SiBrandfolder, SiBookstack } from "react-icons/si";
+import { PiCubeFill } from "react-icons/pi";
 import styled from "styled-components";
 import Logo from "../../assets/logo1.png";
-import { FaCar } from "react-icons/fa";
-import { SiBrandfolder } from "react-icons/si";
-import { SiBookstack } from "react-icons/si";
-import { PiCubeFill } from "react-icons/pi"; // distinct icon for Models
-
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "../../redux/auth/authSlice";
 
 const rootSubmenuKeys = ["sub1", "sub2", "sub4"];
+
 const Sidebar = ({ collapsed }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const user = useSelector(selectCurrentUser);
+
   const keys = JSON.parse(localStorage.getItem("keyPath"));
   const [openKeys, setOpenKeys] = useState(keys ? keys[keys.length - 1] : []);
-  const path = location.pathname;
   const [current, setCurrent] = useState(["dashboard"]);
   const [items, setItems] = useState([]);
-  const { t, i18n } = useTranslation();
 
+  const path = location.pathname;
+
+  // Helper to create a menu item
+  function getItem(label, key, icon, children, type, disabled = false) {
+    return { key, icon, children, label, type, disabled };
+  }
+
+  // Handle clicking on a menu item
   const onClick = (e) => {
     setCurrent([e.key]);
-
     navigate(e.key);
     setOpenKeys(e.keyPath);
-
     const y = JSON.parse(localStorage.getItem("keyPath")) || [];
-
     localStorage.setItem("keyPath", JSON.stringify([...y, e.keyPath]));
   };
 
+  // Handle submenu open
   const onOpenChange = (keys) => {
     const latestOpenKey = keys.find((key) => openKeys.indexOf(key) === -1);
-
     if (latestOpenKey && rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
       setOpenKeys(keys);
     } else {
       setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
     }
   };
-  useEffect(() => {
-    getItems();
-  }, []);
+
+  // Sync sidebar with current path
   useEffect(() => {
     const p = path.toLowerCase();
     let sel = "";
@@ -82,32 +82,27 @@ const Sidebar = ({ collapsed }) => {
     else sel = "dashboard";
 
     setCurrent(sel ? [sel] : []);
-
     const y = JSON.parse(localStorage.getItem("keyPath")) || [];
     setOpenKeys(y ? y[y.length - 1] : []);
   }, [path]);
 
-  function getItem(
-    label,
-    key,
-    icon,
-    children,
-    type,
-    disabled = false,
-    style = {}
-  ) {
-    return {
-      key,
-      icon,
-      children,
-      label,
-      type,
-      disabled,
-      style,
+  // Generate menu items based on role
+  useEffect(() => {
+    const normalizeRole = (u) => {
+      if (!u) return null;
+      if (typeof u === "string") return u.toLowerCase();
+      if (u.role) {
+        if (typeof u.role === "string") return u.role.toLowerCase();
+        if (u.role.name) return String(u.role.name).toLowerCase();
+      }
+      if (u.user) return normalizeRole(u.user);
+      return null;
     };
-  }
-  const getItems = async () => {
-    const items2 = [
+
+    const role = normalizeRole(user) || "superadmin";
+
+    // All possible menu items
+    const allItems = [
       getItem(
         <p className="text-gray-400">{t("OVERVIEW")}</p>,
         "dashboard",
@@ -116,10 +111,7 @@ const Sidebar = ({ collapsed }) => {
         null,
         true
       ),
-
       getItem(t("Dashboard"), "/dash", <DashboardOutlined />),
-
-      // getItem(t("Users"), "user", <UserOutlined />),
       getItem("Cars", "cars", <FaCar />),
       getItem("Staffs", "staff", <IdcardOutlined />),
       getItem("Hosts", "host", <FaUserTie />),
@@ -135,18 +127,33 @@ const Sidebar = ({ collapsed }) => {
       getItem("Roles", "roles", <SafetyOutlined />),
     ];
 
-    setItems(items2);
-  };
+    let visibleItems = allItems;
+
+    if (role === "superadmin" || role === "staff") {
+      // Admin sees everything except Messages
+      visibleItems = allItems.filter((item) => item.key !== "messages");
+    } else if (role === "host") {
+      // Host sees only these
+      const allowedKeys = [
+        "/dash",
+        "cars",
+        "bookings",
+        "payments",
+        "messages",
+        "dashboard",
+      ];
+      visibleItems = allItems.filter((item) => allowedKeys.includes(item.key));
+    }
+
+    setItems(visibleItems);
+  }, [user]);
 
   return (
     <SidebarStyle
       width={250}
       style={{
         height: "100vh",
-        // border: "1px solid gray",
-        // borderRadius: "0px 40px 40px 0",
         position: "fixed",
-
         display: collapsed && "none",
         backgroundColor: "white",
         zIndex: 110,
@@ -155,38 +162,28 @@ const Sidebar = ({ collapsed }) => {
       collapsible
       collapsed={collapsed}
     >
-      <div className="demo-logo-vertical" />
+      {/* Logo Section */}
       <div
-        className="flex  justify-center items-center"
-        style={{
-          width: 249,
-          height: 100,
-          background: "white",
-          borderRadius: "0px 40px 0 0",
-        }}
+        className="flex justify-center items-center"
+        style={{ width: 249, height: 100, background: "white" }}
       >
         <NavLink
           to={"/home"}
-          className={"flex  justify-center items-center gap-1"}
+          className="flex justify-center items-center gap-1"
         >
-          <img
-            src={Logo}
-            color="white"
-            className=" h-20    text-black border-red-800"
-            alt="MK Logo"
-          />
+          <img src={Logo} className="h-20" alt="Logo" />
           <p className="text-2xl font-black tracking-wide text-green-500">
             AFRICAR
-          </p>{" "}
+          </p>
         </NavLink>
       </div>
+
+      {/* Menu Section */}
       <div className="sidebar__menus">
         <Menu
-          theme={"dark"}
+          theme="dark"
           onClick={onClick}
-          style={{
-            backgroundColor: "transparent",
-          }}
+          style={{ backgroundColor: "transparent" }}
           openKeys={openKeys}
           onOpenChange={onOpenChange}
           selectedKeys={current}
@@ -199,27 +196,14 @@ const Sidebar = ({ collapsed }) => {
 };
 
 const SidebarStyle = styled(Sider)`
-  /* .sidebar__menus {
-    overflow: auto;
-    overflow-x: hidden;
-    height: calc(100vh - 100px);
-    scrollbar-width: normal;
-    scrollbar-color: red green;
-  } */
-
-  /* *********************************** scroller bar *********************************** */
-
   .sidebar__menus {
     overflow: auto;
     overflow-x: hidden;
     height: calc(100vh - 100px);
-
-    /* Firefox */
     scrollbar-width: thin;
     scrollbar-color: #3bb66e #f1f1f1;
   }
 
-  /* Chrome, Edge, and Safari */
   .sidebar__menus::-webkit-scrollbar {
     width: 8px;
   }
@@ -231,13 +215,11 @@ const SidebarStyle = styled(Sider)`
   .sidebar__menus::-webkit-scrollbar-thumb {
     background-color: #c4c4c4;
     border-radius: 4px;
-    /* border: 2px solid #f1f1f1; */
   }
 
   .sidebar__menus::-webkit-scrollbar-thumb:hover {
     background-color: #d8d8d8;
   }
-  /* ************************************ scroller bar *********************************** */
 
   .ant-menu-sub {
     background-color: transparent !important;
@@ -246,14 +228,17 @@ const SidebarStyle = styled(Sider)`
   .ant-menu-item {
     color: black !important;
   }
+
   .ant-menu-item-selected {
     background-color: #3bb66e !important;
     color: wheat !important;
   }
+
   span {
     font-size: 13px !important;
     color: black !important;
   }
+
   .ant-menu-item-selected span {
     color: wheat !important;
   }

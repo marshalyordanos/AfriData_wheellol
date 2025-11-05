@@ -12,8 +12,6 @@ import { selectCurrentUser } from "./redux/auth/authSlice";
 
 const AppRoute = () => {
   const user = useSelector(selectCurrentUser);
-  // const user = "lkkkkkkkkk";
-  // console.log(user);
   return (
     <div>
       <Routes>

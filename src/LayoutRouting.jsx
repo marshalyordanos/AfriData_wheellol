@@ -1,51 +1,69 @@
 import React, { useEffect } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { selectCurrentUser, setSummary } from "./redux/auth/authSlice";
 import LayoutApp from "./components/layout/LayoutApp";
-import PermissionList from "./views/permissions/PermissionList";
-import RoleList from "./views/roles/RoleList";
+
+// Pages
+import DashboardPage from "./views/Dashboard/DashboardPage";
 import BrandsList from "./views/brands/BrandsList";
 import BrandsDetail from "./views/brands/BrandsDetails";
+import BrandModelsList from "./views/brands/BrandModelsList";
 
-import DashboardPage from "./views/Dashboard/DashboardPage";
-import ChangePassword from "./views/auth/ChangePassword";
-import ProfileDetails from "./views/profile/ProfileDetails";
 import HostList from "./views/host/HostList";
 import HostDetail from "./views/host/HostDetails";
 
-import CarModelsList from "./views/carModels/CarModelsList";
-import CarModelsDetails from "./views/carModels/CarModelsDetails";
-import CarsList from "./views/cars/CarsList";
-import CarsDetails from "./views/cars/CarsDetails";
-import BookingList from "./views/bookings/BookingList";
-import BookingDetails from "./views/bookings/BookingDetails";
-import CancellationPoliciesList from "./views/cancellation-policies/Cancellation-policiesList";
-import PaymentList from "./views/payment/PaymentList";
-import PaymentDetails from "./views/payment/PaymentDetails";
-import DisputeList from "./views/dispute/DisputeList";
-import DisputeDetails from "./views/dispute/DisputeDetails";
-import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
-import BrandModelsList from "./views/brands/BrandModelsList";
-import CarInsurancePage from "./views/cars/CarInsurancePage";
 import StaffList from "./views/staff/StaffList";
 import StaffDetail from "./views/staff/StaffDetails";
+
+import CarModelsList from "./views/carModels/CarModelsList";
+import CarModelsDetails from "./views/carModels/CarModelsDetails";
+
+import CarsList from "./views/cars/CarsList";
+import CarsDetails from "./views/cars/CarsDetails";
+import CarInsurancePage from "./views/cars/CarInsurancePage";
+
+import BookingList from "./views/bookings/BookingList";
+import BookingDetails from "./views/bookings/BookingDetails";
+
+import PaymentList from "./views/payment/PaymentList";
+import PaymentDetails from "./views/payment/PaymentDetails";
+
+import CancellationPoliciesList from "./views/cancellation-policies/Cancellation-policiesList";
+
+import DisputeList from "./views/dispute/DisputeList";
+import DisputeDetails from "./views/dispute/DisputeDetails";
+
+import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
+
+import PermissionList from "./views/permissions/PermissionList";
+import RoleList from "./views/roles/RoleList";
+
 import GustList from "./views/gust/GustList";
 import GustDetail from "./views/gust/GustDetails";
 import GuestReview from "./views/gust/Review";
 import HostReview from "./views/host/Review";
 import CartReview from "./views/cars/Review";
+
 import ChatsList from "./views/messages/ChatsList";
 import ChatDetails from "./views/messages/ChatDetails";
+
+import ProfileDetails from "./views/profile/ProfileDetails";
+import ChangePassword from "./views/auth/ChangePassword";
+
 import api from "./api/api";
-import { useDispatch } from "react-redux";
-import { setSummary } from "./redux/auth/authSlice";
+
 const LayoutRouting = () => {
   const dispatch = useDispatch();
+  const user = useSelector(selectCurrentUser);
+  const role =
+    user?.role?.name || JSON.parse(localStorage.getItem("user"))?.role.name;
+  
 
+  // Fetch summary on load
   const fetchSummary = async () => {
     try {
       const res = await api.get("users/summary");
-      console.log("res.d:", res.data);
-
       dispatch(setSummary(res.data?.data));
     } catch (error) {
       console.error("fetchSummary: ", error);
@@ -56,59 +74,71 @@ const LayoutRouting = () => {
     fetchSummary();
   }, []);
 
+  // Allowed routes for each role
+  const hostRoutes = [
+    { path: "", element: <DashboardPage /> },
+    { path: "overview", element: <DashboardPage /> },
+    { path: "cars", element: <CarsList /> },
+    { path: "cars/details/:id", element: <CarsDetails /> },
+    { path: "cars/reviews/:id", element: <CartReview /> },
+
+    { path: "bookings", element: <BookingList /> },
+    { path: "bookings/:id", element: <BookingDetails /> },
+
+    { path: "messages", element: <ChatsList /> },
+    { path: "messages/:id", element: <ChatDetails /> },
+
+    { path: "payments", element: <PaymentList /> },
+    { path: "payments/:id", element: <PaymentDetails /> },
+
+    { path: "profile/:id", element: <ProfileDetails /> },
+    { path: "/change-password", element: <ChangePassword /> },
+  ];
+
+  const adminRoutes = [
+    { path: "", element: <DashboardPage /> },
+    { path: "brands", element: <BrandsList /> },
+    { path: "brands/:brandId/models", element: <BrandModelsList /> },
+    { path: "brands/:id", element: <BrandsDetail /> },
+    { path: "host", element: <HostList /> },
+    { path: "host/details/:id", element: <HostDetail /> },
+    { path: "staff", element: <StaffList /> },
+    { path: "staff/details/:id", element: <StaffDetail /> },
+    { path: "models", element: <CarModelsList /> },
+    { path: "models/:id", element: <CarModelsDetails /> },
+    { path: "cars", element: <CarsList /> },
+    { path: "cars/details/:id", element: <CarsDetails /> },
+    { path: "cars/:carId/insurance", element: <CarInsurancePage /> },
+    { path: "bookings", element: <BookingList /> },
+    { path: "bookings/:id", element: <BookingDetails /> },
+    { path: "payments", element: <PaymentList /> },
+    { path: "payments/:id", element: <PaymentDetails /> },
+    { path: "cancellation-policies", element: <CancellationPoliciesList /> },
+    { path: "disputes", element: <DisputeList /> },
+    { path: "disputes/:id", element: <DisputeDetails /> },
+    { path: "vehicle-types", element: <VehicleTypesList /> },
+    { path: "permissions", element: <PermissionList /> },
+    { path: "roles", element: <RoleList /> },
+    { path: "gust", element: <GustList /> },
+    { path: "gust/details/:id", element: <GustDetail /> },
+    { path: "gust/reviews/:id", element: <GuestReview /> },
+    { path: "host/reviews/:id", element: <HostReview /> },
+    { path: "cars/reviews/:id", element: <CartReview /> },
+    { path: "profile/:id", element: <ProfileDetails /> },
+    { path: "/change-password", element: <ChangePassword /> },
+    // Admin CANNOT access messages
+    { path: "messages", element: <Navigate to="/dash" /> },
+    { path: "messages/:id", element: <Navigate to="/dash" /> },
+  ];
+
+  const routesToRender = role === "HOST" ? hostRoutes : adminRoutes;
+
   return (
     <Routes>
       <Route element={<LayoutApp />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="" element={<DashboardPage />} />
-
-        <Route path="brands" element={<BrandsList />} />
-        <Route path="brands/:brandId/models" element={<BrandModelsList />} />
-
-        <Route path="brands/:id" element={<BrandsDetail />} />
-
-        <Route path="host" element={<HostList />} />
-        <Route path="host/details/:id" element={<HostDetail />} />
-
-        <Route path="staff" element={<StaffList />} />
-        <Route path="staff/details/:id" element={<StaffDetail />} />
-
-        <Route path="models" element={<CarModelsList />} />
-        <Route path="models/:id" element={<CarModelsDetails />} />
-
-        <Route path="cars" element={<CarsList />} />
-        <Route path="cars/details/:id" element={<CarsDetails />} />
-        <Route path="/cars/:carId/insurance" element={<CarInsurancePage />} />
-
-        <Route path="bookings" element={<BookingList />} />
-        <Route path="bookings/:id" element={<BookingDetails />} />
-        <Route path="payments" element={<PaymentList />} />
-        <Route path="payments/:id" element={<PaymentDetails />} />
-
-        <Route
-          path="cancellation-policies"
-          element={<CancellationPoliciesList />}
-        />
-        {/* Cancellation policy details route removed - policies managed from list (update via edit route) */}
-
-        <Route path="disputes" element={<DisputeList />} />
-        <Route path="disputes/:id" element={<DisputeDetails />} />
-
-        <Route path="messages" element={<ChatsList />} />
-        <Route path="messages/:id" element={<ChatDetails />} />
-        <Route path="profile/:id" element={<ProfileDetails />} />
-        <Route path="vehicle-types" element={<VehicleTypesList />} />
-
-        <Route path="permissions" element={<PermissionList />} />
-        <Route path="roles" element={<RoleList />} />
-
-        <Route path="/change-password" element={<ChangePassword />} />
-
-        <Route path="gust" element={<GustList />} />
-        <Route path="gust/details/:id" element={<GustDetail />} />
-        <Route path="gust/reviews/:id" element={<GuestReview />} />
-        <Route path="host/reviews/:id" element={<HostReview />} />
-        <Route path="cars/reviews/:id" element={<CartReview />} />
+        {routesToRender.map((r) => (
+          <Route key={r.path} path={r.path} element={r.element} />
+        ))}
 
         <Route path="*" element={<h1>Page Not Found Inside Dashboard</h1>} />
       </Route>

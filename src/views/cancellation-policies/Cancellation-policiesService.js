@@ -9,7 +9,7 @@ class CancellationPoliciesService {
     // "refundPercent": 0}
 
     return api.post("/cancellation-policies", data).then((response) => {
-      return response.data.data;
+      return response.data; // return full payload ({ success, message, data })
     });
   }
   updateCancellationPolicy(data, id) {
@@ -19,12 +19,12 @@ class CancellationPoliciesService {
     // "refundPercent": 0}
 
     return api.patch(`/cancellation-policies/${id}`, data).then((response) => {
-      return response.data.data;
+      return response.data; // return full payload ({ success, message, data })
     });
   }
   deleteCancellationPolicy(id) {
     return api.delete(`/cancellation-policies/${id}`).then((response) => {
-      return response.data.data;
+      return response.data; // return full payload ({ success, message, data })
     });
   }
 

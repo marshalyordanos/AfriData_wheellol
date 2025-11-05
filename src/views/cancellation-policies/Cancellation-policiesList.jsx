@@ -1,7 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, Modal, Tag, Space, Form, Select } from "antd";
+import {
+  Button,
+  Dropdown,
+  Input,
+  Modal,
+  Tag,
+  Space,
+  Form,
+  Select,
+  message,
+} from "antd";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -33,6 +43,7 @@ const CancellationPoliciesList = () => {
   const [selection, setSelection] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
 
   const getPaginationInfo = () => [
@@ -89,12 +100,18 @@ const CancellationPoliciesList = () => {
         content: "Are you sure you want to delete this cancellation policy?",
         onOk: async () => {
           try {
-            await dispatch(deleteCancellationPolicy(id)).unwrap();
+            const res = await dispatch(deleteCancellationPolicy(id)).unwrap();
+            const serverMsg =
+              res?.message || res?.data?.message || "Deleted successfully";
+            message.success(serverMsg);
             const [pg, lm] = getPaginationInfo();
             dispatch(
               fetchCancellationPolicies({ page: pg, pageSize: lm, searchText })
             );
           } catch (err) {
+            const errMsg =
+              err?.message || err?.data?.message || "Delete failed";
+            message.error(errMsg);
             console.error(err);
           }
         },
@@ -118,36 +135,49 @@ const CancellationPoliciesList = () => {
     }
   }, [policyDetails, editingId, form]);
 
- const onFinish = async (values) => {
-   try {
-     // Convert numeric fields to integers
-     const formattedValues = {
-       ...values,
-       daysBeforeTrip: parseInt(values.daysBeforeTrip, 10),
-       refundPercent: parseInt(values.refundPercent, 10),
-     };
+  const onFinish = async (values) => {
+    try {
+      // Convert numeric fields to integers
+      const formattedValues = {
+        ...values,
+        daysBeforeTrip: parseInt(values.daysBeforeTrip, 10),
+        refundPercent: parseInt(values.refundPercent, 10),
+      };
 
-     if (editingId) {
-       await dispatch(
-         updateCancellationPolicy({ id: editingId, data: formattedValues })
-       ).unwrap();
-     } else {
-       await dispatch(createCancellationPolicy(formattedValues)).unwrap();
-     }
+      // dispatch and unwrap to get server payload
+      let res;
+      try {
+        setSaving(true);
+        if (editingId) {
+          res = await dispatch(
+            updateCancellationPolicy({ id: editingId, data: formattedValues })
+          ).unwrap();
+        } else {
+          res = await dispatch(
+            createCancellationPolicy(formattedValues)
+          ).unwrap();
+        }
+        const serverMsg =
+          res?.message || res?.data?.message || "Saved successfully";
+        message.success(serverMsg);
+      } finally {
+        setSaving(false);
+      }
 
-     // refresh list and close modal
-     const [pg, lm] = getPaginationInfo();
-     dispatch(
-       fetchCancellationPolicies({ page: pg, pageSize: lm, searchText })
-     );
-     setIsModalVisible(false);
-     setEditingId(null);
-     form.resetFields();
-   } catch (err) {
-     console.error("Save failed:", err);
-   }
- };
-
+      // refresh list and close modal
+      const [pg, lm] = getPaginationInfo();
+      dispatch(
+        fetchCancellationPolicies({ page: pg, pageSize: lm, searchText })
+      );
+      setIsModalVisible(false);
+      setEditingId(null);
+      form.resetFields();
+    } catch (err) {
+      const errMsg = err?.message || err?.data?.message || "Save failed";
+      message.error(errMsg);
+      console.error("Save failed:", err);
+    }
+  };
 
   const columns = [
     {
@@ -312,7 +342,7 @@ const CancellationPoliciesList = () => {
               >
                 Cancel
               </Button>
-              <Button type="primary" htmlType="submit" loading={modalLoading}>
+              <Button type="primary" htmlType="submit" loading={saving}>
                 Save
               </Button>
             </Space>
