@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { login, selectCurrentUser } from "../../redux/auth/authSlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button, Checkbox, Form, Input, message, Modal } from "antd";
 // import { selectCurrentUser } from "../../redux/auth/authSlice";
 // import authService from "../../api/auth.service";
@@ -203,6 +203,16 @@ const LoginPage = () => {
               </Form.Item>
             </Form>
           </Modal>
+         
+          <div className="text-center mt-3 text-sm" style={{ color: "#333" }}>
+            Already have an account?{" "}
+            <Link
+              to="/register"
+              className="text-[#628DBA] font-semibold hover:text-[#3B6A92] hover:underline cursor-pointer"
+            >
+              Register
+            </Link>
+          </div>
         </div>
       </div>
     </div>

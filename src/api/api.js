@@ -10,10 +10,10 @@ const handleErrorResponse = (errorMessage) => {
 
 const instance = axios.create({
   // baseURL: "https://car-back-bemu.onrender.com",
-  // baseURL: "https://car-back-22tv.onrender.com",
+  baseURL: "https://pages-teddy-mai-retreat.trycloudflare.com/",
 
-  // baseURL: "http://localhost:8000/api/v1",
-  baseURL: "http://localhost:3000/",
+  // baseURL: "https://car-back-bemu.onrender.com/",
+  // baseURL: "http://localhost:3000/",
 
   headers: {
     "Content-Type": "application/json",

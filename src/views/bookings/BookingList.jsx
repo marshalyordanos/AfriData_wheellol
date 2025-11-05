@@ -31,7 +31,10 @@ import {
   FaTimesCircle,
   FaUserSlash,
 } from "react-icons/fa";
-import { selectbookingSummary } from "../../redux/auth/authSlice";
+import {
+  selectbookingSummary,
+  selectCurrentUser,
+} from "../../redux/auth/authSlice";
 
 const BookingList = () => {
   const dispatch = useDispatch();
@@ -55,6 +58,20 @@ const BookingList = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const bookingSummary = useSelector(selectbookingSummary);
+  const currentUser = useSelector(selectCurrentUser);
+
+  const normalizeRole = (u) => {
+    if (!u) return null;
+    if (typeof u === "string") return u.toLowerCase();
+    if (u.role) {
+      if (typeof u.role === "string") return u.role.toLowerCase();
+      if (u.role.name) return String(u.role.name).toLowerCase();
+    }
+    if (u.user) return normalizeRole(u.user);
+    return null;
+  };
+
+  const currentRole = normalizeRole(currentUser) || "superadmin";
   const getPaginationInfo = () => [
     Number(searchParams.get("page") || 1),
     Number(searchParams.get("limit") || limit),
@@ -364,7 +381,12 @@ const BookingList = () => {
               e.stopPropagation();
               const bookingId = record.id || record._id;
               if (bookingId)
-                navigate(`/dash/messages/${bookingId}`, { state: record });
+                navigate(`/dash/messages/${bookingId}`, {
+                  state: {
+                    from: "bookingList",
+                    chatPartner: record.guest,
+                  },
+                });
             }}
           >
             Chat
@@ -557,16 +579,18 @@ const BookingList = () => {
             <ReloadOutlined className=" boder boder-red-900" />
           </button>
 
-          <button
-            className="px-4  py-2 border border-[#3BB66E] 
+          {currentRole !== "host" && (
+            <button
+              className="px-4  py-2 border border-[#3BB66E] 
             text-white bg-[#3BB66E] rounded"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            <span className="flex flex-row">
-              <PlusOutlined />
-              <p className="pl-2">Create Booking</p>
-            </span>
-          </button>
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              <span className="flex flex-row">
+                <PlusOutlined />
+                <p className="pl-2">Create Booking</p>
+              </span>
+            </button>
+          )}
         </span>
       </span>
 
