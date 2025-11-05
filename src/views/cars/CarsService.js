@@ -34,7 +34,7 @@ class CarsService {
     notActiveOnly = false,
     notApprovedOnly = false,
   }) {
-    let url = `/cars?page=${page}&limit=${limit}`;
+    let url = `/cars/admin?page=${page}&limit=${limit}`;
     if (sort) {
       const sortValue =
         order == "ascend" ? sort : order == "descend" ? "-" + sort : "";

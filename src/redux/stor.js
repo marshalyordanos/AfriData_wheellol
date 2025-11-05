@@ -14,6 +14,7 @@ import gustReducer from "../views/gust/GustRedux";
 import profileReducer from "../views/profile/ProfileRedux";
 import messagesReducer from "../views/messages/MessageRedux";
 import disputeReducer from "../views/dispute/DisputetRedux";
+import cartypesReducer from "../views/cartypes/CartypesRedux";
 
 export const store = configureStore({
   reducer: {
@@ -32,5 +33,6 @@ export const store = configureStore({
     host: hostReducer,
     staff: staffReducer,
     gust: gustReducer,
+    cartypes: cartypesReducer,
   },
 });

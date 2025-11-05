@@ -34,6 +34,10 @@ import HostReview from "./views/host/Review";
 import CartReview from "./views/cars/Review";
 import ChatsList from "./views/messages/ChatsList";
 import ChatDetails from "./views/messages/ChatDetails";
+
+import CartypesList from "./views/cartypes/CartypesList";
+import CartypesDetail from "./views/cartypes/CartypesDetails";
+
 import api from "./api/api";
 import { useDispatch } from "react-redux";
 import { setSummary } from "./redux/auth/authSlice";
@@ -65,6 +69,9 @@ const LayoutRouting = () => {
         <Route path="brands/:brandId/models" element={<BrandModelsList />} />
 
         <Route path="brands/:id" element={<BrandsDetail />} />
+
+        <Route path="cartypes" element={<CartypesList />} />
+        {/* <Route path="cartypes/:id" element={<CartypesDetail />} /> */}
 
         <Route path="host" element={<HostList />} />
         <Route path="host/details/:id" element={<HostDetail />} />

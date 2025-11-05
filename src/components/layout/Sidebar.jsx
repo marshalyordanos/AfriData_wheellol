@@ -127,6 +127,7 @@ const Sidebar = ({ collapsed }) => {
       getItem("Disputes", "disputes", <WarningOutlined />),
       getItem("Messages", "messages", <MessageOutlined />),
       getItem("Brands", "brands", <SiBrandfolder />),
+      getItem("CarTypes", "cartypes", <SiBrandfolder />),
       getItem("Models", "models", <PiCubeFill />),
       getItem("Permissions", "permissions", <LockOutlined />),
       getItem("Roles", "roles", <SafetyOutlined />),

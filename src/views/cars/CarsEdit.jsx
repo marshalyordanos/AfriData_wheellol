@@ -15,6 +15,7 @@ import styled from "styled-components";
 import carsService from "./CarsService";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
 import { useSelector } from "react-redux";
+import CartypesService from "../cartypes/CartypesService";
 
 const { Option } = Select;
 
@@ -30,11 +31,15 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
   const [form] = Form.useForm();
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
+  const [carTypes, setCarTypes] = useState([]);
+
   const [fileList, setFileList] = useState([]);
   const [previewImage, setPreviewImage] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [brandLoading, setBrandLoading] = useState(false);
+  const [carTypesLoading, setCartypeLoading] = useState(false);
+
   const [hostId, setHostId] = useState(null); // ✅ dynamic hostId
   const isEdit = !!carId;
   const userData = useSelector(selectCurrentUser);
@@ -46,6 +51,13 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         setLoading(true);
         const brandsList = await carsService.getBrands();
         setBrands(brandsList);
+
+        const typeList = await CartypesService.searchCartype({
+          page: 1,
+          limit: 1000,
+        });
+        console;
+        setCarTypes(typeList?.data);
 
         if (isEdit) {
           const carData = await carsService.getCar(carId);
@@ -67,7 +79,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
               longTermDiscount: carData.longTermDiscount,
               seatingCapacity: carData.seatingCapacity,
               mileageLimit: carData.mileageLimit,
-              carType: carData.carType,
+              carType: carData.carTypeId,
               ecoFriendly: carData.ecoFriendly,
               isActive: carData.isActive,
               description: carData.description || "",
@@ -222,6 +234,32 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         />
       </Form.Item>
 
+      {/* types */}
+      <Form.Item
+        label="Car Type"
+        name="carType"
+        rules={[{ required: true, message: "Model is required" }]}
+      >
+        <Select
+          showSearch
+          placeholder="Select Type"
+          filterOption={false}
+          //  onSearch={handleSearchBrands}
+          //  onChange={handleBrandChange}
+          loading={setCartypeLoading}
+          options={carTypes.map((b) => ({ label: b.name, value: b.id }))}
+        />
+      </Form.Item>
+
+      {/* <Form.Item label="Car Type" name="carType">
+        <Select placeholder="Car Type">
+          <Option value="SEDAN">Sedan</Option>
+          <Option value="VAN">Van</Option>
+          <Option value="SUV">SUV</Option>
+          <Option value="TRUCK">Truck</Option>
+        </Select>
+      </Form.Item> */}
+
       {/* Other fields */}
       <Form.Item label="Year" name="year" rules={[{ required: true }]}>
         <Input type="number" placeholder="Year" />
@@ -271,15 +309,6 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
 
       <Form.Item label="Mileage Limit" name="mileageLimit">
         <Input type="number" placeholder="Mileage Limit" />
-      </Form.Item>
-
-      <Form.Item label="Car Type" name="carType">
-        <Select placeholder="Car Type">
-          <Option value="SEDAN">Sedan</Option>
-          <Option value="VAN">Van</Option>
-          <Option value="SUV">SUV</Option>
-          <Option value="TRUCK">Truck</Option>
-        </Select>
       </Form.Item>
 
       <Form.Item label="Eco Friendly" name="ecoFriendly">

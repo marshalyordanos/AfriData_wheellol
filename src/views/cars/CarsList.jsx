@@ -345,7 +345,11 @@ const CarsList = () => {
         );
       },
     },
-    { title: "Car Type", dataIndex: "carType" },
+    {
+      title: "Car Type",
+      dataIndex: "carType",
+      render: (_, record) => record.carType?.name || "-",
+    },
     {
       title: "Brand",
       dataIndex: "make",

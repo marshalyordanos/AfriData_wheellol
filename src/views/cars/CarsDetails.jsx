@@ -118,7 +118,7 @@ const CarDetails = () => {
             {car.mileageLimit || "-"}
           </Descriptions.Item>
           <Descriptions.Item label="Car Type">
-            {car.carType || "-"}
+            {car?.carType?.name || "-"}
           </Descriptions.Item>
           <Descriptions.Item label="Eco Friendly">
             {car.ecoFriendly || "-"}
