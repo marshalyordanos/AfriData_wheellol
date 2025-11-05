@@ -92,13 +92,13 @@ const ChangePassword = () => {
               type="primary"
               htmlType="submit"
               // loading={loading}
-              className="w-full h-10 bg-blue-600 hover:bg-blue-700"
+              className="w-full h-10 bg-[var(--color-primary)] hover:bg-[var(--color-secondary)]"
             >
               Change Password
             </Button>
           </Form.Item>
 
-          <Button type="link" className="w-full" onClick={() => navigate(-1)}>
+          <Button type="link" className="w-full text-[var(--color-secondary)]" onClick={() => navigate(-1)}>
             Cancel
           </Button>
         </Form>

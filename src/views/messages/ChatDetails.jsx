@@ -250,7 +250,7 @@ const ChatDetails = () => {
                   <div
                     style={{
                       maxWidth: "75%",
-                      background: mine ? "#3bb66e" : "#fff",
+                      background: mine ? "var(--color-primary)" : "var(--color-secondary)",
                       color: mine ? "#fff" : "#111",
                       padding: "10px 14px",
                       borderRadius: 12,
@@ -307,7 +307,7 @@ const ChatDetails = () => {
         <Button
           type="primary"
           onClick={handleSend}
-          style={{ height: 40 }}
+          style={{ height: 40 ,color:"white", backgroundColor:"var(--color-primary)", borderColor:"var(--color-primary)"}}
           loading={sending}
         >
           Send

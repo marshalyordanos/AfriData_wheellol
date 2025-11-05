@@ -46,3 +46,15 @@ input {
   padding: 5px !important;
   margin: 0 !important;
 }
+
+:root {
+  --color-primary: #fc6b38;
+  --color-secondary: #09234c;
+}
+
+/* 
+background-color: var(--color-primary);
+color: var(--color-secondary);
+ */
+
+

@@ -106,9 +106,11 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
             icon={
               collapsed2 ? (
                 collapsed ? (
-                  <MenuUnfoldOutlined style={{ color: "black" }} />
+                  <MenuUnfoldOutlined
+                    style={{ color: "var(--color-primary)" }}
+                  />
                 ) : (
-                  <MenuFoldOutlined style={{ color: "black" }} />
+                  <MenuFoldOutlined style={{ color: "var(--color-primary)" }} />
                 )
               ) : null
             }
@@ -123,7 +125,9 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
 
           <Button
             type="text"
-            icon={<ArrowLeftOutlined style={{ color: "black" }} />}
+            icon={
+              <ArrowLeftOutlined style={{ color: "var(--color-primary)" }} />
+            }
             onClick={handleBack}
             style={{ fontSize: 16, width: 64, height: 34 }}
           />
@@ -132,40 +136,23 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
         {/* Right Controls */}
         <div className="right-controls">
           {/*  Language Selector */}
-          <Dropdown
+          {/* <Dropdown
             menu={{ items: languageItems, onClick: handleLocaleChange }}
             trigger={["click"]}
           >
             <GlobalOutlined style={{ cursor: "pointer", fontSize: 18 }} />
-          </Dropdown>
-
-          {/*  System Admin Section */}
-          {currentUser?.isSystemAdmin && (
-            <div className="admin-dropdown">
-              <Dropdown
-                menu={{
-                  items: adminMenuItems,
-                  onClick: ({ key }) => navigate(key),
-                }}
-                trigger={["click"]}
-              >
-                <span className="header__right">
-                  <WrenchScrewdriverIcon className="h-5 w-5 text-gray-700" />
-                  <Space>
-                    <span className="text-black">{t("System_Admin")}</span>
-                    <DownOutlined />
-                  </Space>
-                </span>
-              </Dropdown>
-            </div>
-          )}
+          </Dropdown> */}
 
           {/*  Notifications &  Profile */}
           <div className="notif-profile">
             <Badge count={unreadCount} size="small">
               <Button
                 type="text"
-                icon={<BellOutlined style={{ fontSize: 18, color: "black" }} />}
+                icon={
+                  <BellOutlined
+                    style={{ fontSize: 18, color: "var(--color-primary)" }}
+                  />
+                }
                 onClick={() => {
                   setNotifOpen(true);
                   dispatch(fetchNotifications());
@@ -185,11 +172,13 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
                     currentUser?.profilePhoto ||
                     null
                   }
-                  icon={<UserOutlined />}
+                  icon={
+                    <UserOutlined style={{ color: "var(--color-primary)" }} />
+                  }
                 />
-                <span style={{ color: "black", marginLeft: 8 }}>
-                  {currentUser?.fullName}
-                </span>
+                {/* <span style={{ color: "black", marginLeft: 8 }}>
+                  {currentUser?.firstName} {currentUser?.lastName}
+                </span> */}
               </span>
             </Dropdown>
           </div>
@@ -207,7 +196,7 @@ const HeaderContainer = styled.div`
   align-items: center;
   justify-content: space-between;
   height: 70px;
-  background-color: white;
+  background-color: var(--color-secondary);
   border-bottom: 1px solid lightgray;
   padding: 0 16px;
 

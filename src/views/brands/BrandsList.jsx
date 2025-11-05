@@ -237,7 +237,7 @@ const BrandsList = () => {
         />
 
         <div className="flex gap-4">
-          <Button onClick={handleReload} icon={<ReloadOutlined />} />
+          <Button onClick={handleReload} style={{ color: "var(--color-primary)" }} icon={<ReloadOutlined />} />
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -245,6 +245,7 @@ const BrandsList = () => {
               setModeID("");
               setIsModalOpen(true);
             }}
+            style={{ backgroundColor: "var(--color-primary)" }}
           >
             Add Brand
           </Button>

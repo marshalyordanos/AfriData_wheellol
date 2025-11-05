@@ -546,14 +546,14 @@ const CarsList = () => {
           <Button
             onClick={handleReload}
             icon={<ReloadOutlined />}
-            className="border border-blue-500 text-blue-500"
+            className="border border-[var(--color-primary)] text-[var(--color-primary)]"
           >
             Reset Filters
           </Button>
 
           <Button
             // type="primary"
-            style={{ backgroundColor: "#3bb66e" }}
+            style={{ backgroundColor: "var(--color-primary)" }}
             icon={<PlusOutlined />}
             onClick={() => {
               setCarId("");

@@ -125,7 +125,7 @@ const RegistrationPage = () => {
 
               <Form.Item>
                 <Button
-                  className="bg-black text-white"
+                  className="bg-[var(--color-primary)] text-white"
                   type="primary"
                   htmlType="submit"
                   loading={loading}
