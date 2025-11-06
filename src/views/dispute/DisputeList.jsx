@@ -277,7 +277,7 @@ const DisputeList = () => {
               loadDisputes({ page: pg, limit: lm });
               setSearchParams({ page: pg, limit: lm });
             }}
-            className="border border-[#1D9BF0] py-2 px-3 text-[#1D9BF0] rounded mr-4"
+            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4"
           >
             <ReloadOutlined />
           </button>

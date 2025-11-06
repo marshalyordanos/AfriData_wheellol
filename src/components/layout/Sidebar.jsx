@@ -16,7 +16,8 @@ import { FaUserTie, FaCar } from "react-icons/fa";
 import { SiBrandfolder, SiBookstack } from "react-icons/si";
 import { PiCubeFill } from "react-icons/pi";
 import styled from "styled-components";
-import Logo from "../../assets/logo1.png";
+// import Logo from "../../assets/logo1.png";
+import Logo from "../../assets/LogoOrange.png";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
@@ -166,16 +167,17 @@ const Sidebar = ({ collapsed }) => {
       {/* Logo Section */}
       <div
         className="flex justify-center items-center"
-        style={{ width: 249, height: 100, background: "white" }}
+        style={{
+          width: 249,
+          height: 100,
+          background: "var(--color-secondary)",
+        }}
       >
         <NavLink
-          to={"/home"}
+          to={"/dash"}
           className="flex justify-center items-center gap-1"
         >
           <img src={Logo} className="h-20" alt="Logo" />
-          <p className="text-2xl font-black tracking-wide text-green-500">
-            AFRICAR
-          </p>
         </NavLink>
       </div>
 
@@ -184,7 +186,7 @@ const Sidebar = ({ collapsed }) => {
         <Menu
           theme="dark"
           onClick={onClick}
-          style={{ backgroundColor: "transparent" }}
+          style={{ backgroundColor: "var(--color-secondary)" }}
           openKeys={openKeys}
           onOpenChange={onOpenChange}
           selectedKeys={current}
@@ -202,7 +204,8 @@ const SidebarStyle = styled(Sider)`
     overflow-x: hidden;
     height: calc(100vh - 100px);
     scrollbar-width: thin;
-    scrollbar-color: #3bb66e #f1f1f1;
+    scrollbar-color: var(--color-primary) #f1f1f1;
+    background-color: var(--color-secondary);
   }
 
   .sidebar__menus::-webkit-scrollbar {
@@ -227,21 +230,21 @@ const SidebarStyle = styled(Sider)`
   }
 
   .ant-menu-item {
-    color: black !important;
+    color: white !important;
   }
 
   .ant-menu-item-selected {
-    background-color: #3bb66e !important;
-    color: wheat !important;
+    background-color: var(--color-primary) !important;
+    color: white !important;
   }
 
   span {
     font-size: 13px !important;
-    color: black !important;
+    color: white !important;
   }
 
   .ant-menu-item-selected span {
-    color: wheat !important;
+    color: white !important;
   }
 `;
 

@@ -202,7 +202,7 @@ const GustList = () => {
         <div className="flex items-center mt-4 md:mt-0">
           <button
             onClick={handleReload}
-            className="border border-[#1D9BF0] py-2 px-3 text-[#1D9BF0] rounded mr-4 flex items-center justify-center"
+            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
           >
             <ReloadOutlined />
           </button>

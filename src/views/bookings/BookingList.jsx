@@ -573,16 +573,16 @@ const BookingList = () => {
           <button
             onClick={handleReload}
             className="
-             border border-[#1D9BF0] py-2 px-3
-             text-[#1D9BF0] rounded mr-4 flex items-center justify-center"
+             border border-[var(--color-primary)] py-2 px-3
+             text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
           >
             <ReloadOutlined className=" boder boder-red-900" />
           </button>
 
           {currentRole !== "host" && (
             <button
-              className="px-4  py-2 border border-[#3BB66E] 
-            text-white bg-[#3BB66E] rounded"
+              className="px-4  py-2 border border-[var(--color-primary)] 
+            text-white bg-[var(--color-primary)] rounded"
               onClick={() => setIsCreateModalOpen(true)}
             >
               <span className="flex flex-row">

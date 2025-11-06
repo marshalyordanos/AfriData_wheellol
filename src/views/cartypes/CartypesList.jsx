@@ -268,15 +268,15 @@ const CartypesList = () => {
           <button
             onClick={handleReload}
             className="
-             border border-[#22c55e] py-2 px-3
-             text-[#22c55e] rounded mr-4 flex items-center justify-center"
+             border border-[var(--color-primary)] py-2 px-3
+             text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
           >
             <ReloadOutlined className=" boder boder-red-900" />
           </button>
 
           <button
-            className="px-4  py-2 border border-[#22c55e] 
-            text-white bg-[#22c55e] rounded"
+            className="px-4  py-2 border border-[var(--color-primary)] 
+            text-white bg-[var(--color-primary)] rounded"
             onClick={() => {
               setIsModalOpen(true);
               setModeID("");
@@ -284,7 +284,7 @@ const CartypesList = () => {
           >
             <span className="flex flex-row">
               <PlusOutlined />
-              <p className="pl-2">Add Item</p>
+              <p className="pl-2">Add CarType</p>
             </span>
           </button>
         </span>
