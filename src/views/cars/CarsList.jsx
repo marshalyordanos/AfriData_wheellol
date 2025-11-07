@@ -12,6 +12,7 @@ import {
   message,
   Select,
   InputNumber,
+  Pagination,
 } from "antd";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
@@ -23,6 +24,8 @@ import {
   updateCarsState,
   carsSearchText,
   carsQuery,
+  carsPage,
+  carsLimit,
 } from "./CarsRedux";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import SummaryCard from "../../components/commons/SummaryCard";
@@ -36,6 +39,7 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { selectcarSummary } from "../../redux/auth/authSlice";
+import CommonCard from "../../components/commons/CommonCard";
 
 // ✅ Helper: find brand/model name from ID
 const findNameById = (items, id) => {
@@ -63,6 +67,8 @@ const CarsList = () => {
   const searchText = useSelector(carsSearchText);
   const { notActiveOnly, notApprovedOnly } = useSelector(carsQuery);
   const carSummary = useSelector(selectcarSummary);
+  const carpage = useSelector(carsPage);
+  const carlimit = useSelector(carsLimit);
 
   const [loading, setLoading] = useState(false);
 
@@ -118,7 +124,7 @@ const CarsList = () => {
         ...car,
         images: car.photos || [],
         brand: car.make || {},
-        model: { name: findNameById(models, car.modelId) }, // ✅ fixed
+        model: car.model || {}, // ✅ fixed
         carType: car.carType || "-",
         rentalPricePerDay: car.rentalPricePerDay || car.dailyRate || 0,
         seatingCapacity: car.seatingCapacity || "-",
@@ -567,24 +573,67 @@ const CarsList = () => {
       </div>
 
       {/* Cars Table */}
-      <CommonTable
-        rowSelectionType="checkbox"
-        data={filteredCars}
-        columns={columns}
-        setSelection={setCarsSelection}
-        handlePagination={handlePagination}
-        total={total}
-        loadding={loading}
-        tableChange={tableChange}
-        rowKey={(r) => r?.id || r?._id}
-        onRow={(record) => ({
-          onClick: () => {
-            const id = record?.id || record?._id;
-            if (id) navigate(`/dash/cars/details/${id}`, { state: record });
-          },
-          style: { cursor: "pointer" },
-        })}
-      />
+      <div className="hidden md:block">
+        <CommonTable
+          rowSelectionType="checkbox"
+          data={filteredCars}
+          columns={columns}
+          setSelection={setCarsSelection}
+          handlePagination={handlePagination}
+          total={total}
+          loadding={loading}
+          tableChange={tableChange}
+          rowKey={(r) => r?.id || r?._id}
+          onRow={(record) => ({
+            onClick: () => {
+              const id = record?.id || record?._id;
+              if (id) navigate(`/dash/cars/details/${id}`, { state: record });
+            },
+            style: { cursor: "pointer" },
+          })}
+        />
+      </div>
+
+      <div className="block md:hidden">
+        {filteredCars.length > 0 &&
+          filteredCars.map((car) => {
+            return (
+              <CommonCard
+                item={car}
+                fieldMap={{
+                  // route_schedule: "Vist name",
+                  year: "Year",
+                  color: "Color",
+                  licensePlate: "License Plate",
+                  vin: "Vin",
+                  "model.name": "Model",
+                }}
+                title={["Vist name", "route_schedule"]}
+                actionItems={items}
+                onActionClick={onActionClick}
+                onCardClick={(item) => {
+                  navigate(`/dash/cars/details/${item.id}`, { state: item });
+                }}
+              />
+            );
+          })}
+
+        {/* {carpage} */}
+        <div className="flex justify-center my-5">
+          <Pagination
+            pageSizeOptions={["10", "20"]}
+            onChange={(current, pageSize) => {
+              handlePagination(current, pageSize);
+            }}
+            onShowSizeChange={(current, pageSize) => {
+              handlePagination(current, pageSize);
+            }}
+            current={Number(carpage)}
+            defaultCurrent={4}
+            total={50}
+          />
+        </div>
+      </div>
     </div>
   );
 };

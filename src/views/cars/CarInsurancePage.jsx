@@ -73,39 +73,43 @@ const CarInsurancePage = () => {
         <Spin tip="Loading..." size="large" />
       ) : (
         <Card
-          title={<Title level={4}>Car Insurance</Title>}
-          extra={
-            <Space>
-              {insurance ? (
-                <>
+          title={
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full">
+              <Title level={4} className="mb-2 sm:mb-0">
+                Car Insurance
+              </Title>
+
+              <Space className="flex-wrap gap-2">
+                {insurance ? (
+                  <>
+                    <Button
+                      type="primary"
+                      icon={<EditOutlined />}
+                      onClick={() => setIsModalOpen(true)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      type="danger"
+                      icon={<DeleteOutlined />}
+                      onClick={() => setIsDeleteModalOpen(true)}
+                    >
+                      Delete
+                    </Button>
+                  </>
+                ) : (
                   <Button
                     type="primary"
-                    icon={<EditOutlined />}
-                    onClick={() => setIsModalOpen(true)}
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      setIsModalOpen(true);
+                    }}
                   >
-                    Edit
+                    Add Insurance
                   </Button>
-                  <Button
-                    type="danger"
-                    icon={<DeleteOutlined />}
-                    onClick={() => setIsDeleteModalOpen(true)}
-                  >
-                    Delete
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => {
-                    setIsModalOpen(true);
-                    setInsurance(null); // ensure blank for creation
-                  }}
-                >
-                  Add Insurance
-                </Button>
-              )}
-            </Space>
+                )}
+              </Space>
+            </div>
           }
         >
           {insurance ? (
