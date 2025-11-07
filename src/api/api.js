@@ -9,13 +9,11 @@ const handleErrorResponse = (errorMessage) => {
 };
 
 const instance = axios.create({
-  // baseURL: "https://car-back-bemu.onrender.com",
-  // baseURL: "https://pages-teddy-mai-retreat.trycloudflare.com/",
+  baseURL: "http://134.209.59.98:3000/",
+  // baseURL: "https://vegetarian-pushed-town-pipeline.trycloudflare.com/",
 
   // baseURL: "https://car-back-bemu.onrender.com/",
-  // baseURL: "http://134.209.59.98:3000/",
-  baseURL: "http://192.168.43.111:3000/",
-  //
+  // baseURL: "http://localhost:3000/",
 
   headers: {
     "Content-Type": "application/json",

@@ -1,722 +1,323 @@
-// import React, { useState } from "react";
-// import { Divider, Empty, Pagination, Radio, Table } from "antd";
-// import styled from "styled-components";
-
-// const CommonTable = React.memo(
-//   ({
-//     data,
-//     columns,
-//     rowSelectionType,
-//     setSelection,
-//     handlePagination,
-//     total,
-//     loadding,
-//     tableChange,
-//     type,
-//     scroll,
-//   }) => {
-//     const onShowSizeChange = (current, pageSize) => {
-//       console.log(current, pageSize);
-//       handlePagination(current, pageSize);
-//     };
-//     console.log("88",data)
-
-//     let rowSelection = {
-//       onChange: (selectedRowKeys, selectedRows) => {
-//         setSelection(selectedRows);
-//         console.log(
-//           `selectedRowKeys: ${selectedRowKeys}`,
-//           "selectedRows: ",
-//           selectedRows
-//         );
-//       },
-//       getCheckboxProps: (record) => ({
-//         disabled: type,
-//         name: type ? "" : record?.name,
-//       }),
-//     };
-
-//     console.log("common table");
-
-//     return (
-//       <div className="mx-6 border-[1px] border-[#F0F0F0] rounded">
-//         <div className="common_table">
-//           <Table
-//             scroll={{ x: "full" }}
-//             rowSelection={{
-//               type: rowSelectionType,
-//               ...rowSelection,
-//             }}
-//             loading={loadding}
-//             rowKey={"_id"}
-//             locale={{
-//               emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />,
-//             }}
-//             columns={columns}
-//             dataSource={data}
-//             onChange={tableChange}
-//             pagination={false}
-//             className=" text-base"
-//           />
-//         </div>
-
-//         {type ? (
-//           ""
-//         ) : (
-//           <div className="flex justify-end py-4">
-//             <Pagination
-//               total={total}
-//               defaultPageSize={5}
-//               defaultCurrent={1}
-//               pageSizeOptions={["5", "10", "20"]}
-//               showSizeChanger={true}
-//               onChange={onShowSizeChange}
-//             />
-//           </div>
-//         )}
-//       </div>
-//     );
-//   }
-// );
-
-// export const TableStyle = styled.div`
-//   border: 1px solid whitesmoke;
-
-//   margin: 0 24px;
-//   margin-top: 20px;
-//   background-color: #ffffff;
-//   border-radius: 10px;
-//   .common_table {
-//     width: 100%;
-//     overflow-x: auto;
-//   }
-//   .common_pagination {
-//     margin: 40px 15px;
-//     display: flex;
-//     justify-content: flex-end;
-//   }
-
-//   th {
-//     font-size: 15px;
-
-//     background-color: #fafafa !important;
-//   }
-
-//   tr {
-//     font-size: 15px;
-//   }
-
-//   tr:n {
-//     font-size: 15px;
-//     background-color: #ffffff;
-//   }
-// `;
-
-// export default CommonTable;
-
-// import React from "react";
-import React, { useEffect, useRef, useState } from "react";
-
-import { Card, Row, Col, Dropdown, Button, Pagination } from "antd";
+import React, { useEffect, useState } from "react";
+import { FaCheckCircle } from "react-icons/fa";
+import { AiOutlineClockCircle, AiOutlineEdit } from "react-icons/ai";
+import { MdDelete } from "react-icons/md";
+import { Button, Dropdown } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
-import CommonModal from "../../components/commons/CommonModel";
-import StateEdit from "../../views/state/StateEdit";
-import ZoneEdit from "../../views/zone/ZoneEdit";
-import WoredaEdit from "../../views/woreda/WoredaEdit";
-import { NavLink, useSearchParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  searchState,
-  updateStateState,
-  stateSearchText,
-} from "../../views/state/StateRedux";
-import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
-import { set } from "lodash";
-import stateService from "../../views/state/StateService";
-import ZoneService from "../../views/zone/ZoneService";
-import WoredaService from "../../views/woreda/WoredaService";
-import KebeleEdit from "../../views/kebele/kebeleEdit";
-import VillageEdit from "../../views/village/VillageEdit";
-import kebeleService from "../../views/kebele/KebeleRedux";
-import VillageService from "../../views/village/VillageService";
 
-const CommonTable = React.memo(
-  ({
-    data,
-    columns,
-    rowSelectionType,
-    onStateChange,
-    onZoneChange,
-    onWoredaChange,
-    onKebeleChange,
-    onVillageChange,
-    onStateDelete,
-    onZoneDelete,
-    onWoredaDelete,
-    onVillageDelete,
-    onKebeleDelete,
+// Helper function to format numbers
+export function formatNumberHuman(value) {
+  const num = parseFloat(value);
+  if (isNaN(num)) return "0.00";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
 
-    setSelection,
-    handlePagination,
-    hasPermission,
-    setSelectedState,
-    navigateToZones,
-    total,
-    tableChange,
-    type,
-    scroll,
-    state,
-  }) => {
-    const [stateData, setStateData] = useState([]);
-    const [zoneData, setZoneData] = useState([]);
-    const [woredaData, setWoredaData] = useState([]);
+// Helper to safely access nested values like "model.name"
+const getNestedValue = (obj, path) => {
+  return path
+    .split(".")
+    .reduce((acc, part) => (acc ? acc[part] : undefined), obj);
+};
 
-    const [loading, setLoading] = useState();
-    const [stateSelection, setStateSelection] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
-    const [isWoredaModalOpen, setIsWoredaModalOpen] = useState(false);
-    const [isKebeleModalOpen, setIsKebeleModalOpen] = useState(false);
-    const [isVillageModalOpen, setIsVillageModalOpen] = useState(false);
+const CommonCard = ({
+  item,
+  fieldMap,
+  title,
+  hasDelete = false,
+  fetchFunc,
+  url,
+  btnName,
+  cFunc,
+  deleteSchema,
+  deleteSchema2,
+  status = "",
+  vstock,
+  onActionClick,
+  actionItems = [],
+  onCardClick,
+}) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [remark, setRemark] = useState("");
+  const [salesColor, setSalesColor] = useState({
+    bgColor: "#c7c7c7",
+    color: "#030303",
+  });
 
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [isWoredaDeleteModalOpen, setIsWoredaDeleteModalOpen] =
-      useState(false);
-    const [isZoneDeleteModalOpen, setIsZoneDeleteModalOpen] = useState(false);
-    const [isKebeleDeleteModalOpen, setIsKebeleDeleteModalOpen] =
-      useState(false);
-    const [isVillageDeleteModalOpen, setIsVillageDeleteModalOpen] =
-      useState(false);
-
-    const [modeID, setModeID] = useState("");
-    const [searchParams, setSearchParams] = useSearchParams();
-    const dispatch = useDispatch();
-    console.log("./././././", data);
-
-    const getPaginationInfo = () => {
-      return [searchParams.get("page") || 1, searchParams.get("limit") || 5];
-    };
-    useEffect(() => {
-      const [page, limit] = getPaginationInfo();
-      dispatch(updateStateState({ page: page, limit: limit }));
-      // setSearchParams({ ...Object.fromEntries(searchParams), 'searchText': e.target.value })
-      searchData();
-    }, []);
-
-    async function searchData() {
-      try {
-        setLoading(true);
-
-        const { payload } = await dispatch(searchState());
-        setStateData(payload.data);
-        setTotal(payload.total);
-        setLoading(false);
-      } catch (err) {
-        setLoading(false);
-      }
+  // Set color based on status
+  const setColor = () => {
+    switch (status) {
+      case "Paid":
+        setSalesColor({ bgColor: "#c3f6cf", color: "#166534" });
+        break;
+      case "Not Paid":
+        setSalesColor({ bgColor: "#184781", color: "white" });
+        break;
+      case "Void":
+        setSalesColor({ bgColor: "#184781", color: "white" });
+        break;
+      case "Void Requested":
+        setSalesColor({ bgColor: "#fbbf24", color: "white" });
+        break;
+      default:
+        setSalesColor({ bgColor: "#c7c7c7", color: "#030303" });
     }
-    const delayTimerRef = useRef(null);
-    const handleDelete = async () => {
-      try {
-        setLoading(true);
-        const data = await stateService.deleteStat(modeID);
-        setIsDeleteModalOpen(false);
-        onStateDelete();
+  };
 
-        searchData();
+  useEffect(() => {
+    setColor();
+  }, [status]);
 
-        setLoading(false);
-      } catch (err) {
-        setLoading(false);
-      }
-    };
+  // Build details array dynamically
+  const details = Object.entries(fieldMap).map(([key, labelOrSuffix]) => {
+    const parts = labelOrSuffix.split("__");
+    const label = parts[0]; // Display label
+    const suffix = parts[1] || "";
+    console.log("item", item, key);
+    const rawValue = getNestedValue(item, key) ?? "";
+    const cleanValue =
+      typeof rawValue === "string"
+        ? rawValue.replace(/<[^>]*>/g, "").trim()
+        : rawValue;
 
-    const handleZoneDelete = async () => {
-      try {
-        setLoading(true);
-        const data = await ZoneService.deleteZone(modeID);
-        setIsZoneDeleteModalOpen(false);
-        onZoneDelete();
+    const value = suffix
+      ? suffix === "ETB"
+        ? `${formatNumberHuman(
+            Number(cleanValue.toString().replace(/,/g, ""))
+          )} ${suffix}`
+        : `${cleanValue} ${suffix}`
+      : cleanValue;
 
-        searchData();
-        setLoading(false);
-      } catch (err) {
-        setLoading(false);
-      }
-    };
+    return { label, value };
+  });
 
-    console.log("fgfgf", onStateChange);
+  console.log(details);
 
-    // const onStateChange = () => {
-    //   console.log("onStateChange");
-    //   searchData();
-    // };
-
-    const handleWoredaDelete = async () => {
-      try {
-        setLoading(true);
-        const data = await WoredaService.deleteWoreda(modeID);
-        setIsWoredaDeleteModalOpen(false);
-        onWoredaDelete();
-
-        searchData();
-        setLoading(false);
-      } catch (err) {
-        setLoading(false);
-      }
-    };
-
-    const handleKebeleDelete = async () => {
-      try {
-        setLoading(true);
-        const data = await kebeleService.deleteKebele(modeID);
-        setIsKebeleDeleteModalOpen(false);
-        onKebeleDelete();
-
-        searchData();
-        setLoading(false);
-      } catch (err) {
-        setLoading(false);
-      }
-    };
-
-    const handleVillageDelete = async () => {
-      try {
-        setLoading(true);
-        const data = await VillageService.deleteVillage(modeID);
-        setIsVillageDeleteModalOpen(false);
-        onVillageDelete();
-
-        searchData();
-        setLoading(false);
-      } catch (err) {
-        setLoading(false);
-      }
-    };
-
-    const onClick = ({ key }, record) => {
-      console.log("key", key);
-      console.log("record", record);
-      if (key == "edit") {
-        if (state === "zone") {
-          console.log("zone");
-          setIsZoneModalOpen(true);
-        } else if (state === "woreda") {
-          console.log("woreda");
-          setIsWoredaModalOpen(true);
-        } else if (state === "kebele") {
-          setIsKebeleModalOpen(true);
-        } else if (state === "village") {
-          setIsVillageModalOpen(true);
-        } else {
-          setIsModalOpen(true);
-        }
-
-        setModeID(record._id);
-      } else if (key === "delete") {
-        if (state === "zone") {
-          console.log("zone");
-          setIsZoneDeleteModalOpen(true);
-        } else if (state === "woreda") {
-          console.log("woreda");
-          setIsWoredaDeleteModalOpen(true);
-        } else if (state === "kebele") {
-          setIsKebeleDeleteModalOpen(true);
-        } else if (state === "village") {
-          setIsVillageDeleteModalOpen(true);
-        } else {
-          setIsDeleteModalOpen(true);
-        }
-        setModeID(record._id);
-      }
-    };
-
-    const items = [
-      {
-        key: "edit",
-        label: <Button type="text">Edit</Button>,
-      },
-      {
-        key: "delete",
-        label: <Button type="text"> Delete</Button>,
-      },
-    ];
-
-    const onShowSizeChange = (current, pageSize) => {
-      console.log(current, pageSize);
-      handlePagination(current, pageSize);
-    };
-
-    // Function to map column titles to card content
-    const renderCardContent = (record) => {
-      return columns.map((column) => {
-        const value = record[column.dataIndex];
-        if (Array.isArray(value)) {
-          return (
-            <div key={column.dataIndex}>
-              <strong>{column.title}: </strong>
-              {value.join(", ")}
-            </div>
-          );
-        } else if (typeof value === "object" && value !== null) {
-          return (
-            <div key={column.dataIndex}>
-              {Object.entries(value).map(([key, val]) => (
-                <div key={key}>{val.name}</div>
-              ))}
-            </div>
-          );
-        }
-        return (
-          <div className="card-content" key={column.dataIndex}>
-            {/* <strong>{column.title}: </strong> */}
-            {value}
-          </div>
-        );
-      });
-    };
-    console.log("pppppppp", data);
-    console.log("fkfk", hasPermission);
-    console.log("**********", isZoneModalOpen);
-    // console.log("**********",sele)
-
-    return (
-      <div className="flex flex-col mx-6 mb-4 px-14 border-[1px] border-[#F0F0F0] rounded">
-        {hasPermission && isModalOpen ? (
-          <CommonModal
-            width={1000}
-            isModalOpen={isModalOpen}
-            setIsModalOpen={setIsModalOpen}
-          >
-            <StateEdit
-              stateData={stateData}
-              searchData={searchData}
-              setMode={setModeID}
-              mode={modeID}
-              isModelOpen={isModalOpen}
-              setIsModalOpen={setIsModalOpen}
-              onStateChange={onStateChange}
-            />
-          </CommonModal>
-        ) : (
-          ""
-        )}
-
-        {hasPermission && isZoneModalOpen ? (
-          <CommonModal
-            width={1000}
-            isModalOpen={isZoneModalOpen}
-            setIsModalOpen={setIsZoneModalOpen}
-          >
-            <ZoneEdit
-              zoneData={stateData}
-              searchData={searchData}
-              setMode={setModeID}
-              mode={modeID}
-              isModelOpen={isZoneModalOpen}
-              setIsModalOpen={setIsZoneModalOpen}
-              onZoneChange={onZoneChange}
-            />
-          </CommonModal>
-        ) : (
-          ""
-        )}
-
-        {hasPermission && isWoredaModalOpen ? (
-          <CommonModal
-            width={1000}
-            isModalOpen={isWoredaModalOpen}
-            setIsModalOpen={setIsWoredaModalOpen}
-          >
-            <WoredaEdit
-              woredaData={stateData}
-              searchData={searchData}
-              setMode={setModeID}
-              mode={modeID}
-              onWoredaChange={onWoredaChange}
-              isModelOpen={isWoredaModalOpen}
-              setIsModalOpen={setIsWoredaModalOpen}
-            />
-          </CommonModal>
-        ) : (
-          ""
-        )}
-
-        {hasPermission && isKebeleModalOpen ? (
-          <CommonModal
-            width={1000}
-            isModalOpen={isKebeleModalOpen}
-            setIsModalOpen={setIsKebeleModalOpen}
-          >
-            <KebeleEdit
-              kebeleData={stateData}
-              searchData={searchData}
-              setMode={setModeID}
-              mode={modeID}
-              onKebeleChange={onKebeleChange}
-              isModelOpen={isKebeleModalOpen}
-              setIsModalOpen={setIsKebeleModalOpen}
-            />
-          </CommonModal>
-        ) : (
-          ""
-        )}
-
-        {hasPermission && isVillageModalOpen ? (
-          <CommonModal
-            width={1000}
-            isModalOpen={isVillageModalOpen}
-            setIsModalOpen={setIsVillageModalOpen}
-          >
-            <VillageEdit
-              villageData={stateData}
-              searchData={searchData}
-              setMode={setModeID}
-              mode={modeID}
-              onVillageChange={onVillageChange}
-              isModelOpen={isVillageModalOpen}
-              setIsModalOpen={setIsVillageModalOpen}
-            />
-          </CommonModal>
-        ) : (
-          ""
-        )}
-        {hasPermission && isDeleteModalOpen ? (
-          <CommonDeleteModal
-            setIsModalOpen={setIsDeleteModalOpen}
-            handleDelete={handleDelete}
-            loading={loading}
-            isModalOpen={isDeleteModalOpen}
-          >
-            <h1 className="text-2xl font-bold text-red-600">
-              Are you absolutely sure?
-            </h1>
-            <p className="mt-2 text-lg text-gray-700">
-              This action{" "}
-              <span className="font-semibold">cannot be undone</span> and will
-              permanently delete the selected data.
-            </p>
-            <p className="mt-2 text-lg text-red-500">
-              Please double-check your selection before proceeding.
-            </p>
-          </CommonDeleteModal>
-        ) : (
-          ""
-        )}
-
-        {hasPermission && isZoneDeleteModalOpen ? (
-          <CommonDeleteModal
-            setIsModalOpen={setIsZoneDeleteModalOpen}
-            handleDelete={handleZoneDelete}
-            loading={loading}
-            isModalOpen={isZoneDeleteModalOpen}
-          >
-            <h1 className="text-2xl font-bold text-red-600">
-              Are you absolutely sure?
-            </h1>
-            <p className="mt-2 text-lg text-gray-700">
-              This action{" "}
-              <span className="font-semibold">cannot be undone</span> and will
-              permanently delete the selected data.
-            </p>
-            <p className="mt-2 text-lg text-red-500">
-              Please double-check your selection before proceeding.
-            </p>
-          </CommonDeleteModal>
-        ) : (
-          ""
-        )}
-
-        {hasPermission && isWoredaDeleteModalOpen ? (
-          <CommonDeleteModal
-            setIsModalOpen={setIsWoredaDeleteModalOpen}
-            handleDelete={handleWoredaDelete}
-            loading={loading}
-            isModalOpen={isWoredaDeleteModalOpen}
-          >
-            <h1 className="text-2xl font-bold text-red-600">
-              Are you absolutely sure?
-            </h1>
-            <p className="mt-2 text-lg text-gray-700">
-              This action{" "}
-              <span className="font-semibold">cannot be undone</span> and will
-              permanently delete the selected data.
-            </p>
-            <p className="mt-2 text-lg text-red-500">
-              Please double-check your selection before proceeding.
-            </p>
-          </CommonDeleteModal>
-        ) : (
-          ""
-        )}
-
-        {hasPermission && isKebeleDeleteModalOpen ? (
-          <CommonDeleteModal
-            setIsModalOpen={setIsKebeleDeleteModalOpen}
-            handleDelete={handleKebeleDelete}
-            loading={loading}
-            isModalOpen={isKebeleDeleteModalOpen}
-          >
-            <h1 className="text-2xl font-bold text-red-600">
-              Are you absolutely sure?
-            </h1>
-            <p className="mt-2 text-lg text-gray-700">
-              This action{" "}
-              <span className="font-semibold">cannot be undone</span> and will
-              permanently delete the selected data.
-            </p>
-            <p className="mt-2 text-lg text-red-500">
-              Please double-check your selection before proceeding.
-            </p>
-          </CommonDeleteModal>
-        ) : (
-          ""
-        )}
-        {hasPermission && isVillageDeleteModalOpen ? (
-          <CommonDeleteModal
-            setIsModalOpen={setIsVillageDeleteModalOpen}
-            handleDelete={handleVillageDelete}
-            loading={loading}
-            isModalOpen={isVillageDeleteModalOpen}
-          >
-            <h1 className="text-2xl font-bold text-red-600">
-              Are you absolutely sure?
-            </h1>
-            <p className="mt-2 text-lg text-gray-700">
-              This action{" "}
-              <span className="font-semibold">cannot be undone</span> and will
-              permanently delete the selected data.
-            </p>
-            <p className="mt-2 text-lg text-red-500">
-              Please double-check your selection before proceeding.
-            </p>
-          </CommonDeleteModal>
-        ) : (
-          ""
-        )}
-
-        <Row gutter={[24, 24]}>
-          {data?.map((record) => (
-            <Col span={8} key={record._id}>
-              <Card
-                title={
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p
-                        style={{ fontWeight: "700", color: "#000000" }}
-                        className="font-18px capitalize font-bold"
-                      >
-                        {renderCardContent(record)}
-                      </p>
-                    </div>
-                    {hasPermission && (
-                      <Dropdown
-                        menu={{
-                          items,
-                          onClick: (menuInfo) => {
-                            menuInfo.domEvent.stopPropagation();
-                            onClick(menuInfo, record);
-                          },
-                        }}
-                        trigger={["click"]}
-                      >
-                        <Button
-                          type="text"
-                          icon={<MoreOutlined className="horizontal-dots" />}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </Dropdown>
-                    )}
-                  </div>
-                }
-                bordered={false}
-                loading={loading}
-                style={{ minHeight: "150px", cursor: "pointer" }} // Add cursor pointer
-                bodyStyle={{ padding: "20px" }}
-                // onClick={() => {
-                //     // Action on card click
-                //     setSelectedState(record._id);
-                //     onClick={() => navigateToZones(record._id)}
-                //     searchData(); // or navigate to specific zone
-                // }}
-                onClick={() => navigateToZones(record._id)}
-              >
-                {record.zonesCount >= 0 ? (
-                  <p
-                    style={{
-                      fontWeight: "700",
-                      color: "#D8D8D8",
-                      fontSize: "16px",
-                    }}
-                    className="font-bold"
-                  >
-                    {record.zonesCount} Zones
-                  </p>
-                ) : record.woredasCount >= 0 ? (
-                  <p
-                    style={{
-                      fontWeight: "700",
-                      color: "#D8D8D8",
-                      fontSize: "16px",
-                    }}
-                    className="font-bold"
-                  >
-                    {record.woredasCount} Woredas
-                  </p>
-                ) : record.kebeleCount >= 0 ? (
-                  <p
-                    style={{
-                      fontWeight: "700",
-                      color: "#D8D8D8",
-                      fontSize: "16px",
-                    }}
-                    className="font-bold"
-                  >
-                    {record.kebeleCount} kebeles
-                  </p>
-                ) : record.villageCount >= 0 ? (
-                  <p
-                    style={{
-                      fontWeight: "700",
-                      color: "#D8D8D8",
-                      fontSize: "16px",
-                    }}
-                    className="font-bold"
-                  >
-                    {record.villageCount} Villages
-                  </p>
-                ) : (
-                  <p
-                    style={{
-                      fontWeight: "700",
-                      color: "#D8D8D8",
-                      fontSize: "16px",
-                    }}
-                    className="font-bold"
-                  >
-                    {record.facilityCount} Facilities
-                  </p>
-                )}
-              </Card>
-            </Col>
-          ))}
-        </Row>
-
-        {!type && (
-          <div className="flex justify-end py-4">
-            <Pagination
-              total={total}
-              defaultPageSize={5}
-              defaultCurrent={1}
-              pageSizeOptions={["5", "10", "20"]}
-              showSizeChanger={true}
-              onChange={onShowSizeChange}
-            />
+  return (
+    <div
+      onClick={() => {
+        onCardClick && onCardClick(item);
+      }}
+      style={{
+        padding: 7,
+        backgroundColor: "white",
+        borderRadius: 10,
+        marginBottom: 5,
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 10,
+        }}
+      >
+        {title && (
+          <div>
+            {Array.isArray(title)
+              ? title.map((t, i) => (
+                  <span key={i} style={{ marginRight: 5 }}>
+                    {getNestedValue(item, t) || t}
+                  </span>
+                ))
+              : getNestedValue(item, title) || title}
           </div>
         )}
+        <Dropdown
+          menu={{
+            items: actionItems,
+            onClick: (value) => onActionClick(value, item),
+          }}
+          trigger={["click"]}
+          placement="bottomLeft"
+        >
+          <Button
+            type="text"
+            icon={<MoreOutlined style={{ fontSize: 20 }} />}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </Dropdown>
       </div>
-    );
-  }
-);
 
-export default CommonTable;
+      {/* Details */}
+      {details.map((detail, idx) => (
+        <div key={idx}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 1,
+            }}
+          >
+            <span style={{ color: "#A7A7A7", fontSize: 12.5 }}>
+              {detail.label}
+            </span>
+            <span style={{ fontSize: 12.5, color: "#333" }}>
+              {detail.value}
+            </span>
+          </div>
+          {idx < details.length - 1 && (
+            <hr style={{ margin: "6px 0", borderColor: "#C3C3C3" }} />
+          )}
+        </div>
+      ))}
+
+      {/* Buttons */}
+      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+        {hasDelete && (
+          <button
+            onClick={() => setModalVisible(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "5px 15px",
+              borderRadius: 8,
+              backgroundColor: "white",
+              border: "none",
+            }}
+          >
+            <MdDelete size={24} color="#3393CE" />
+            <span style={{ color: "#3393CE", marginLeft: 5 }}>Delete</span>
+          </button>
+        )}
+        {(item?.status === "Paid" || item?.status === "Not Paid") &&
+          btnName && (
+            <button
+              onClick={() => setShowModal(true)}
+              style={{
+                padding: "5px 15px",
+                borderRadius: 8,
+                border: "1px solid #3393CE",
+                backgroundColor: "white",
+              }}
+            >
+              {btnName}
+            </button>
+          )}
+      </div>
+
+      {/* Delete Modal */}
+      {modalVisible && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.2)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: 20,
+              borderRadius: 10,
+              width: 300,
+            }}
+          >
+            <p>Are you sure you want to delete this item?</p>
+            <div style={{ display: "flex", gap: 15 }}>
+              <button
+                onClick={() => setModalVisible(false)}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#ccc",
+                  borderRadius: 5,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                // onClick={handleDelete}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#3393CE",
+                  color: "white",
+                  borderRadius: 5,
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remark Modal */}
+      {showModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.2)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: 20,
+              borderRadius: 10,
+              width: 300,
+            }}
+          >
+            <input
+              placeholder="Remark"
+              value={remark}
+              onChange={(e) => setRemark(e.target.value)}
+              style={{
+                width: "100%",
+                padding: 12,
+                borderRadius: 6,
+                border: "1px solid #CCC",
+                marginBottom: 20,
+              }}
+            />
+            <div style={{ display: "flex", gap: 15 }}>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#ccc",
+                  borderRadius: 5,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!remark) return;
+                  cFunc(item.id, remark);
+                  setShowModal(false);
+                }}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#3393CE",
+                  color: "white",
+                  borderRadius: 5,
+                }}
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CommonCard;

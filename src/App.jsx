@@ -10,8 +10,6 @@ import "./localization";
 function App() {
   const dispatch = useDispatch();
 
-  console.log("app ------------");
-
   useEffect(() => {
     dispatch(setCredential({ user: authService.getCurrentUser() }));
   }, []);

@@ -7,6 +7,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import LayoutHeader from "./Header";
 import SideDrawer from "../../utils/SideDrawer";
+import BottomNav from "./BottomNav";
 const { Content } = Layout;
 const LayoutApp = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -47,10 +48,23 @@ const LayoutApp = () => {
 
   return (
     <LayoutContainer>
-      {collapsed2 ? (
+      {/* {collapsed2 ? (
         <SideDrawer open={!collapsed} setOpen={setCollapsed}>
           <Sidebar collapsed={collapsed} />
         </SideDrawer>
+      ) : (
+        <Sidebar collapsed={collapsed} />
+      )} */}
+
+      {collapsed2 ? (
+        <>
+          {/* Remove drawer show bottom nav instead */}
+          <SideDrawer open={!collapsed} setOpen={setCollapsed}>
+            <Sidebar collapsed={collapsed} />
+          </SideDrawer>{" "}
+          {/* hide sidebar entirely */}
+          <BottomNav />
+        </>
       ) : (
         <Sidebar collapsed={collapsed} />
       )}
