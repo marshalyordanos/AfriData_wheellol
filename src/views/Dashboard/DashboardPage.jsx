@@ -100,7 +100,7 @@ const DashboardPage = () => {
       const res3 = await api.get("users/summary?entity=latestBookings");
 
       setLetestbooking(res3.data?.data);
-      console.log("fetchSummary: ", res.data, res3.data);
+      console.log("fetchSummary: ", res3.data);
       setLaoding(false);
     } catch (error) {
       setLaoding(false);
