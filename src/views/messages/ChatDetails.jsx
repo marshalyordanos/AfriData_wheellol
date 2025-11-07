@@ -30,11 +30,12 @@ const ChatDetails = () => {
 
   // get partner user from navigation state or messages
   const navFrom = location.state?.from || null;
-  const navPartner = location.state?.chatPartner || null;
+  const chatPartner = location.state?.chatPartner || null;
   const bookingSummary = location.state?.bookingSummary || null;
 
   const derivePartner = () => {
-    if (navPartner) return navPartner;
+    console.log("Deriving partner user...",chatPartner);
+    if (chatPartner) return chatPartner;
     // look into messages to find a user object that's not the current user
     if (Array.isArray(messages) && messages.length > 0) {
       for (const m of messages) {
@@ -71,7 +72,7 @@ const ChatDetails = () => {
     }
   }, [messages]);
 
-  console.log("Message info in chatState : ^^^^^^^^^^^^^^^^^", location.state);
+  // console.log("Message info in chatState : ^^^^^^^^^^^^^^^^^", location.state);
 
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -81,7 +82,7 @@ const ChatDetails = () => {
       setSending(true);
       const senderId = currentUserId;
       const booking = location.state || {};
-      let receiverId = booking.receiverId || null;
+      let receiverId = chatPartner?.id || null;
 
       // Determine receiver
       if (!receiverId && booking?.host?.id && booking?.guest?.id) {

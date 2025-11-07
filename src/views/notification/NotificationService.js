@@ -1,8 +1,8 @@
 import api from "../../api/api";
 
 class NotificationService {
-  getNotifications({ page = 1, limit = 20 } = {}) {
-    const url = `notifications?page=${page}&pageSize=${limit}`;
+  getNotifications({ userid, page = 1, limit = 20 } = {}) {
+    const url = `messages/notifications/${userid}?page=${page}&pageSize=${limit}`;
     return api.get(url).then((r) => {
       return {
         data: r.data?.data || [],
@@ -11,16 +11,24 @@ class NotificationService {
     });
   }
 
-  markAsRead(id) {
+  unReadNotifications(userId) {
     return api
-      .post(`/notifications/${id}/read`)
+      .get(`/messages/notifications/unread-count/${userId}`)
       .then((r) => r.data?.data || r.data);
   }
 
-  markAllRead() {
-    return api
-      .post(`/notifications/read-all`)
-      .then((r) => r.data?.data || r.data);
+  markAsRead(id, userId) {
+    const url = userId
+      ? `/messages/notifications/mark-as-read/${id}?userid=${userId}`
+      : `/messages/notifications/mark-as-read/${id}`;
+    return api.post(url).then((r) => r.data?.data || r.data);
+  }
+
+  markAllRead(userId) {
+    const url = userId
+      ? `/notifications/read-all?userid=${userId}`
+      : `/notifications/read-all`;
+    return api.post(url).then((r) => r.data?.data || r.data);
   }
 }
 
