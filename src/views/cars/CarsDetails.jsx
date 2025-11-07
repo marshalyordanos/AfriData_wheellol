@@ -25,7 +25,6 @@ const CarDetails = () => {
       try {
         setLoading(true);
 
-        // Load car + all brands and models
         const [carData, brandsData, modelsData] = await Promise.all([
           carsService.getCar(id),
           carsService.getBrands(),
@@ -60,34 +59,58 @@ const CarDetails = () => {
     );
   }
 
-  // Use makeId and modelId to display names
   const brandName = findNameById(brands, car.makeId);
   const modelName = findNameById(models, car.modelId);
 
   return (
-    <div className="p-6">
-      <Card title={`${brandName} ${modelName}`} bordered>
+    <div className="p-4 sm:p-6 md:p-8">
+      <Card
+        title={`${brandName} ${modelName}`}
+        bordered
+        style={{
+          width: "100%",
+          maxWidth: 800,
+          margin: "0 auto",
+          boxSizing: "border-box",
+        }}
+      >
         {/* Images horizontal scroll */}
-        <div className="flex gap-2 overflow-x-auto py-2">
+        <div
+          className="flex gap-2 overflow-x-auto py-2"
+          style={{
+            scrollbarWidth: "thin",
+            paddingBottom: 5,
+          }}
+        >
           {(car.photos || []).map((photo, index) => (
-            <Image
+            <div
               key={index}
-              src={photo}
-              width={150}
-              height={100}
               style={{
-                objectFit: "cover",
+                minWidth: 120,
+                flexShrink: 0,
                 borderRadius: 8,
+                overflow: "hidden",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
               }}
-            />
+            >
+              <img
+                src={photo}
+                alt={`Car ${index + 1}`}
+                style={{
+                  width: "100%",
+                  height: 80,
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+            </div>
           ))}
         </div>
 
-        {/* Car details in grid */}
+        {/* Responsive Car Details */}
         <Descriptions
           bordered
-          column={2}
+          column={{ xs: 1, sm: 1, md: 2 }}
           className="mt-4"
           labelStyle={{ fontWeight: 600 }}
         >
@@ -136,7 +159,7 @@ const CarDetails = () => {
         {car.description && (
           <div className="mt-4">
             <strong>Description:</strong>
-            <p>{car.description}</p>
+            <p style={{ wordWrap: "break-word" }}>{car.description}</p>
           </div>
         )}
       </Card>

@@ -44,6 +44,8 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
   const isEdit = !!carId;
   const userData = useSelector(selectCurrentUser);
 
+  console.log("userdata:", "klsdmskmaks", userData);
+
   // Load brands and car data (if editing)
   useEffect(() => {
     const loadInitialData = async () => {
@@ -65,7 +67,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
             setHostId(carData.hostId); // ✅ set dynamic hostId
 
             form.setFieldsValue({
-              hostId: userData?.id,
+              hostId: userData?.user?.id,
               makeId: carData.makeId,
               modelId: carData.modelId,
               year: carData.year,
@@ -172,7 +174,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
 
       console.log("userDatauserData:", userData);
 
-      formData.append("hostId", userData?.id);
+      formData.append("hostId", userData?.user?.id);
 
       // Append photos (only new ones)
       if (fileList.length > 0) {
