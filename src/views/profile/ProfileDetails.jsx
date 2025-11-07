@@ -134,8 +134,8 @@ const ProfileDetails = () => {
         }}
       >
         <h2 style={{ margin: 0 }}>Profile Details</h2>
-        <Button type="primary" onClick={onEdit}>
-          Edit
+        <Button type="primary" style={{ background: "var(--color-primary)" }} onClick={onEdit}>
+          Update Profile
         </Button>
       </div>
 
