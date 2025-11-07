@@ -60,20 +60,6 @@ const LayoutRouting = () => {
   const role =
     user?.role?.name || JSON.parse(localStorage.getItem("user"))?.role.name;
 
-  // Fetch summary on load
-  const fetchSummary = async () => {
-    try {
-      const res = await api.get("users/summary");
-      dispatch(setSummary(res.data?.data));
-    } catch (error) {
-      console.error("fetchSummary: ", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchSummary();
-  }, []);
-
   // Allowed routes for each role
   const hostRoutes = [
     { path: "", element: <DashboardPage /> },

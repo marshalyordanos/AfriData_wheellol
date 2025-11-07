@@ -19,6 +19,8 @@ import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import carsService from "./CarsService";
 import CarsEdit from "./CarsEdit";
 import { useDispatch, useSelector } from "react-redux";
+import api from "../../api/api";
+
 import {
   searchCars,
   updateCarsState,
@@ -66,7 +68,10 @@ const CarsList = () => {
 
   const searchText = useSelector(carsSearchText);
   const { notActiveOnly, notApprovedOnly } = useSelector(carsQuery);
-  const carSummary = useSelector(selectcarSummary);
+  // const carSummary = useSelector(selectcarSummary);
+
+  const [carSummary, setCarSUmmary] = useState({});
+
   const carpage = useSelector(carsPage);
   const carlimit = useSelector(carsLimit);
 
@@ -140,6 +145,22 @@ const CarsList = () => {
       setLoading(false);
     }
   };
+
+  // Fetch summary on load
+  const fetchSummary = async () => {
+    try {
+      const res = await api.get("users/summary?entity=car");
+      setCarSUmmary(res.data.data?.car);
+
+      console.log("fetchSummary: ", res.data);
+    } catch (error) {
+      console.error("fetchSummary: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
 
   // ✅ Filtering logic
   useEffect(() => {

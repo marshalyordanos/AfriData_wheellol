@@ -3,6 +3,7 @@ import { Input, Button, Tag, Dropdown, Select, DatePicker } from "antd";
 import { ReloadOutlined, PlusOutlined, MoreOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import api from "../../api/api";
 
 import CommonTable from "../../components/commons/CommonTable";
 import CommonModal from "../../components/commons/CommonModel";
@@ -57,7 +58,7 @@ const BookingList = () => {
   const [localSearch, setLocalSearch] = useState(searchText || "");
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const bookingSummary = useSelector(selectbookingSummary);
+  const [bookingSummary, setBookingSummary] = useState({});
   const currentUser = useSelector(selectCurrentUser);
 
   const normalizeRole = (u) => {
@@ -238,6 +239,21 @@ const BookingList = () => {
     loadBookings({ page: 1, limit: 10, sort: "", order: "", searchText: "" });
   };
 
+  // Fetch summary on load
+  const fetchSummary = async () => {
+    try {
+      const res = await api.get("users/summary?entity=booking");
+      setBookingSummary(res.data.data?.booking);
+
+      console.log("fetchSummary: ", res.data);
+    } catch (error) {
+      console.error("fetchSummary: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
   const columns = [
     {
       title: " ",
