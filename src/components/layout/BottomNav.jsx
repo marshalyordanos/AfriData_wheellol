@@ -10,18 +10,24 @@ import {
 import { SiBrandfolder, SiBookstack } from "react-icons/si";
 
 import { useNavigate, useLocation } from "react-router-dom";
+import { selectCurrentUser } from "../../redux/auth/authSlice";
+import { useSelector } from "react-redux";
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const currentUser = useSelector(selectCurrentUser);
 
   const buttons = [
     { icon: <HomeOutlined />, path: "/dash" },
     { icon: <SiBookstack />, path: "/dash/bookings" },
-    { icon: <MessageOutlined />, path: "/dash/messages" },
+    currentUser?.isSuperAdmin
+      ? { icon: <UserOutlined />, path: "/dash/gust" }
+      : { icon: <MessageOutlined />, path: "/dash/messages" },
+
     { icon: <CarOutlined />, path: "/dash/cars" },
     { icon: <CreditCardOutlined />, path: "/dash/payments" },
-  ];
+  ].filter(Boolean);
 
   return (
     <NavContainer>

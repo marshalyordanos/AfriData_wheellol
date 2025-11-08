@@ -21,6 +21,8 @@ import {
   fetchNotifications,
   selectUnreadCount,
 } from "../../views/notification/NotificationRedux";
+import Logo from "../../assets/icon orange.svg";
+
 
 const { Header } = Layout;
 
@@ -99,6 +101,15 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
       }}
     >
       <HeaderContainer>
+        {/* Mobile-centered logo */}
+        <div className="mobile-logo" onClick={() => navigate("/dash")}>
+          <img
+            src={Logo}
+            alt="logo"
+            style={{ width: "40px", left: "50%", transform: "translateX(27%)", height: "auto" }}
+          />
+        </div>
+
         {/* Left Controls */}
         <div className="left-controls">
           <Button
@@ -229,6 +240,30 @@ const HeaderContainer = styled.div`
     align-items: center;
     gap: 8px;
     cursor: pointer;
+  }
+
+  /* Mobile centered logo */
+  .mobile-logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: block;
+    cursor: pointer;
+    height: 48px;
+    width: auto;
+  }
+
+  .mobile-logo img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  /* hide mobile logo on medium+ screens */
+  @media (min-width: 768px) {
+    .mobile-logo {
+      display: none;
+    }
   }
 `;
 
