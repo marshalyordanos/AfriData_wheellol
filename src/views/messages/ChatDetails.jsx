@@ -6,13 +6,18 @@ import {
   sendMessage,
   selectMessagesForBooking,
   selectMessagesLoading,
+  upsertMessage,
 } from "./MessageRedux";
 import { Avatar, Input, Button, Spin } from "antd";
 import { LoadingOutlined, CheckOutlined } from "@ant-design/icons";
+import socketService from "../../services/socketService";
+
 const { TextArea } = Input;
 
 const ChatDetails = () => {
   const { id } = useParams(); // bookingId
+  const { connected } = useSelector((state) => state.socket);
+
   const location = useLocation();
   const dispatch = useDispatch();
   const messages = useSelector((state) => selectMessagesForBooking(state, id));
@@ -30,11 +35,12 @@ const ChatDetails = () => {
 
   // get partner user from navigation state or messages
   const navFrom = location.state?.from || null;
-  const navPartner = location.state?.chatPartner || null;
+  const chatPartner = location.state?.chatPartner || null;
   const bookingSummary = location.state?.bookingSummary || null;
 
   const derivePartner = () => {
-    if (navPartner) return navPartner;
+    // console.log("Deriving partner user...", chatPartner);
+    if (chatPartner) return chatPartner;
     // look into messages to find a user object that's not the current user
     if (Array.isArray(messages) && messages.length > 0) {
       for (const m of messages) {
@@ -64,14 +70,59 @@ const ChatDetails = () => {
     }
   }, [id]);
 
+  //SOCKET FOR Messages
+  useEffect(() => {
+    if (!connected || !currentUserId || !id) return;
+
+    const onNewMessage = (payload) => {
+      try {
+        const data = payload?.data || payload || {};
+
+        if (data.senderId != currentUserId) {
+          console.log("💬 New message socket event (ChatDetails):", data);
+          if (String(data.bookingId) !== String(id)) return; // ignore other bookings
+
+          // Insert or update the message into the store
+          const msg = {
+            id: data.id || data._id,
+            bookingId: data.bookingId,
+            senderId: data.senderId,
+            receiverId: data.receiverId,
+            content: data.content || data.message || "",
+            isRead: data.isRead ?? false,
+            createdAt: data.createdAt || new Date().toISOString(),
+            sender: data.sender || data.from || null,
+          };
+
+          dispatch(upsertMessage(msg));
+
+          // If the user is viewing this booking, mark optimistic placeholders gone
+          setOptimistic((prev) =>
+            prev.filter((m) => m.content !== msg.content)
+          );
+        }
+      } catch (err) {
+        console.error("onNewMessage handler error:", err);
+      }
+    };
+
+    socketService.joinBooking(id);
+    socketService.on("new_message", onNewMessage);
+
+    return () => {
+      socketService.off("new_message");
+      socketService.off("join_booking");
+    };
+  }, [connected, currentUserId, id]);
+
   // auto-scroll to bottom when messages change
   useEffect(() => {
     if (messagesRef.current) {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, optimistic]);
 
-  console.log("Message info in chatState : ^^^^^^^^^^^^^^^^^", location.state);
+  // console.log("Message info in chatState : ^^^^^^^^^^^^^^^^^", location.state);
 
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -81,7 +132,7 @@ const ChatDetails = () => {
       setSending(true);
       const senderId = currentUserId;
       const booking = location.state || {};
-      let receiverId = booking.receiverId || null;
+      let receiverId = chatPartner?.id || null;
 
       // Determine receiver
       if (!receiverId && booking?.host?.id && booking?.guest?.id) {
@@ -250,7 +301,9 @@ const ChatDetails = () => {
                   <div
                     style={{
                       maxWidth: "75%",
-                      background: mine ? "var(--color-primary)" : "var(--color-secondary)",
+                      background: mine
+                        ? "var(--color-primary)"
+                        : "var(--color-secondary)",
                       color: mine ? "#fff" : "#111",
                       padding: "10px 14px",
                       borderRadius: 12,
@@ -307,7 +360,12 @@ const ChatDetails = () => {
         <Button
           type="primary"
           onClick={handleSend}
-          style={{ height: 40 ,color:"white", backgroundColor:"var(--color-primary)", borderColor:"var(--color-primary)"}}
+          style={{
+            height: 40,
+            color: "white",
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+          }}
           loading={sending}
         >
           Send
