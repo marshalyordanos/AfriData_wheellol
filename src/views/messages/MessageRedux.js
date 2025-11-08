@@ -79,6 +79,32 @@ const messagesSlice = createSlice({
         state.chats.unshift(chat);
       }
     },
+    // Insert or update a single message into a booking's messages list
+    upsertMessage: (state, action) => {
+      const msg = action.payload || {};
+      const bookingId = msg.bookingId || msg.booking_id || msg.booking || null;
+      if (!bookingId) return;
+
+      state.messages[bookingId] = state.messages[bookingId] || {
+        items: [],
+        pagination: {},
+      };
+      const items = state.messages[bookingId].items || [];
+      const exists = items.find(
+        (m) => String(m.id || m._id) === String(msg.id || msg._id)
+      );
+      if (!exists) {
+        // append message
+        state.messages[bookingId].items = [...items, msg];
+      } else {
+        // update existing
+        state.messages[bookingId].items = items.map((m) =>
+          String(m.id || m._id) === String(msg.id || msg._id)
+            ? { ...m, ...msg }
+            : m
+        );
+      }
+    },
     clearMessagesState: (state) => {
       state.chats = [];
       state.messages = {};
@@ -129,7 +155,7 @@ const messagesSlice = createSlice({
 });
 
 export const { clearMessagesState } = messagesSlice.actions;
-export const { upsertChat } = messagesSlice.actions;
+export const { upsertChat, upsertMessage } = messagesSlice.actions;
 
 export default messagesSlice.reducer;
 

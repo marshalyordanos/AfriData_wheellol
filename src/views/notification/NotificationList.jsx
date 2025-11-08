@@ -67,8 +67,14 @@ const NotificationsList = ({ open, onClose }) => {
     dispatch(markNotificationRead({ id, userId: currentUserId }));
   };
 
-  const handleMarkAll = () => {
-    dispatch(markAllNotificationsRead(currentUserId));
+  const handleMarkAllAndClose = async () => {
+    if (!currentUserId) return;
+    try {
+      await dispatch(markAllNotificationsRead(currentUserId));
+      if (typeof onClose === "function") onClose();
+    } catch (err) {
+      console.error("Failed to mark all notifications read:", err);
+    }
   };
 
   return (
@@ -99,8 +105,9 @@ const NotificationsList = ({ open, onClose }) => {
       >
         <Button
           size="small"
-          onClick={handleMarkAll}
-          disabled={!notifications.length}
+          onClick={handleMarkAllAndClose}
+          disabled={!notifications.length || loading}
+          loading={loading}
         >
           Mark all as read
         </Button>

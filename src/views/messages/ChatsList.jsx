@@ -4,11 +4,13 @@ import {
   fetchChatsForUser,
   selectChats,
   selectChatsLoading,
+  upsertChat,
 } from "./MessageRedux";
 import { List, Avatar, Badge, Empty, Spin, Input } from "antd";
 import MessagesService from "./MessagesService";
 import { useNavigate } from "react-router-dom";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
+import socketService from "../../services/socketService";
 
 const ChatsList = () => {
   const dispatch = useDispatch();
@@ -16,6 +18,8 @@ const ChatsList = () => {
   const chats = useSelector(selectChats);
   const loading = useSelector(selectChatsLoading);
   const currentUser = useSelector(selectCurrentUser);
+  const { connected } = useSelector((state) => state.socket);
+
   const storedUser = (() => {
     try {
       return JSON.parse(localStorage.getItem("user"));
@@ -27,6 +31,46 @@ const ChatsList = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [query, setQuery] = useState("");
 
+
+  //SOCKET FOR CHATLIST
+  useEffect(() => {
+    if (!connected || !userId) return;
+
+    // Update chat list event
+    const onUpdateChatList = (data) => {
+      try {
+        console.log("update_chat_list socket event:", data);
+
+        const lastMsgObj = {
+          content: data?.content || data?.lastMessage?.content || "",
+          createdAt:
+            data?.createdAt ||
+            data?.lastMessage?.createdAt ||
+            new Date().toISOString(),
+        };
+
+        const chatSummary = {
+          bookingId: data?.bookingId,
+          lastMessage: lastMsgObj,
+          unreadCount: data?.unreadCount ?? 1,
+          withUser: data?.withUser || null,
+        };
+
+        dispatch(upsertChat(chatSummary));
+      } catch (err) {
+        console.error("onUpdateChatList handler error:", err);
+      }
+    };
+
+    socketService.on("update_chat_list", onUpdateChatList);
+
+    return () => {
+      socketService.off("update_chat_list", onUpdateChatList);
+    };
+  }, [connected]);
+
+
+  // Fetch chats for user
   useEffect(() => {
     if (!userId) return;
 
@@ -99,10 +143,12 @@ const ChatsList = () => {
           return (
             <List.Item
               onClick={() =>
-                navigate(`/dash/messages/${chat.bookingId}`, { state: {
-                  from:"chatsList",
-                  chatPartner: chat.withUser
-                } })
+                navigate(`/dash/messages/${chat.bookingId}`, {
+                  state: {
+                    from: "chatsList",
+                    chatPartner: chat.withUser,
+                  },
+                })
               }
               style={{
                 cursor: "pointer",

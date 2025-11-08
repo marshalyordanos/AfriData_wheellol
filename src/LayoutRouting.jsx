@@ -10,11 +10,6 @@ import LayoutApp from "./components/layout/LayoutApp";
 import SocketService from "./services/socketService";
 import { notification } from "antd";
 import { BellOutlined } from "@ant-design/icons";
-import {
-  fetchChatsForUser,
-  fetchMessagesForBooking,
-} from "./views/messages/MessageRedux";
-import { upsertChat } from "./views/messages/MessageRedux";
 
 import api from "./api/api";
 
@@ -67,11 +62,19 @@ import ProfileDetails from "./views/profile/ProfileDetails";
 import ChangePassword from "./views/auth/ChangePassword";
 
 import CartypesList from "./views/cartypes/CartypesList";
-import { initializeSockets } from "./services/socketSetup";
+import { connectSocket } from "./redux/socketSlice";
 
 const LayoutRouting = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectCurrentUser);
+  const { connected } = useSelector((state) => state.socket);
+
+  //conect to socket on user change
+  useEffect(() => {
+    if (user) {
+      dispatch(connectSocket(user?.id || user?.user?.id));
+    }
+  }, [user]);
 
   const currentUserId = useMemo(() => {
     return user?.id || user?.userId || user?.user?.id || null;
@@ -89,18 +92,44 @@ const LayoutRouting = () => {
       console.error("fetchSummary: ", error);
     }
   };
+  dispatch(fetchUnreadNotifications(currentUserId));
 
   useEffect(() => {
     fetchSummary();
   }, [currentUserId, dispatch]);
 
-  // Socket listener for real-time notifications using SocketService
-   useEffect(() => {
-     const cleanup = initializeSockets(dispatch, currentUserId);
-     return () => cleanup && cleanup();
-   }, [dispatch, currentUserId]);
+  useEffect(() => {
+    if (!connected || !currentUserId) return;
+
+    const handleNewNotification = (data) => {
+      try {
+        console.log("📩 New notification:", data);
+
+        // only fetch for the current user
+        dispatch(fetchNotifications({ userid: currentUserId }));
+        dispatch(fetchUnreadNotifications(currentUserId));
+
+        notification.open({
+          message: data.title || "New Notification",
+          description: data.message || "You have a new notification",
+          icon: <BellOutlined style={{ color: "var(--primary-color)" }} />,
+          placement: "bottomRight",
+          duration: 7,
+        });
+      } catch (err) {
+        console.error("handleNewNotification error:", err);
+      }
+    };
+
+    SocketService.on("new_notification", handleNewNotification);
+
+    return () => {
+      SocketService.off("new_notification", handleNewNotification);
+    };
+  }, [connected]);
 
   // Routes per role
+  // Allowed routes for each role
   const hostRoutes = [
     { path: "", element: <DashboardPage /> },
     { path: "overview", element: <DashboardPage /> },

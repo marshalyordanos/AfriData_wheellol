@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Table,
@@ -20,17 +20,119 @@ import {
 } from "react-icons/fa";
 import Chart from "react-apexcharts";
 import { motion } from "framer-motion";
-
+import api from "../../api/api";
+import { useNavigate } from "react-router-dom";
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const DashboardPage = () => {
-  const kpis = [
-    { title: "Total Bookings", value: 1200, icon: <FaCar /> },
-    { title: "Total Revenue", value: "$230,000", icon: <FaDollarSign /> },
-    { title: "Total Users", value: 842, icon: <FaUser /> },
-    { title: "Active Owners", value: 34, icon: <FaChartLine /> },
-  ];
+  const [loading, setLaoding] = useState(null);
+  const navigate = useNavigate();
+
+  const [totalSummary, settotalSUmmary] = useState({});
+  const [totalSummaryR, settotalSUmmaryR] = useState([
+    {
+      title: "Total Bookings",
+      value: totalSummary?.totalBookings || 0,
+      icon: <FaCar />,
+    },
+    {
+      title: "Total Revenue",
+      value: totalSummary?.totalRevenue || 0,
+      icon: <FaDollarSign />,
+    },
+    {
+      title: "Total Users",
+      value: totalSummary?.totalUsers || 0,
+      icon: <FaUser />,
+    },
+    {
+      title: "Active Owners",
+      value: totalSummary?.activeHosts || 0,
+      icon: <FaChartLine />,
+    },
+  ]);
+  useEffect(() => {
+    settotalSUmmaryR([
+      {
+        title: "Total Bookings",
+        value: totalSummary?.totalBookings || 0,
+        icon: <FaCar />,
+      },
+      {
+        title: "Total Revenue",
+        value: String(totalSummary?.totalRevenue || 0) + " ETB",
+        icon: <FaDollarSign />,
+      },
+      {
+        title: "Total Users",
+        value: totalSummary?.totalUsers || 0,
+        icon: <FaUser />,
+      },
+      {
+        title: "Active Owners",
+        value: String(totalSummary?.activeHosts || 0),
+        icon: <FaChartLine />,
+      },
+    ]);
+  }, [totalSummary]);
+
+  const [lestestBooking, setLetestbooking] = useState([]);
+  const [revenueOverTime, setRevenueOverTime] = useState({});
+
+  const fetchSummary = async () => {
+    try {
+      // setLaoding(true);
+      const res = await api.get("users/summary?entity=total");
+      settotalSUmmary(res.data.data);
+
+      // setLaoding(false);
+    } catch (error) {
+      // setLaoding(false);
+
+      console.error("fetchSummary: ", error);
+    }
+  };
+  const fetchBooking = async () => {
+    try {
+      setLaoding(true);
+
+      const res3 = await api.get("users/summary?entity=latestBookings");
+
+      setLetestbooking(res3.data?.data);
+      console.log("fetchSummary: ", res3.data);
+      setLaoding(false);
+    } catch (error) {
+      setLaoding(false);
+
+      console.error("fetchSummary: ", error);
+    }
+  };
+
+  const fetchGraph = async () => {
+    try {
+      // setLaoding(true);
+
+      const res3 = await api.get("users/summary?entity=graph");
+
+      setRevenueOverTime(res3.data?.data);
+      console.log("fetchSummary: ", res3.data);
+      // setLaoding(false);
+    } catch (error) {
+      // setLaoding(false);
+
+      console.error("fetchSummary: ", error);
+    }
+  };
+  useEffect(() => {
+    fetchSummary();
+  }, []);
+  useEffect(() => {
+    fetchBooking();
+  }, []);
+  useEffect(() => {
+    fetchGraph();
+  }, []);
 
   const bookingData = [
     {
@@ -92,11 +194,24 @@ const DashboardPage = () => {
   ];
 
   const columns = [
-    { title: "Renter", dataIndex: "name" },
-    { title: "Car", dataIndex: "name" },
-    { title: "Model", dataIndex: "model" },
+    {
+      title: "Renter",
+      dataIndex: "name",
+      render: (text, r) => (
+        <p>{r?.guest?.firstName + " " + r?.guest?.lastName}</p>
+      ),
+    },
+    {
+      title: "Car",
+      dataIndex: "name",
+      render: (text, r) => <p>{r?.car?.make?.name}</p>,
+    },
+    {
+      title: "Model",
+      dataIndex: "model.name",
+      render: (text, r) => <p>{r?.car?.model?.name}</p>,
+    },
 
-    { title: "Date", dataIndex: "date" },
     {
       title: "Status",
       dataIndex: "status",
@@ -110,14 +225,30 @@ const DashboardPage = () => {
         </Tag>
       ),
     },
-    { title: "Owner", dataIndex: "owner" },
+    {
+      title: "Owner",
+      dataIndex: "owner",
+      render: (text, r) => (
+        <p>{r?.host?.firstName + " " + r?.host?.lastName}</p>
+      ),
+    },
+    {
+      title: "Start Date",
+      dataIndex: "startDate",
+      render: (text, r) => <p>{isoToDisplay(r?.startDate)}</p>,
+    },
+    {
+      title: "End Date",
+      dataIndex: "endDate",
+      render: (text, r) => <p>{isoToDisplay(r?.endDate)}</p>,
+    },
   ];
 
   const revenueChart = {
     series: [
       {
         name: "Revenue",
-        data: [10000, 18000, 24000, 32000, 40000, 46000, 54000],
+        data: Object.values(revenueOverTime) || [],
       },
     ],
     options: {
@@ -148,16 +279,35 @@ const DashboardPage = () => {
         strokeWidth: 3,
       },
       xaxis: {
-        categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+        categories: [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ],
       },
       dataLabels: { enabled: false },
     },
   };
 
+  const onRowClick = (record) => {
+    if (record && (record.id || record._id)) {
+      const bookingId = record.id || record._id;
+      navigate(`/dash/bookings/${bookingId}`);
+    }
+  };
   return (
     <div className="p-6 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((kpi, idx) => (
+      <div className="grid grid-cols-1  lg:grid-cols-4 gap-4">
+        {totalSummaryR.map((kpi, idx) => (
           <motion.div
             key={idx}
             initial={{ opacity: 0, y: 10 }}
@@ -175,7 +325,7 @@ const DashboardPage = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1  gap-6">
         <Card className="rounded-2xl shadow">
           <h2 className="text-lg font-semibold mb-4">Revenue Over Time</h2>
           <Chart
@@ -186,35 +336,73 @@ const DashboardPage = () => {
           />
         </Card>
 
-        <Card className="rounded-2xl shadow">
-          <h2 className="text-lg font-semibold mb-4">Filters</h2>
-          <div className="space-y-4">
-            <RangePicker className="w-full" />
-            <Select className="w-full" defaultValue="All Statuses">
-              <Option value="All">All Statuses</Option>
-              <Option value="Paid">Paid</Option>
-              <Option value="Cancelled">Cancelled</Option>
-              <Option value="Not Paid">Not Paid</Option>
-            </Select>
-            <Input placeholder="Search by Model or Owner Name" />
-          </div>
-        </Card>
+        {/* <Card className="rounded-2xl shadow">
+              <h2 className="text-lg font-semibold mb-4">Filters</h2>
+              <div className="space-y-4">
+                <RangePicker className="w-full" />
+                <Select className="w-full" defaultValue="All Statuses">
+                  <Option value="All">All Statuses</Option>
+                  <Option value="Paid">Paid</Option>
+                  <Option value="Cancelled">Cancelled</Option>
+                  <Option value="Not Paid">Not Paid</Option>
+                </Select>
+                <Input placeholder="Search by Model or Owner Name" />
+              </div>
+            </Card> */}
       </div>
 
       <Card className="rounded-2xl shadow">
         <h2 className="text-lg font-semibold mb-4">Latest Bookings</h2>
         <Table
+          loading={loading}
           columns={columns}
-          dataSource={bookingData}
+          dataSource={lestestBooking}
           rowKey="id"
-          pagination={{ pageSize: 5 }}
+          // pagination={{ pageSize: 5 }}
           scroll={{
             x: 700,
           }}
+          onRow={(record) => ({
+            onClick: () => onRowClick(record),
+            style: { cursor: "pointer" },
+          })}
+          pagination={false}
         />
       </Card>
     </div>
   );
 };
+
+export function isoToDisplay(isoStr) {
+  const d = new Date(isoStr);
+
+  // month names
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const yyyy = d.getFullYear();
+  const monthName = months[d.getMonth()];
+  const dd = String(d.getDate()).padStart(2, "0");
+
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? hours : 12; // 0 → 12
+
+  return `${monthName} ${dd}, ${yyyy} ${hours}:${minutes} ${ampm}`;
+}
 
 export default DashboardPage;

@@ -18,16 +18,12 @@ class NotificationService {
   }
 
   markAsRead(id, userId) {
-    const url = userId
-      ? `/messages/notifications/mark-as-read/${id}?userid=${userId}`
-      : `/messages/notifications/mark-as-read/${id}`;
+    const url = `/messages/notifications/mark-as-read/${id}?userid=${userId}`;
     return api.post(url).then((r) => r.data?.data || r.data);
   }
 
   markAllRead(userId) {
-    const url = userId
-      ? `/notifications/read-all?userid=${userId}`
-      : `/notifications/read-all`;
+    const url = `/messages/notifications/mark-as-read/${userId}`;
     return api.post(url).then((r) => r.data?.data || r.data);
   }
 }

@@ -26,6 +26,7 @@ import {
 } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { selectpaymentSummary } from "../../redux/auth/authSlice";
+import api from "../../api/api";
 
 const { confirm } = Modal;
 
@@ -54,7 +55,7 @@ const PaymentList = () => {
     Number(searchParams.get("limit") || 10),
   ];
 
-  const paymentSummary = useSelector(selectpaymentSummary);
+  const [paymentSummary, seyPaymentSummary] = useState({});
   const currentPage = Number(searchParams.get("page") || 1);
   const currentLimit = Number(searchParams.get("limit") || 10);
   const [page, setPage] = useState(currentPage);
@@ -202,6 +203,22 @@ const PaymentList = () => {
       setRefundSubmitting(false);
     }
   };
+
+  // Fetch summary on load
+  const fetchSummary = async () => {
+    try {
+      const res = await api.get("users/summary?entity=payment");
+      seyPaymentSummary(res.data.data?.payment);
+
+      console.log("fetchSummary: ", res.data);
+    } catch (error) {
+      console.error("fetchSummary: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
 
   const columns = [
     {
