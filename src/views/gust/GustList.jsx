@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Dropdown, Input, message, Tag } from "antd";
+import { Button, Dropdown, Input, message, Tag, Pagination } from "antd";
 import { PlusOutlined, ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import CommonTable from "../../components/commons/CommonTable";
+import CommonCard from "../../components/commons/CommonCard";
 import GustService from "./GustService";
 import { useDispatch, useSelector } from "react-redux";
 import { searchGust, updateGustState, gustSearchText } from "./GustRedux";
@@ -209,18 +210,56 @@ const GustList = () => {
         </div>
       </div>
 
-      <CommonTable
-        rowSelectionType={"checkbox"}
-        data={gustData}
-        columns={columns}
-        total={total}
-        loadding={loading}
-        rowKey={(r) => r?._id}
-        tableChange={tableChange}
-        handlePagination={handlePagination}
-        currentPage={parseInt(page) || 1}
-        pageSize={parseInt(limit) || 10}
-      />
+      <div className="hidden md:block">
+        <CommonTable
+          rowSelectionType={"checkbox"}
+          data={gustData}
+          columns={columns}
+          total={total}
+          loadding={loading}
+          rowKey={(r) => r?._id}
+          tableChange={tableChange}
+          handlePagination={handlePagination}
+          currentPage={parseInt(page) || 1}
+          pageSize={parseInt(limit) || 10}
+        />
+      </div>
+
+      <div className="block md:hidden px-6">
+        {gustData && gustData.length > 0 ? (
+          gustData.map((g) => (
+            <CommonCard
+              key={g?._id || g?.id}
+              item={g}
+              title={["firstName", "lastName"]}
+              fieldMap={{
+                email: "Email",
+                phone: "Phone",
+                role: "Role",
+                active: "Active",
+              }}
+              actionItems={items(g)}
+              onActionClick={(info, item) => onClick(info, item)}
+              onCardClick={(record) => {
+                const id = record?._id || record?.id;
+                if (id) navigate(`/dash/gust/details/${id}`, { state: record });
+              }}
+            />
+          ))
+        ) : (
+          <div className="p-6">No guests found</div>
+        )}
+
+        <div className="my-4 flex justify-center">
+          <Pagination
+            current={parseInt(page) || 1}
+            pageSize={parseInt(limit) || 10}
+            total={total}
+            onChange={handlePagination}
+            showSizeChanger
+          />
+        </div>
+      </div>
     </div>
   );
 };

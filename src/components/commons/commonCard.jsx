@@ -59,21 +59,50 @@ const CommonCard = ({
 
   useEffect(() => setColor(), [status]);
 
-  // Build details dynamically
+  // Build details dynamically and normalize values so we don't render raw objects
   const details = Object.entries(fieldMap).map(([key, labelOrSuffix]) => {
-    const [label, suffix] = labelOrSuffix.split("__");
-    const rawValue = getNestedValue(item, key) ?? "";
-    const cleanValue =
-      typeof rawValue === "string"
-        ? rawValue.replace(/<[^>]*>/g, "").trim()
-        : rawValue;
-    const value = suffix
-      ? suffix === "ETB"
-        ? `${formatNumberHuman(
-            Number(cleanValue.toString().replace(/,/g, ""))
-          )} ${suffix}`
-        : `${cleanValue} ${suffix}`
-      : cleanValue;
+    const [labelRaw, suffix] = (labelOrSuffix || "").split("__");
+    const label = labelRaw || key;
+    const rawValue = getNestedValue(item, key);
+
+    let cleanValue = "";
+    if (rawValue === null || rawValue === undefined) {
+      cleanValue = "";
+    } else if (typeof rawValue === "string") {
+      cleanValue = rawValue.replace(/<[^>]*>/g, "").trim();
+    } else if (Array.isArray(rawValue)) {
+      // join array values (prefer primitives)
+      cleanValue = rawValue
+        .map((v) =>
+          v && typeof v === "object" ? v.name || JSON.stringify(v) : String(v)
+        )
+        .join(", ");
+    } else if (typeof rawValue === "object") {
+      // Prefer common display fields
+      if (rawValue.name) cleanValue = String(rawValue.name);
+      else if (rawValue.firstName || rawValue.lastName)
+        cleanValue = `${rawValue.firstName || ""} ${
+          rawValue.lastName || ""
+        }`.trim();
+      else if (rawValue.id && rawValue.id === rawValue)
+        cleanValue = String(rawValue.id);
+      else cleanValue = JSON.stringify(rawValue);
+    } else {
+      cleanValue = String(rawValue);
+    }
+
+    let value;
+    if (suffix) {
+      if (suffix === "ETB") {
+        const num = Number(String(cleanValue).replace(/,/g, "")) || 0;
+        value = `${formatNumberHuman(num)} ${suffix}`;
+      } else {
+        value = `${cleanValue} ${suffix}`;
+      }
+    } else {
+      value = cleanValue;
+    }
+
     return { label, value };
   });
 
@@ -120,7 +149,12 @@ const CommonCard = ({
         <Dropdown
           menu={{
             items: actionItems,
-            onClick: (value) => onActionClick(value, item),
+            onClick: (value) => {
+              try {
+                value?.domEvent?.stopPropagation();
+              } catch (err) {}
+              onActionClick && onActionClick(value, item);
+            },
           }}
           trigger={["click"]}
           placement="bottomLeft"

@@ -6,6 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 import CommonTable from "../../components/commons/CommonTable";
+import CommonCard from "../../components/commons/CommonCard";
+import { Pagination } from "antd";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import BrandsEdit from "./BrandsEdit";
@@ -26,7 +28,6 @@ const BrandsList = () => {
   const delayTimerRef = useRef(null);
   const navigate = useNavigate();
 
-  // parse pagination params safely
   const getPaginationInfo = () => [
     parseInt(searchParams.get("page") || 1, 10),
     parseInt(searchParams.get("limit") || 5, 10),
@@ -34,13 +35,10 @@ const BrandsList = () => {
 
   useEffect(() => {
     const [page, limit] = getPaginationInfo();
-    // keep redux query in sync (used elsewhere)
     dispatch(updateBrandsState({ page, limit }));
     fetchData(); // initial load
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch data directly from service for predictable filtering/pagination
   const fetchData = async (opts = {}) => {
     const { page: p, limit: l, searchText: s } = opts;
     const [page, limit] = [
@@ -92,10 +90,8 @@ const BrandsList = () => {
     } catch (err) {
       setLoading(false);
 
-      // Log for debugging only
       console.error("Delete brand error:", err?.response?.data?.message || err);
 
-      // Show only friendly message
       const fkError =
         err?.response?.data?.message?.toLowerCase().includes("foreign key") ||
         err?.response?.status === 409 ||
@@ -111,11 +107,8 @@ const BrandsList = () => {
     }
   };
 
-  // Dropdown menu action handler: stop propagation and handle actions reliably
   const handleMenuClick = (info, record) => {
-    // antd Menu click gives domEvent
     try {
-      // prevent row click
       if (info?.domEvent) info.domEvent.stopPropagation();
     } catch (e) {}
     setModeID(record.id);
@@ -145,14 +138,12 @@ const BrandsList = () => {
           }}
           trigger={["click"]}
           placement="bottomLeft"
-          // render dropdown into body so clicks don't bubble to table row
           getPopupContainer={() => document.body}
         >
           <Button
             type="text"
             icon={<MoreOutlined />}
             onClick={(e) => {
-              // clicking the trigger button should not navigate the row
               e.stopPropagation();
               setModeID(record.id);
             }}
@@ -206,7 +197,6 @@ const BrandsList = () => {
           setIsModalOpen={setIsModalOpen}
         >
           <BrandsEdit
-            // pass a fresh fetch function so edit modal can refresh list after save
             searchData={() => fetchData()}
             mode={modeID}
             setMode={setModeID}
@@ -230,14 +220,18 @@ const BrandsList = () => {
       <div className="flex justify-between items-center mb-6">
         <Input
           placeholder="Search Brands"
-          value={reduxSearchText} // bind to redux state
+          value={reduxSearchText} 
           onChange={searchHandler}
           className="max-w-sm rounded"
           allowClear
         />
 
         <div className="flex gap-4">
-          <Button onClick={handleReload} style={{ color: "var(--color-primary)" }} icon={<ReloadOutlined />} />
+          <Button
+            onClick={handleReload}
+            style={{ color: "var(--color-primary)" }}
+            icon={<ReloadOutlined />}
+          />
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -252,27 +246,66 @@ const BrandsList = () => {
         </div>
       </div>
 
-      <CommonTable
-        data={brandsData}
-        columns={columns}
-        rowKey="id" // important for row selection & uniqueness
-        rowSelectionType="checkbox"
-        setSelection={setBrandsSelection}
-        onRow={(record) => ({
-          onClick: (e) => {
-            // if click originates from action buttons, they will call stopPropagation()
-            // otherwise navigate to brand detail
-            navigate(`/dash/brands/${record.id}`, { state: record });
-          },
-        })}
-        handlePagination={(page, pageSize) => {
-          setSearchParams({ page, limit: pageSize });
-          dispatch(updateBrandsState({ page, limit: pageSize }));
-          fetchData({ page, limit: pageSize });
-        }}
-        total={total}
-        loadding={loading}
-      />
+      <div className="hidden md:block">
+        <CommonTable
+          data={brandsData}
+          columns={columns}
+          rowKey="id" // important for row selection & uniqueness
+          rowSelectionType="checkbox"
+          setSelection={setBrandsSelection}
+          onRow={(record) => ({
+            onClick: (e) => {
+              navigate(`/dash/brands/${record.id}`, { state: record });
+            },
+          })}
+          handlePagination={(page, pageSize) => {
+            setSearchParams({ page, limit: pageSize });
+            dispatch(updateBrandsState({ page, limit: pageSize }));
+            fetchData({ page, limit: pageSize });
+          }}
+          total={total}
+          loadding={loading}
+        />
+      </div>
+
+      {/* Mobile cards */}
+      <div className="block md:hidden px-4">
+        {brandsData && brandsData.length > 0 ? (
+          brandsData.map((b) => (
+            <CommonCard
+              key={b.id}
+              item={b}
+              title={"name"}
+              fieldMap={{
+                createdAt: "Created At",
+                isActive: "Active",
+                models: "Models",
+              }}
+              actionItems={dropdownItems}
+              onActionClick={(info, item) => handleMenuClick(info, item)}
+              onCardClick={(record) =>
+                navigate(`/dash/brands/${record.id}`, { state: record })
+              }
+            />
+          ))
+        ) : (
+          <div className="p-6">No brands found</div>
+        )}
+
+        <div className="my-4 flex justify-center">
+          <Pagination
+            current={getPaginationInfo()[0]}
+            pageSize={getPaginationInfo()[1]}
+            total={total}
+            onChange={(p, ps) => {
+              setSearchParams({ page: p, limit: ps });
+              dispatch(updateBrandsState({ page: p, limit: ps }));
+              fetchData({ page: p, limit: ps });
+            }}
+            showSizeChanger
+          />
+        </div>
+      </div>
     </div>
   );
 };
