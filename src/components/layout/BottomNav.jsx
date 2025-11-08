@@ -2,10 +2,13 @@ import React from "react";
 import styled from "styled-components";
 import {
   HomeOutlined,
-  BellOutlined,
   UserOutlined,
+  MessageOutlined,
   CarOutlined,
+  CreditCardOutlined,
 } from "@ant-design/icons";
+import { SiBrandfolder, SiBookstack } from "react-icons/si";
+
 import { useNavigate, useLocation } from "react-router-dom";
 
 const BottomNav = () => {
@@ -14,9 +17,10 @@ const BottomNav = () => {
 
   const buttons = [
     { icon: <HomeOutlined />, path: "/dash" },
+    { icon: <SiBookstack />, path: "/dash/bookings" },
+    { icon: <MessageOutlined />, path: "/dash/messages" },
     { icon: <CarOutlined />, path: "/dash/cars" },
-    { icon: <BellOutlined />, path: "/dash/notifications" },
-    { icon: <UserOutlined />, path: "/dash/profile/me" },
+    { icon: <CreditCardOutlined />, path: "/dash/payments" },
   ];
 
   return (

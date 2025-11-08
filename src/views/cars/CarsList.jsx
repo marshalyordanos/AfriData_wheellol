@@ -557,18 +557,18 @@ const CarsList = () => {
             Reset Filters
           </Button>
 
-          <Button
-            // type="primary"
-            style={{ backgroundColor: "var(--color-primary)" }}
-            icon={<PlusOutlined />}
+          <button
+            className="px-4  py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-auto"
             onClick={() => {
               setCarId("");
               setIsModalOpen(true);
             }}
-            className="ml-auto"
           >
-            Add New Car
-          </Button>
+            <span className="flex flex-row items-center">
+              <PlusOutlined />
+              <p className="pl-2 m-0">Add New Car</p>
+            </span>
+          </button>
         </div>
       </div>
 

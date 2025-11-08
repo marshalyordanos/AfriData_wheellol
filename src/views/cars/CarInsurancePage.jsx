@@ -64,7 +64,13 @@ const CarInsurancePage = () => {
         type="link"
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate("/dash/cars")}
-        style={{ marginBottom: 16 }}
+    
+        style={{
+          marginBottom: 16,
+          background: "var(--color-primary)",
+          borderColor: "var(--color-primary)",
+          color: "#fff",
+        }}
       >
         Back to Cars
       </Button>
@@ -84,6 +90,11 @@ const CarInsurancePage = () => {
                   <>
                     <Button
                       type="primary"
+                      style={{
+                        background: "var(--color-primary)",
+                        borderColor: "var(--color-primary)",
+                        color: "#fff",
+                      }}
                       icon={<EditOutlined />}
                       onClick={() => setIsModalOpen(true)}
                     >

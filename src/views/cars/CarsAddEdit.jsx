@@ -256,7 +256,7 @@ const CarsAddEdit = ({ setIsModalOpen, isModalOpen, mode, searchData }) => {
         {/* Buttons */}
         <ButtonStyle>
           <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-          <Button type="primary" htmlType="submit">
+          <Button type="primary" color="var(--color-primary)" htmlType="submit">
             {mode ? "Update Car" : "Add Car"}
           </Button>
         </ButtonStyle>

@@ -82,7 +82,15 @@ const CarInsuranceForm = ({
       </Form.Item>
 
       <Form.Item>
-        <Button type="primary" htmlType="submit">
+        <Button
+          type="primary"
+          htmlType="submit"
+          style={{
+            background: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "#fff",
+          }}
+        >
           {insuranceData?.id ? "Update Insurance" : "Add Insurance"}
         </Button>
       </Form.Item>

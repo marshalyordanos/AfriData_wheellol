@@ -359,10 +359,18 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         )}
       </Form.Item>
 
-      {/* Buttons */}
+     {/* Buttons */}
       <div style={{ display: "flex", gap: "10px", marginTop: 20 }}>
         <Button onClick={() => setIsModalOpen?.(false)}>Cancel</Button>
-        <Button type="primary" htmlType="submit">
+        <Button
+          type="primary"
+          htmlType="submit"
+          style={{
+            background: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "#fff",
+          }}
+        >
           {isEdit ? "Update" : "Create"}
         </Button>
       </div>

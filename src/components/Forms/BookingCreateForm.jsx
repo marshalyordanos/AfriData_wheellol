@@ -244,7 +244,11 @@ const BookingCreateForm = ({ onSave, onCancel }) => {
 
       <div className="flex gap-2 justify-end">
         <Button onClick={onCancel}>Cancel</Button>
-        <Button type="primary" htmlType="submit" loading={submitting}>
+        <Button type="primary" style={{
+            background: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "#fff",
+          }} htmlType="submit" loading={submitting}>
           Create Booking
         </Button>
       </div>
