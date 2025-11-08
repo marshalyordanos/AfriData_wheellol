@@ -49,62 +49,6 @@ const messagesSlice = createSlice({
     error: null,
   },
   reducers: {
-    // Upsert a single chat summary into the chats array without toggling loading
-    upsertChat: (state, action) => {
-      const chat = action.payload || {};
-      const bookingId =
-        chat.bookingId || chat.bookingId || chat.id || chat.bookingId;
-      if (!bookingId) return;
-
-      const idx = state.chats.findIndex(
-        (c) => String(c.bookingId) === String(bookingId)
-      );
-      if (idx > -1) {
-        // merge lastMessage and unreadCount and withUser
-        state.chats[idx] = {
-          ...state.chats[idx],
-          ...chat,
-          lastMessage: chat.lastMessage || state.chats[idx].lastMessage,
-          unreadCount:
-            typeof chat.unreadCount === "number"
-              ? chat.unreadCount
-              : state.chats[idx].unreadCount,
-          withUser: chat.withUser || state.chats[idx].withUser,
-        };
-        // move updated chat to top
-        const updated = state.chats.splice(idx, 1)[0];
-        state.chats.unshift(updated);
-      } else {
-        // insert new chat at the top
-        state.chats.unshift(chat);
-      }
-    },
-    // Insert or update a single message into a booking's messages list
-    upsertMessage: (state, action) => {
-      const msg = action.payload || {};
-      const bookingId = msg.bookingId || msg.booking_id || msg.booking || null;
-      if (!bookingId) return;
-
-      state.messages[bookingId] = state.messages[bookingId] || {
-        items: [],
-        pagination: {},
-      };
-      const items = state.messages[bookingId].items || [];
-      const exists = items.find(
-        (m) => String(m.id || m._id) === String(msg.id || msg._id)
-      );
-      if (!exists) {
-        // append message
-        state.messages[bookingId].items = [...items, msg];
-      } else {
-        // update existing
-        state.messages[bookingId].items = items.map((m) =>
-          String(m.id || m._id) === String(msg.id || msg._id)
-            ? { ...m, ...msg }
-            : m
-        );
-      }
-    },
     clearMessagesState: (state) => {
       state.chats = [];
       state.messages = {};
@@ -155,7 +99,6 @@ const messagesSlice = createSlice({
 });
 
 export const { clearMessagesState } = messagesSlice.actions;
-export const { upsertChat, upsertMessage } = messagesSlice.actions;
 
 export default messagesSlice.reducer;
 

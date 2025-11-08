@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { FaCheckCircle } from "react-icons/fa";
-import { AiOutlineClockCircle, AiOutlineEdit } from "react-icons/ai";
 import { MdDelete } from "react-icons/md";
 import { Button, Dropdown } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 
-// Helper function to format numbers
+// Helper: format numbers
 export function formatNumberHuman(value) {
   const num = parseFloat(value);
   if (isNaN(num)) return "0.00";
@@ -15,26 +13,18 @@ export function formatNumberHuman(value) {
   }).format(num);
 }
 
-// Helper to safely access nested values like "model.name"
-const getNestedValue = (obj, path) => {
-  return path
-    .split(".")
-    .reduce((acc, part) => (acc ? acc[part] : undefined), obj);
-};
+// Helper to access nested values safely
+const getNestedValue = (obj, path) =>
+  path.split(".").reduce((acc, part) => (acc ? acc[part] : undefined), obj);
 
 const CommonCard = ({
   item,
   fieldMap,
   title,
   hasDelete = false,
-  fetchFunc,
-  url,
   btnName,
   cFunc,
-  deleteSchema,
-  deleteSchema2,
   status = "",
-  vstock,
   onActionClick,
   actionItems = [],
   onCardClick,
@@ -43,46 +33,40 @@ const CommonCard = ({
   const [showModal, setShowModal] = useState(false);
   const [remark, setRemark] = useState("");
   const [salesColor, setSalesColor] = useState({
-    bgColor: "#c7c7c7",
-    color: "#030303",
+    bgColor: "#f3f4f6",
+    color: "#374151",
   });
 
   // Set color based on status
   const setColor = () => {
     switch (status) {
       case "Paid":
-        setSalesColor({ bgColor: "#c3f6cf", color: "#166534" });
+        setSalesColor({ bgColor: "#dcfce7", color: "#166534" });
         break;
       case "Not Paid":
-        setSalesColor({ bgColor: "#184781", color: "white" });
+        setSalesColor({ bgColor: "#bfdbfe", color: "#1e3a8a" });
         break;
       case "Void":
-        setSalesColor({ bgColor: "#184781", color: "white" });
+        setSalesColor({ bgColor: "#fef3f3", color: "#b91c1c" });
         break;
       case "Void Requested":
-        setSalesColor({ bgColor: "#fbbf24", color: "white" });
+        setSalesColor({ bgColor: "#fef9c3", color: "#78350f" });
         break;
       default:
-        setSalesColor({ bgColor: "#c7c7c7", color: "#030303" });
+        setSalesColor({ bgColor: "#f3f4f6", color: "#374151" });
     }
   };
 
-  useEffect(() => {
-    setColor();
-  }, [status]);
+  useEffect(() => setColor(), [status]);
 
-  // Build details array dynamically
+  // Build details dynamically
   const details = Object.entries(fieldMap).map(([key, labelOrSuffix]) => {
-    const parts = labelOrSuffix.split("__");
-    const label = parts[0]; // Display label
-    const suffix = parts[1] || "";
-    console.log("item", item, key);
+    const [label, suffix] = labelOrSuffix.split("__");
     const rawValue = getNestedValue(item, key) ?? "";
     const cleanValue =
       typeof rawValue === "string"
         ? rawValue.replace(/<[^>]*>/g, "").trim()
         : rawValue;
-
     const value = suffix
       ? suffix === "ETB"
         ? `${formatNumberHuman(
@@ -90,43 +74,49 @@ const CommonCard = ({
           )} ${suffix}`
         : `${cleanValue} ${suffix}`
       : cleanValue;
-
     return { label, value };
   });
 
-  console.log(details);
-
   return (
     <div
-      onClick={() => {
-        onCardClick && onCardClick(item);
-      }}
+      onClick={() => onCardClick && onCardClick(item)}
       style={{
-        padding: 7,
-        backgroundColor: "white",
-        borderRadius: 10,
-        marginBottom: 5,
+        padding: 16,
+        backgroundColor: "#fff",
+        borderRadius: 14,
+        marginBottom: 12,
+        boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+        cursor: "pointer",
+        transition: "all 0.3s ease",
       }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.boxShadow = "0 10px 25px rgba(0,0,0,0.12)")
+      }
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.boxShadow = "0 6px 18px rgba(0,0,0,0.06)")
+      }
     >
       {/* Header */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          marginBottom: 10,
+          marginBottom: 14,
+          alignItems: "center",
         }}
       >
         {title && (
-          <div>
+          <div style={{ fontWeight: 600, fontSize: 16, color: "#111827" }}>
             {Array.isArray(title)
               ? title.map((t, i) => (
-                  <span key={i} style={{ marginRight: 5 }}>
+                  <span key={i} style={{ marginRight: 6 }}>
                     {getNestedValue(item, t) || t}
                   </span>
                 ))
               : getNestedValue(item, title) || title}
           </div>
         )}
+
         <Dropdown
           menu={{
             items: actionItems,
@@ -137,7 +127,7 @@ const CommonCard = ({
         >
           <Button
             type="text"
-            icon={<MoreOutlined style={{ fontSize: 20 }} />}
+            icon={<MoreOutlined style={{ fontSize: 20, color: "#6b7280" }} />}
             onClick={(e) => e.stopPropagation()}
           />
         </Dropdown>
@@ -145,43 +135,54 @@ const CommonCard = ({
 
       {/* Details */}
       {details.map((detail, idx) => (
-        <div key={idx}>
+        <div key={idx} style={{ marginBottom: 10 }}>
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              marginBottom: 1,
+              fontSize: 14,
             }}
           >
-            <span style={{ color: "#A7A7A7", fontSize: 12.5 }}>
+            <span style={{ color: "#6b7280", fontWeight: 500 }}>
               {detail.label}
             </span>
-            <span style={{ fontSize: 12.5, color: "#333" }}>
+            <span style={{ color: "#111827", fontWeight: 600 }}>
               {detail.value}
             </span>
           </div>
           {idx < details.length - 1 && (
-            <hr style={{ margin: "6px 0", borderColor: "#C3C3C3" }} />
+            <hr
+              style={{
+                margin: "8px 0",
+                border: "none",
+                borderTop: "1px solid #e5e7eb",
+              }}
+            />
           )}
         </div>
       ))}
 
-      {/* Buttons */}
-      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+      {/* Action Buttons */}
+      <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
         {hasDelete && (
           <button
             onClick={() => setModalVisible(true)}
             style={{
               display: "flex",
               alignItems: "center",
-              padding: "5px 15px",
-              borderRadius: 8,
-              backgroundColor: "white",
-              border: "none",
+              gap: 6,
+              padding: "8px 18px",
+              borderRadius: 10,
+              backgroundColor: "#fff",
+              border: "1px solid #f87171",
+              color: "#b91c1c",
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "0.2s",
             }}
           >
-            <MdDelete size={24} color="#3393CE" />
-            <span style={{ color: "#3393CE", marginLeft: 5 }}>Delete</span>
+            <MdDelete size={18} />
+            Delete
           </button>
         )}
         {(item?.status === "Paid" || item?.status === "Not Paid") &&
@@ -189,10 +190,14 @@ const CommonCard = ({
             <button
               onClick={() => setShowModal(true)}
               style={{
-                padding: "5px 15px",
-                borderRadius: 8,
-                border: "1px solid #3393CE",
-                backgroundColor: "white",
+                padding: "8px 18px",
+                borderRadius: 10,
+                border: "1px solid #3b82f6",
+                backgroundColor: "#eff6ff",
+                color: "#1d4ed8",
+                fontWeight: 500,
+                cursor: "pointer",
+                transition: "0.2s",
               }}
             >
               {btnName}
@@ -205,43 +210,50 @@ const CommonCard = ({
         <div
           style={{
             position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.2)",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.4)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            zIndex: 9999,
           }}
         >
           <div
             style={{
-              backgroundColor: "white",
-              padding: 20,
-              borderRadius: 10,
-              width: 300,
+              backgroundColor: "#fff",
+              padding: 28,
+              borderRadius: 14,
+              width: 340,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
             }}
           >
-            <p>Are you sure you want to delete this item?</p>
-            <div style={{ display: "flex", gap: 15 }}>
+            <p style={{ fontWeight: 600, marginBottom: 22 }}>
+              Are you sure you want to delete this item?
+            </p>
+            <div
+              style={{ display: "flex", gap: 14, justifyContent: "flex-end" }}
+            >
               <button
                 onClick={() => setModalVisible(false)}
                 style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#ccc",
-                  borderRadius: 5,
+                  padding: "8px 18px",
+                  backgroundColor: "#f3f4f6",
+                  borderRadius: 8,
+                  color: "#374151",
+                  fontWeight: 500,
+                  cursor: "pointer",
                 }}
               >
                 Cancel
               </button>
               <button
-                // onClick={handleDelete}
                 style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#3393CE",
+                  padding: "8px 18px",
+                  backgroundColor: "#ef4444",
                   color: "white",
-                  borderRadius: 5,
+                  borderRadius: 8,
+                  fontWeight: 500,
+                  cursor: "pointer",
                 }}
               >
                 Delete
@@ -256,22 +268,21 @@ const CommonCard = ({
         <div
           style={{
             position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.2)",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.4)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            zIndex: 9999,
           }}
         >
           <div
             style={{
-              backgroundColor: "white",
-              padding: 20,
-              borderRadius: 10,
-              width: 300,
+              backgroundColor: "#fff",
+              padding: 28,
+              borderRadius: 14,
+              width: 340,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
             }}
           >
             <input
@@ -280,19 +291,25 @@ const CommonCard = ({
               onChange={(e) => setRemark(e.target.value)}
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 6,
-                border: "1px solid #CCC",
+                padding: 14,
+                borderRadius: 8,
+                border: "1px solid #d1d5db",
                 marginBottom: 20,
+                fontSize: 14,
               }}
             />
-            <div style={{ display: "flex", gap: 15 }}>
+            <div
+              style={{ display: "flex", gap: 14, justifyContent: "flex-end" }}
+            >
               <button
                 onClick={() => setShowModal(false)}
                 style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#ccc",
-                  borderRadius: 5,
+                  padding: "8px 18px",
+                  backgroundColor: "#f3f4f6",
+                  borderRadius: 8,
+                  color: "#374151",
+                  fontWeight: 500,
+                  cursor: "pointer",
                 }}
               >
                 Cancel
@@ -304,10 +321,12 @@ const CommonCard = ({
                   setShowModal(false);
                 }}
                 style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#3393CE",
+                  padding: "8px 18px",
+                  backgroundColor: "#3b82f6",
                   color: "white",
-                  borderRadius: 5,
+                  borderRadius: 8,
+                  fontWeight: 500,
+                  cursor: "pointer",
                 }}
               >
                 Submit

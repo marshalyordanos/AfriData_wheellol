@@ -3,9 +3,10 @@ import { Input, Button, Tag, Dropdown, Select, DatePicker } from "antd";
 import { ReloadOutlined, PlusOutlined, MoreOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import api from "../../api/api";
 
 import CommonTable from "../../components/commons/CommonTable";
+import CommonCard from "../../components/commons/CommonCard";
+import { Pagination } from "antd";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import BookingCreateForm from "../../components/Forms/BookingCreateForm";
@@ -58,7 +59,7 @@ const BookingList = () => {
   const [localSearch, setLocalSearch] = useState(searchText || "");
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [bookingSummary, setBookingSummary] = useState({});
+  const bookingSummary = useSelector(selectbookingSummary);
   const currentUser = useSelector(selectCurrentUser);
 
   const normalizeRole = (u) => {
@@ -239,21 +240,6 @@ const BookingList = () => {
     loadBookings({ page: 1, limit: 10, sort: "", order: "", searchText: "" });
   };
 
-  // Fetch summary on load
-  const fetchSummary = async () => {
-    try {
-      const res = await api.get("users/summary?entity=booking");
-      setBookingSummary(res.data.data?.booking);
-
-      console.log("fetchSummary: ", res.data);
-    } catch (error) {
-      console.error("fetchSummary: ", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchSummary();
-  }, []);
   const columns = [
     {
       title: " ",
@@ -612,22 +598,60 @@ const BookingList = () => {
 
       {/* Table */}
       <div style={{ fontSize: 3 }}>
-        <CommonTable
-          data={bookingData}
-          columns={columns}
-          handlePagination={handlePagination}
-          total={total}
-          loading={loading}
-          loadding={loading}
-          tableChange={tableChange}
-          onRow={(record) => ({
-            onClick: () => onRowClick(record),
-            style: { cursor: "pointer" },
-          })}
-          rowKey={(r) => r?.id}
-          currentPage={Number(page) || 1}
-          pageSize={Number(limit) || 10}
-        />
+        <div className="hidden md:block">
+          <CommonTable
+            data={bookingData}
+            columns={columns}
+            handlePagination={handlePagination}
+            total={total}
+            loading={loading}
+            loadding={loading}
+            tableChange={tableChange}
+            onRow={(record) => ({
+              onClick: () => onRowClick(record),
+              style: { cursor: "pointer" },
+            })}
+            rowKey={(r) => r?.id}
+            currentPage={Number(page) || 1}
+            pageSize={Number(limit) || 10}
+          />
+        </div>
+
+        <div className="block md:hidden px-6">
+          {bookingData && bookingData.length > 0 ? (
+            bookingData.map((b) => (
+              <CommonCard
+                key={b?.id || b?._id}
+                item={b}
+                title={["car.make.name", "car.model.name"]}
+                fieldMap={{
+                  "guest.firstName": "Guest",
+                  totalPrice: "Total Price",
+                  status: "Status",
+                  startDate: "Start Date",
+                  endDate: "End Date",
+                }}
+                actionItems={[
+                  { key: "edit", label: <Button type="text">Update</Button> },
+                ]}
+                onActionClick={(info, item) => onActionClick(info, item)}
+                onCardClick={(record) => onRowClick(record)}
+              />
+            ))
+          ) : (
+            <div className="p-6">No bookings found</div>
+          )}
+
+          <div className="my-4 flex justify-center">
+            <Pagination
+              current={Number(page) || 1}
+              pageSize={Number(limit) || 10}
+              total={total}
+              onChange={handlePagination}
+              showSizeChanger
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

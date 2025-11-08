@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
+import CommonCard from "../../components/commons/CommonCard";
+import { Pagination } from "antd";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Input, Select, message, Modal, Tag } from "antd";
 import styled from "styled-components";
@@ -348,19 +350,76 @@ const UserList = () => {
         </span>
       </span>
 
-      <CommonTable
-        rowSelectionType={"checkbox"}
-        data={userData}
-        columns={columns}
-        setSelection={setUserSelection}
-        handlePagination={handlePagination}
-        total={total}
-        loadding={loading}
-        tableChange={tableChange}
-        rowKey={(r) => r?._id || r?.id}
-        currentPage={parseInt(page) || 1}
-        pageSize={parseInt(limit) || 10}
-      />
+      <div className="hidden md:block">
+        <CommonTable
+          rowSelectionType={"checkbox"}
+          data={userData}
+          columns={columns}
+          setSelection={setUserSelection}
+          handlePagination={handlePagination}
+          total={total}
+          loadding={loading}
+          tableChange={tableChange}
+          rowKey={(r) => r?._id || r?.id}
+          currentPage={parseInt(page) || 1}
+          pageSize={parseInt(limit) || 10}
+        />
+      </div>
+
+      <div className="block md:hidden px-6">
+        {userData && userData.length > 0 ? (
+          userData.map((u) => (
+            <CommonCard
+              key={u?._id || u?.id}
+              item={u}
+              title={["firstName", "lastName"]}
+              fieldMap={{
+                email: "Email",
+                phone: "Phone",
+                verified: "Verified",
+              }}
+              actionItems={[
+                { key: "edit", label: <Button type="text">Edit</Button> },
+                {
+                  key: "verify",
+                  label: u?.hostProfile?.isVerified ? (
+                    <Button type="text" disabled>
+                      Verified
+                    </Button>
+                  ) : (
+                    <Button type="text">Verify</Button>
+                  ),
+                },
+                {
+                  key: "toggleActive",
+                  label: (
+                    <Button type="text">
+                      {u.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                  ),
+                },
+              ]}
+              onActionClick={(info, item) => onClick(info, item)}
+              onCardClick={(record) => {
+                const id = record?.id || record?._id;
+                if (id) navigate(`/dash/host/details/${id}`, { state: record });
+              }}
+            />
+          ))
+        ) : (
+          <div className="p-6">No hosts found</div>
+        )}
+
+        <div className="my-4 flex justify-center">
+          <Pagination
+            current={parseInt(page) || 1}
+            pageSize={parseInt(limit) || 10}
+            total={total}
+            onChange={handlePagination}
+            showSizeChanger
+          />
+        </div>
+      </div>
     </div>
   );
 };

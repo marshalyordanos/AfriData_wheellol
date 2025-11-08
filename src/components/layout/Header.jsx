@@ -29,13 +29,9 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   const unreadCount = useSelector((state) => selectUnreadCount(state));
-
   const { t, i18n } = useTranslation();
 
   const [notifOpen, setNotifOpen] = React.useState(false);
-
-  const currentUserId =
-    currentUser?.id || currentUser?.userId || currentUser?.user?.id || null;
 
   const handleBack = () => {
     navigate(-1);
@@ -159,8 +155,7 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
                 }
                 onClick={() => {
                   setNotifOpen(true);
-                  if (currentUserId)
-                    dispatch(fetchNotifications({ userid: currentUserId }));
+                  dispatch(fetchNotifications());
                 }}
               />
             </Badge>

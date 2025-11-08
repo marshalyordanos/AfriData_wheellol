@@ -68,6 +68,7 @@ const Sidebar = ({ collapsed }) => {
     if (p.startsWith("/dash/host")) sel = "host";
     else if (p.startsWith("/dash/staff")) sel = "staff";
     else if (p.startsWith("/dash/cars")) sel = "cars";
+    else if (p.startsWith("/dash/cartypes")) sel = "cartypes";
     else if (p.startsWith("/dash/gust")) sel = "gust";
     else if (p.startsWith("/dash/brands")) sel = "brands";
     else if (p.startsWith("/dash/models")) sel = "models";

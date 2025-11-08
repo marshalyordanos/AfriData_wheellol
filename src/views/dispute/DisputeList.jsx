@@ -10,11 +10,13 @@ import {
   DatePicker,
   Form,
   InputNumber,
+  Pagination,
 } from "antd";
 import { ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import CommonTable from "../../components/commons/CommonTable";
+import CommonCard from "../../components/commons/CommonCard";
 import DisputeService from "./DisputeService";
 import { useDispatch, useSelector } from "react-redux";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
@@ -284,23 +286,66 @@ const DisputeList = () => {
         </div>
       </div>
 
-      <CommonTable
-        data={disputes}
-        columns={columns}
-        total={total}
-        loading={loading}
-        currentPage={query.page}
-        pageSize={query.limit}
-        rowKey={(r) => r?.id}
-        handlePagination={(p, ps) => handlePagination(p, ps)}
-        onRow={(record) => ({
-          onClick: () => {
-            const id = record.id || record._id;
-            if (id) navigate(`/dash/disputes/${id}`, { state: record });
-          },
-          style: { cursor: "pointer" },
-        })}
-      />
+      <div className="hidden md:block">
+        <CommonTable
+          data={disputes}
+          columns={columns}
+          total={total}
+          loading={loading}
+          currentPage={query.page}
+          pageSize={query.limit}
+          rowKey={(r) => r?.id}
+          handlePagination={(p, ps) => handlePagination(p, ps)}
+          onRow={(record) => ({
+            onClick: () => {
+              const id = record.id || record._id;
+              if (id) navigate(`/dash/disputes/${id}`, { state: record });
+            },
+            style: { cursor: "pointer" },
+          })}
+        />
+      </div>
+
+      {/* Mobile cards */}
+      <div className="block md:hidden px-6">
+        {disputes && disputes.length > 0 ? (
+          disputes.map((d) => (
+            <CommonCard
+              key={d?.id || d?._id}
+              item={d}
+              title={["booking.id"]}
+              fieldMap={{
+                reason: "Reason",
+                status: "Status",
+                "payment.amount": "Amount",
+                "payment.status": "Payment Status",
+              }}
+              actionItems={[
+                { key: "review", label: <Button type="text">Review</Button> },
+                { key: "resolve", label: <Button type="text">Resolve</Button> },
+                { key: "reject", label: <Button type="text">Reject</Button> },
+              ]}
+              onActionClick={(info, item) => handleAction(info.key, item)}
+              onCardClick={(record) => {
+                const id = record.id || record._id;
+                if (id) navigate(`/dash/disputes/${id}`, { state: record });
+              }}
+            />
+          ))
+        ) : (
+          <div className="p-6">No disputes found</div>
+        )}
+
+        <div className="my-4 flex justify-center">
+          <Pagination
+            current={query.page}
+            pageSize={query.limit}
+            total={total}
+            onChange={handlePagination}
+            showSizeChanger
+          />
+        </div>
+      </div>
       {/* Resolve Modal */}
       <Modal
         title="Resolve Dispute"

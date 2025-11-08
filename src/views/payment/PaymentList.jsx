@@ -13,6 +13,8 @@ import { ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import CommonTable from "../../components/commons/CommonTable";
+import CommonCard from "../../components/commons/CommonCard";
+import { Pagination } from "antd";
 import PaymentService from "./PaymentService";
 import { Form, InputNumber } from "antd";
 import SummaryCard from "../../components/commons/SummaryCard";
@@ -26,7 +28,6 @@ import {
 } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { selectpaymentSummary } from "../../redux/auth/authSlice";
-import api from "../../api/api";
 
 const { confirm } = Modal;
 
@@ -55,7 +56,7 @@ const PaymentList = () => {
     Number(searchParams.get("limit") || 10),
   ];
 
-  const [paymentSummary, seyPaymentSummary] = useState({});
+  const paymentSummary = useSelector(selectpaymentSummary);
   const currentPage = Number(searchParams.get("page") || 1);
   const currentLimit = Number(searchParams.get("limit") || 10);
   const [page, setPage] = useState(currentPage);
@@ -203,22 +204,6 @@ const PaymentList = () => {
       setRefundSubmitting(false);
     }
   };
-
-  // Fetch summary on load
-  const fetchSummary = async () => {
-    try {
-      const res = await api.get("users/summary?entity=payment");
-      seyPaymentSummary(res.data.data?.payment);
-
-      console.log("fetchSummary: ", res.data);
-    } catch (error) {
-      console.error("fetchSummary: ", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchSummary();
-  }, []);
 
   const columns = [
     {
@@ -467,23 +452,64 @@ const PaymentList = () => {
         </div>
       </div>
 
-      <CommonTable
-        data={payments}
-        columns={columns}
-        total={total}
-        loading={loading}
-        currentPage={page}
-        pageSize={pageSize}
-        rowKey={(r) => r?.id}
-        handlePagination={(p, ps) => handlePagination(p, ps)}
-        onRow={(record) => ({
-          onClick: () => {
-            const id = record.id || record._id;
-            if (id) navigate(`/dash/payments/${id}`, { state: record });
-          },
-          style: { cursor: "pointer" },
-        })}
-      />
+      <div className="hidden md:block">
+        <CommonTable
+          data={payments}
+          columns={columns}
+          total={total}
+          loading={loading}
+          currentPage={page}
+          pageSize={pageSize}
+          rowKey={(r) => r?.id}
+          handlePagination={(p, ps) => handlePagination(p, ps)}
+          onRow={(record) => ({
+            onClick: () => {
+              const id = record.id || record._id;
+              if (id) navigate(`/dash/payments/${id}`, { state: record });
+            },
+            style: { cursor: "pointer" },
+          })}
+        />
+      </div>
+
+      <div className="block md:hidden px-6">
+        {payments && payments.length > 0 ? (
+          payments.map((p) => (
+            <CommonCard
+              key={p?.id || p?._id}
+              item={p}
+              title={["payer.firstName", "payer.lastName"]}
+              fieldMap={{
+                amount: "Amount",
+                method: "Method",
+                status: "Status",
+                hostEarnings: "Host Earnings",
+              }}
+              actionItems={[
+                { key: "refund", label: <Button type="text">Refund</Button> },
+                { key: "release", label: <Button type="text">Release</Button> },
+              ]}
+              onActionClick={(info, item) => handleAction(info.key, item)}
+              onCardClick={(record) => {
+                const id = record.id || record._id;
+                if (id) navigate(`/dash/payments/${id}`, { state: record });
+              }}
+            />
+          ))
+        ) : (
+          <div className="p-6">No payments found</div>
+        )}
+
+        <div className="my-4 flex justify-center">
+          <Pagination
+            current={page}
+            pageSize={pageSize}
+            total={total}
+            onChange={handlePagination}
+            showSizeChanger
+          />
+        </div>
+      </div>
 
       <Modal
         title={`Refund Payment`}

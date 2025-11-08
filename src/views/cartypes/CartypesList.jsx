@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Input, Select } from "antd";
+import { Button, Dropdown, Input, Select, Pagination } from "antd";
 import styled from "styled-components";
 import CommonModal from "../../components/commons/CommonModel";
+import CommonCard from "../../components/commons/CommonCard";
 
 import cartypesService from "./CartypesService";
 import CartypesEdit from "./CartypesEdit";
@@ -290,16 +291,45 @@ const CartypesList = () => {
         </span>
       </span>
 
-      <CommonTable
-        rowSelectionType={"checkbox"}
-        data={cartypesData}
-        columns={columns}
-        setSelection={setCartypesSelection}
-        handlePagination={handlePagination}
-        total={total}
-        loadding={loading}
-        tableChange={tableChange}
-      />
+      <div className="hidden md:block">
+        <CommonTable
+          rowSelectionType={"checkbox"}
+          data={cartypesData}
+          columns={columns}
+          setSelection={setCartypesSelection}
+          handlePagination={handlePagination}
+          total={total}
+          loadding={loading}
+          tableChange={tableChange}
+        />
+      </div>
+
+      <div className="block md:hidden px-4">
+        {cartypesData && cartypesData.length > 0 ? (
+          cartypesData.map((ct) => (
+            <CommonCard
+              key={ct?.id || ct?._id}
+              item={ct}
+              title={"name"}
+              fieldMap={{}}
+              actionItems={items.map((it) => ({ ...it }))}
+              onActionClick={(info, item) => onClick(info, item)}
+            />
+          ))
+        ) : (
+          <div className="p-6">No car types found</div>
+        )}
+
+        <div className="my-4 flex justify-center">
+          <Pagination
+            current={parseInt(searchParams.get("page") || 1)}
+            pageSize={parseInt(searchParams.get("limit") || 5)}
+            total={total}
+            onChange={handlePagination}
+            showSizeChanger
+          />
+        </div>
+      </div>
     </div>
   );
 };

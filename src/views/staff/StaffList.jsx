@@ -1,8 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Dropdown, Input, message, Modal, Select, Tag } from "antd";
+import {
+  Button,
+  Dropdown,
+  Input,
+  message,
+  Modal,
+  Select,
+  Tag,
+  Pagination,
+} from "antd";
 import RolesService from "../roles/RoleService";
 import { PlusOutlined, ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import CommonTable from "../../components/commons/CommonTable";
+import CommonCard from "../../components/commons/CommonCard";
 import CommonModal from "../../components/commons/CommonModel";
 import StaffService from "./StaffService";
 import StaffEdit from "./StaffEdit";
@@ -321,18 +331,58 @@ const StaffList = () => {
         </div>
       </div>
 
-      <CommonTable
-        rowSelectionType={"checkbox"}
-        data={staffData}
-        columns={columns}
-        total={total}
-        loadding={loading}
-        rowKey={(r) => r?._id}
-        tableChange={tableChange}
-        handlePagination={handlePagination}
-        currentPage={parseInt(page) || 1}
-        pageSize={parseInt(limit) || 10}
-      />
+      <div className="hidden md:block">
+        <CommonTable
+          rowSelectionType={"checkbox"}
+          data={staffData}
+          columns={columns}
+          total={total}
+          loadding={loading}
+          rowKey={(r) => r?._id}
+          tableChange={tableChange}
+          handlePagination={handlePagination}
+          currentPage={parseInt(page) || 1}
+          pageSize={parseInt(limit) || 10}
+        />
+      </div>
+
+      {/* Mobile card list */}
+      <div className="block md:hidden px-6">
+        {staffData && staffData.length > 0 ? (
+          staffData.map((s) => (
+            <CommonCard
+              key={s?._id || s?.id}
+              item={s}
+              title={["firstName", "lastName"]}
+              fieldMap={{
+                email: "Email",
+                phone: "Phone",
+                role: "Role",
+                active: "Active",
+              }}
+              actionItems={items(s)}
+              onActionClick={(info, item) => onClick(info, item)}
+              onCardClick={(record) => {
+                const id = record?._id || record?.id;
+                if (id)
+                  navigate(`/dash/staff/details/${id}`, { state: record });
+              }}
+            />
+          ))
+        ) : (
+          <div className="p-6">No staff found</div>
+        )}
+
+        <div className="my-4 flex justify-center">
+          <Pagination
+            current={parseInt(page) || 1}
+            pageSize={parseInt(limit) || 10}
+            total={total}
+            onChange={handlePagination}
+            showSizeChanger
+          />
+        </div>
+      </div>
     </div>
   );
 };

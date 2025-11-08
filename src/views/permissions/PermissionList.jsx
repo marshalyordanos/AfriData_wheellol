@@ -18,6 +18,8 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import PermissionService from "./PermissionService";
+import CommonCard from "../../components/commons/CommonCard";
+import { Pagination } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import {
   updateVehicleTypesState,
@@ -229,28 +231,77 @@ const PermissionList = () => {
         </div>
       </div>
 
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={data}
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize: limit || PAGE_SIZE,
-          total,
-          onChange: (p, ps) => {
-            dispatch(updateVehicleTypesState({ page: p, limit: ps }));
-            fetchList({ page: p, limit: ps, searchText });
-          },
-          showTotal: (t) => `${t} item${t === 1 ? "" : "s"}`,
-          showSizeChanger: true,
-          pageSizeOptions: ["10", "20"],
-          showQuickJumper: false,
-        }}
-        locale={{
-          emptyText: loading ? "" : <Empty description="No permissions" />,
-        }}
-      />
+      <div className="hidden md:block">
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={data}
+          loading={loading}
+          pagination={{
+            current: page,
+            pageSize: limit || PAGE_SIZE,
+            total,
+            onChange: (p, ps) => {
+              dispatch(updateVehicleTypesState({ page: p, limit: ps }));
+              fetchList({ page: p, limit: ps, searchText });
+            },
+            showTotal: (t) => `${t} item${t === 1 ? "" : "s"}`,
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "20"],
+            showQuickJumper: false,
+          }}
+          locale={{
+            emptyText: loading ? "" : <Empty description="No permissions" />,
+          }}
+        />
+      </div>
+
+      {/* Mobile card list */}
+      <div className="block md:hidden px-4">
+        {data && data.length > 0 ? (
+          data.map((rec) => (
+            <CommonCard
+              key={rec.id}
+              item={rec}
+              title={"resource"}
+              fieldMap={{ description: "Description", createdAt: "Created At" }}
+              actionItems={[
+                { key: "edit", label: <Button type="text">Edit</Button> },
+                { key: "delete", label: <Button type="text">Delete</Button> },
+              ]}
+              onActionClick={(info, item) => {
+                if (!info) return;
+                const key = info.key;
+                if (key === "edit") {
+                  openEdit(item);
+                }
+                if (key === "delete") {
+                  Modal.confirm({
+                    title: "Delete permission?",
+                    okButtonProps: { danger: true },
+                    onOk: () => handleDelete(item.id),
+                  });
+                }
+              }}
+            />
+          ))
+        ) : (
+          <div className="p-6">No permissions found</div>
+        )}
+
+        <div className="my-4 flex justify-center">
+          <Pagination
+            current={page}
+            pageSize={limit || PAGE_SIZE}
+            total={total}
+            onChange={(p, ps) => {
+              dispatch(updateVehicleTypesState({ page: p, limit: ps }));
+              fetchList({ page: p, limit: ps, searchText });
+            }}
+            showSizeChanger
+          />
+        </div>
+      </div>
 
       <Modal
         open={modalOpen}

@@ -1,5 +1,4 @@
 // src/services/socketSetup.js
-import React from "react";
 import SocketService from "./socketService";
 import { notification } from "antd";
 import { BellOutlined } from "@ant-design/icons";
@@ -35,7 +34,7 @@ export const initializeSockets = (dispatch, currentUserId) => {
     notification.open({
       message: data.title || "New Notification",
       description: data.message || "You have a new notification",
-      icon: React.createElement(BellOutlined, { style: { color: "#1890ff" } }),
+      icon: <BellOutlined style={{ color: "#1890ff" }} />,
       placement: "bottomRight",
       duration: 7,
     });

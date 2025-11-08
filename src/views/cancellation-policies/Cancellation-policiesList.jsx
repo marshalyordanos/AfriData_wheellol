@@ -12,6 +12,8 @@ import {
   Select,
   message,
 } from "antd";
+import CommonCard from "../../components/commons/CommonCard";
+import { Pagination } from "antd";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -350,22 +352,58 @@ const CancellationPoliciesList = () => {
         </Form>
       </Modal>
 
-      <CommonTable
-        rowSelectionType={"checkbox"}
-        data={policies}
-        columns={columns}
-        setSelection={setSelection}
-        handlePagination={handlePagination}
-        total={pagination.total || 0}
-        loadding={loading}
-        tableChange={tableChange}
-        rowKey={(r) => r?.id || r?._id}
-        currentPage={Number(pagination.page) || 1}
-        pageSize={Number(pagination.pageSize) || 10}
-        onRow={(record) => ({
-          style: { cursor: "default" },
-        })}
-      />
+      <div className="hidden md:block">
+        <CommonTable
+          rowSelectionType={"checkbox"}
+          data={policies}
+          columns={columns}
+          setSelection={setSelection}
+          handlePagination={handlePagination}
+          total={pagination.total || 0}
+          loadding={loading}
+          tableChange={tableChange}
+          rowKey={(r) => r?.id || r?._id}
+          currentPage={Number(pagination.page) || 1}
+          pageSize={Number(pagination.pageSize) || 10}
+          onRow={(record) => ({
+            style: { cursor: "default" },
+          })}
+        />
+      </div>
+
+      <div className="block md:hidden px-4">
+        {policies && policies.length > 0 ? (
+          policies.map((p) => (
+            <CommonCard
+              key={p?.id || p?._id}
+              item={p}
+              title={"userType"}
+              fieldMap={{
+                daysBeforeTrip: "Days Before Trip",
+                refundPercent: "Refund Percent",
+                createdAt: "Created At",
+              }}
+              actionItems={[
+                { key: "update", label: <Button type="text">Update</Button> },
+                { key: "delete", label: <Button type="text">Delete</Button> },
+              ]}
+              onActionClick={(info, item) => handleAction(info.key, item)}
+            />
+          ))
+        ) : (
+          <div className="p-6">No policies found</div>
+        )}
+
+        <div className="my-4 flex justify-center">
+          <Pagination
+            current={Number(pagination.page) || 1}
+            pageSize={Number(pagination.pageSize) || 10}
+            total={pagination.total || 0}
+            onChange={handlePagination}
+            showSizeChanger
+          />
+        </div>
+      </div>
     </div>
   );
 };
