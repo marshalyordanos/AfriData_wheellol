@@ -1,11 +1,21 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { selectCurrentUser, setSummary } from "./redux/auth/authSlice";
+import {
+  fetchNotifications,
+  fetchUnreadNotifications,
+} from "./views/notification/NotificationRedux";
 import LayoutApp from "./components/layout/LayoutApp";
+import SocketService from "./services/socketService";
+import { notification } from "antd";
+import { BellOutlined } from "@ant-design/icons";
+
+import api from "./api/api";
 
 // Pages
 import DashboardPage from "./views/Dashboard/DashboardPage";
+
 import BrandsList from "./views/brands/BrandsList";
 import BrandsDetail from "./views/brands/BrandsDetails";
 import BrandModelsList from "./views/brands/BrandModelsList";
@@ -51,12 +61,25 @@ import ChatDetails from "./views/messages/ChatDetails";
 import ProfileDetails from "./views/profile/ProfileDetails";
 import ChangePassword from "./views/auth/ChangePassword";
 
-import api from "./api/api";
 import CartypesList from "./views/cartypes/CartypesList";
+import { connectSocket } from "./redux/socketSlice";
 
 const LayoutRouting = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectCurrentUser);
+  const { connected } = useSelector((state) => state.socket);
+
+  //conect to socket on user change
+  useEffect(() => {
+    if (user) {
+      dispatch(connectSocket(user?.id || user?.user?.id));
+    }
+  }, [user]);
+
+  const currentUserId = useMemo(() => {
+    return user?.id || user?.userId || user?.user?.id || null;
+  }, [user]);
+
   const role =
     user?.role?.name || JSON.parse(localStorage.getItem("user"))?.role.name;
 
@@ -69,11 +92,43 @@ const LayoutRouting = () => {
       console.error("fetchSummary: ", error);
     }
   };
+  dispatch(fetchUnreadNotifications(currentUserId));
 
   useEffect(() => {
     fetchSummary();
-  }, []);
+  }, [currentUserId, dispatch]);
 
+  useEffect(() => {
+    if (!connected || !currentUserId) return;
+
+    const handleNewNotification = (data) => {
+      try {
+        console.log("📩 New notification:", data);
+
+        // only fetch for the current user
+        dispatch(fetchNotifications({ userid: currentUserId }));
+        dispatch(fetchUnreadNotifications(currentUserId));
+
+        notification.open({
+          message: data.title || "New Notification",
+          description: data.message || "You have a new notification",
+          icon: <BellOutlined style={{ color: "var(--primary-color)" }} />,
+          placement: "bottomRight",
+          duration: 7,
+        });
+      } catch (err) {
+        console.error("handleNewNotification error:", err);
+      }
+    };
+
+    SocketService.on("new_notification", handleNewNotification);
+
+    return () => {
+      SocketService.off("new_notification", handleNewNotification);
+    };
+  }, [connected]);
+
+  // Routes per role
   // Allowed routes for each role
   const hostRoutes = [
     { path: "", element: <DashboardPage /> },
@@ -81,16 +136,12 @@ const LayoutRouting = () => {
     { path: "cars", element: <CarsList /> },
     { path: "cars/details/:id", element: <CarsDetails /> },
     { path: "cars/reviews/:id", element: <CartReview /> },
-
     { path: "bookings", element: <BookingList /> },
     { path: "bookings/:id", element: <BookingDetails /> },
-
     { path: "messages", element: <ChatsList /> },
     { path: "messages/:id", element: <ChatDetails /> },
-
     { path: "payments", element: <PaymentList /> },
     { path: "payments/:id", element: <PaymentDetails /> },
-
     { path: "profile/:id", element: <ProfileDetails /> },
     { path: "/change-password", element: <ChangePassword /> },
   ];
@@ -127,7 +178,6 @@ const LayoutRouting = () => {
     { path: "cars/reviews/:id", element: <CartReview /> },
     { path: "profile/:id", element: <ProfileDetails /> },
     { path: "/change-password", element: <ChangePassword /> },
-    // Admin CANNOT access messages
     { path: "messages", element: <Navigate to="/dash" /> },
     { path: "messages/:id", element: <Navigate to="/dash" /> },
   ];
@@ -140,7 +190,6 @@ const LayoutRouting = () => {
         {routesToRender.map((r) => (
           <Route key={r.path} path={r.path} element={r.element} />
         ))}
-
         <Route path="*" element={<h1>Page Not Found Inside Dashboard</h1>} />
       </Route>
     </Routes>

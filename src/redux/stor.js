@@ -17,6 +17,7 @@ import disputeReducer from "../views/dispute/DisputetRedux";
 import cartypesReducer from "../views/cartypes/CartypesRedux";
 import notificationsReducer from "../views/notification/NotificationRedux";
 import cancellationPoliciesReducer from "../views/cancellation-policies/Cancellation-policiesRedux";
+import socketReducer from "./socketSlice";
 
 export const store = configureStore({
   reducer: {
@@ -38,5 +39,6 @@ export const store = configureStore({
     staff: staffReducer,
     gust: gustReducer,
     cartypes: cartypesReducer,
+    socket: socketReducer,
   },
 });
