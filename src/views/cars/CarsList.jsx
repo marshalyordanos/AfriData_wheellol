@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import CarInsurancePage from "./CarInsurancePage";
 import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
+import api from "../../api/api";
 import {
   Button,
   Dropdown,
@@ -66,7 +67,7 @@ const CarsList = () => {
 
   const searchText = useSelector(carsSearchText);
   const { notActiveOnly, notApprovedOnly } = useSelector(carsQuery);
-  const carSummary = useSelector(selectcarSummary);
+  const [carSummary, setCarSUmmary] = useState({});
   const carpage = useSelector(carsPage);
   const carlimit = useSelector(carsLimit);
 
@@ -140,7 +141,21 @@ const CarsList = () => {
       setLoading(false);
     }
   };
+  // Fetch summary on load
+  const fetchSummary = async () => {
+    try {
+      const res = await api.get("users/summary?entity=car");
+      setCarSUmmary(res.data.data?.car);
 
+      console.log("fetchSummary: ", res.data);
+    } catch (error) {
+      console.error("fetchSummary: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
   // ✅ Filtering logic
   useEffect(() => {
     let filtered = [...carsData];
