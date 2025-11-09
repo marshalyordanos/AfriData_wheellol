@@ -11,6 +11,7 @@ import {
 } from "antd";
 import { ReloadOutlined, MoreOutlined } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import api from "../../api/api";
 
 import CommonTable from "../../components/commons/CommonTable";
 import CommonCard from "../../components/commons/CommonCard";
@@ -56,12 +57,26 @@ const PaymentList = () => {
     Number(searchParams.get("limit") || 10),
   ];
 
-  const paymentSummary = useSelector(selectpaymentSummary);
+  const [paymentSummary, setPaymentSummary] = useState("");
   const currentPage = Number(searchParams.get("page") || 1);
   const currentLimit = Number(searchParams.get("limit") || 10);
   const [page, setPage] = useState(currentPage);
   const [pageSize, setPageSize] = useState(currentLimit);
 
+  const fetchSummary = async () => {
+    try {
+      const res = await api.get("users/summary?entity=payment");
+      setPaymentSummary(res.data.data?.payment);
+
+      console.log("fetchSummary: ", res.data);
+    } catch (error) {
+      console.error("fetchSummary: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
   const loadPayments = async ({
     page = 1,
     pageSize = 10,
