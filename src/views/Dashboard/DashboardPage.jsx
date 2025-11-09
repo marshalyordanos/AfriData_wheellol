@@ -10,6 +10,7 @@ import {
   Dropdown,
   Menu,
   Button,
+  Pagination,
 } from "antd";
 import {
   FaUser,
@@ -22,6 +23,7 @@ import Chart from "react-apexcharts";
 import { motion } from "framer-motion";
 import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
+import CommonCard from "../../components/commons/CommonCard";
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
@@ -304,6 +306,10 @@ const DashboardPage = () => {
       navigate(`/dash/bookings/${bookingId}`);
     }
   };
+
+  const handlePagination = (page, pageSize) => {
+    searchData();
+  };
   return (
     <div className="p-6 space-y-6">
       <div className="grid grid-cols-1  lg:grid-cols-4 gap-4">
@@ -351,24 +357,51 @@ const DashboardPage = () => {
             </Card> */}
       </div>
 
-      <Card className="rounded-2xl shadow">
-        <h2 className="text-lg font-semibold mb-4">Latest Bookings</h2>
-        <Table
-          loading={loading}
-          columns={columns}
-          dataSource={lestestBooking}
-          rowKey="id"
-          // pagination={{ pageSize: 5 }}
-          scroll={{
-            x: 700,
-          }}
-          onRow={(record) => ({
-            onClick: () => onRowClick(record),
-            style: { cursor: "pointer" },
+      <div className="hidden md:block">
+        <Card className="rounded-2xl shadow">
+          <h2 className="text-lg font-semibold mb-4">Latest Bookings</h2>
+          <Table
+            loading={loading}
+            columns={columns}
+            dataSource={lestestBooking}
+            rowKey="id"
+            // pagination={{ pageSize: 5 }}
+            scroll={{
+              x: 700,
+            }}
+            onRow={(record) => ({
+              onClick: () => onRowClick(record),
+              style: { cursor: "pointer" },
+            })}
+            pagination={false}
+          />
+        </Card>
+      </div>
+      <div className="block md:hidden">
+        {lestestBooking.length > 0 &&
+          lestestBooking.map((car) => {
+            return (
+              <CommonCard
+                item={car}
+                fieldMap={{
+                  "guest.firstName": "Guest",
+                  "host.firstName": "Host",
+                  "car.make.name": "Make",
+                  "car.model.name": "Model",
+                  totalPrice: "Total Price",
+                  startDate: "Start Date",
+                  endDate: "End Date",
+                }}
+                // title={["make.name", "model.name"]}
+                actionItems={[]}
+                onActionClick={() => {}}
+                onCardClick={(item) => {
+                  onRowClick(item);
+                }}
+              />
+            );
           })}
-          pagination={false}
-        />
-      </Card>
+      </div>
     </div>
   );
 };
