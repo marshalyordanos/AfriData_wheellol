@@ -163,8 +163,10 @@ const CommonCard = ({
             type="text"
             icon={<MoreOutlined style={{ fontSize: 20, color: "#6b7280" }} />}
             onClick={(e) => e.stopPropagation()}
+
           />
         </Dropdown>
+        
       </div>
 
       {/* Details */}
