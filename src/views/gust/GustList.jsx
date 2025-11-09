@@ -235,8 +235,8 @@ const GustList = () => {
               fieldMap={{
                 email: "Email",
                 phone: "Phone",
-                role: "Role",
-                active: "Active",
+                "role.name": "Role",
+                // isActive: "Active",
               }}
               actionItems={items(g)}
               onActionClick={(info, item) => onClick(info, item)}

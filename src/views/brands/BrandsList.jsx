@@ -220,7 +220,7 @@ const BrandsList = () => {
       <div className="flex justify-between items-center mb-6">
         <Input
           placeholder="Search Brands"
-          value={reduxSearchText} 
+          value={reduxSearchText}
           onChange={searchHandler}
           className="max-w-sm rounded"
           allowClear
@@ -275,11 +275,10 @@ const BrandsList = () => {
             <CommonCard
               key={b.id}
               item={b}
-              title={"name"}
+              title={["name", "name"]}
               fieldMap={{
                 createdAt: "Created At",
-                isActive: "Active",
-                models: "Models",
+                // isActive: "Active",
               }}
               actionItems={dropdownItems}
               onActionClick={(info, item) => handleMenuClick(info, item)}

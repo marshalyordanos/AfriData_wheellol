@@ -623,7 +623,7 @@ const CarsList = () => {
                   vin: "Vin",
                   "model.name": "Model",
                 }}
-                title={["Vist name", "route_schedule"]}
+                title={["make.name", "model.name"]}
                 actionItems={items}
                 onActionClick={onActionClick}
                 onCardClick={(item) => {
@@ -644,8 +644,8 @@ const CarsList = () => {
               handlePagination(current, pageSize);
             }}
             current={Number(carpage)}
-            defaultCurrent={4}
-            total={50}
+            // defaultCurrent={}
+            total={total}
           />
         </div>
       </div>
