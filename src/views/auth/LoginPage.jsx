@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button, Checkbox, Form, Input, message, Modal } from "antd";
 // import { selectCurrentUser } from "../../redux/auth/authSlice";
 // import authService from "../../api/auth.service";
+import { motion } from "framer-motion";
 
 const LoginPage = () => {
   const dispatch = useDispatch();
@@ -98,12 +99,130 @@ const LoginPage = () => {
   */
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.3,
+      },
+    },
+  };
+
+  const headingVariants = {
+    hidden: { opacity: 0, y: -30 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  const serviceVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 },
+  };
+
+  const formVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  const inputVariants = {
+    hidden: { opacity: 0, x: 20 },
+    visible: { opacity: 1, x: 0 },
+  };
   return (
-    <div className="w-[100vw] h-[100vh] bg-[#628DBA]  flex flex-col lg:flex-row justify-between ">
-      <div className=" bg-white  h-full flex-1 flex  items-center justify-center">
+    // <div className="w-[100vw] h-[100vh] bg-[#628DBA]  flex flex-col lg:flex-row justify-between ">
+    <div className="min-h-screen flex">
+      {/* Left Side - Video Background */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/videos/login.mp4" type="video/mp4" />
+        </video>
+
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-400/80 to-blue-900/50" />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
+          <div className="text-center max-w-md">
+            <motion.h1
+              className="text-5xl font-bold mb-14 mt-10 ml-3"
+              variants={headingVariants}
+              initial="hidden"
+              animate="visible"
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              Car Rental
+            </motion.h1>
+            {/* <p className="text-xl text-blue-100 mb-8">
+              Your trusted logistics partner for fast, reliable delivery
+              solutions
+            </p> */}
+
+            {/* Features */}
+            <motion.div
+              className="space-y-4"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.div
+                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-3"
+                variants={serviceVariants}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                whileHover={{
+                  scale: 1.02,
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                  transition: { duration: 0.2 },
+                }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {/* <IoShieldCheckmark className="h-5 w-5 text-green-300" /> */}
+                <span className="text-xl">Secure & Reliable Service</span>
+              </motion.div>
+              <motion.div
+                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-3"
+                variants={serviceVariants}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                whileHover={{
+                  scale: 1.02,
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                  transition: { duration: 0.2 },
+                }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {/* <IoCar className="h-5 w-5 text-blue-300" /> */}
+                <span className="text-xl">Fast Delivery Network</span>
+              </motion.div>
+              <motion.div
+                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-3"
+                variants={serviceVariants}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                whileHover={{
+                  scale: 1.02,
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                  transition: { duration: 0.2 },
+                }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {/* <IoPerson className="h-5 w-5 text-purple-300" /> */}
+                <span className="text-xl">24/7 Customer Support</span>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      <div className=" bg-white border  h-[100vh] flex-1 flex  items-center justify-center">
         <div className="  min-w-[270px]  ">
           <div>
             <p className=" my-7 text-xl">Login</p>
+            <img src={Logo} className="h-20" alt="Logo" />
           </div>
           <Form
             name="basic"
@@ -203,7 +322,7 @@ const LoginPage = () => {
               </Form.Item>
             </Form>
           </Modal>
-         
+
           <div className="text-center mt-3 text-sm" style={{ color: "#333" }}>
             Already have an account?{" "}
             <Link
@@ -216,6 +335,7 @@ const LoginPage = () => {
         </div>
       </div>
     </div>
+    // </div>
   );
 };
 
