@@ -60,6 +60,7 @@ const BookingList = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [bookingSummary, setBookingSummary] = useState({});
   const currentUser = useSelector(selectCurrentUser);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   const normalizeRole = (u) => {
     if (!u) return null;
@@ -73,6 +74,9 @@ const BookingList = () => {
   };
 
   const currentRole = normalizeRole(currentUser) || "superadmin";
+  // const currentRole = currentUser.role.name || "superadmin";
+  // console.log(currentRole);
+
   const getPaginationInfo = () => [
     Number(searchParams.get("page") || 1),
     Number(searchParams.get("limit") || limit),
@@ -386,28 +390,51 @@ const BookingList = () => {
     {
       title: "Chat",
       dataIndex: "chat",
-      render: (_, record) =>
-        // show chat for confirmed or completed bookings
-        record &&
-        ["confirmed", "completed"].includes(
-          String(record.status || "").toLowerCase()
-        ) ? (
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              const bookingId = record.id || record._id;
-              if (bookingId)
-                navigate(`/dash/messages/${bookingId}`, {
-                  state: {
-                    from: "bookingList",
-                    chatPartner: record.guest,
-                  },
-                });
-            }}
-          >
-            Chat
-          </Button>
-        ) : null,
+      render: (_, record) => {
+        if (!record) return null;
+        // console.log("##############", record);
+        const status = String(record.status || "").toLowerCase();
+
+        if (currentRole === "host") {
+          // host: only show chat when booking is confirmed
+          if (status === "confirmed") {
+            return (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const bookingId = record.id || record._id;
+                  if (bookingId)
+                    navigate(`/dash/messages/${bookingId}`, {
+                      state: { from: "bookingList", chatPartner: record.guest },
+                    });
+                }}
+              >
+                Chat
+              </Button>
+            );
+          }
+          return null;
+        }
+
+        if (record.dispute) {
+          return (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                const bookingId = record.id || record._id;
+                if (bookingId)
+                  navigate(`/dash/messages/${bookingId}`, {
+                    state: { from: "bookingList", chatPartner: record.guest },
+                  });
+              }}
+            >
+              Chat
+            </Button>
+          );
+        }
+
+        return null;
+      },
     },
     // 13. Dispute
     {
@@ -416,6 +443,12 @@ const BookingList = () => {
       render: (d) => (d ? "Yes" : "No"),
     },
   ];
+
+  // If current role is host, hide the action column from table views
+  const tableColumns =
+    currentRole === "host"
+      ? columns.filter((col) => col.dataIndex !== "action")
+      : columns;
 
   return (
     <div>
@@ -615,7 +648,7 @@ const BookingList = () => {
         <div className="hidden md:block">
           <CommonTable
             data={bookingData}
-            columns={columns}
+            columns={tableColumns}
             handlePagination={handlePagination}
             total={total}
             loading={loading}

@@ -145,10 +145,11 @@ const LayoutRouting = () => {
     { path: "profile/:id", element: <ProfileDetails /> },
     { path: "/change-password", element: <ChangePassword /> },
   ];
-
+  
   const adminRoutes = [
     { path: "", element: <DashboardPage /> },
     { path: "brands", element: <BrandsList /> },
+    { path: "messages/:id", element: <ChatDetails /> },
     { path: "brands/:brandId/models", element: <BrandModelsList /> },
     { path: "brands/:id", element: <BrandsDetail /> },
     { path: "host", element: <HostList /> },

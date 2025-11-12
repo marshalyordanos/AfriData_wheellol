@@ -29,6 +29,7 @@ import {
 } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { selectpaymentSummary } from "../../redux/auth/authSlice";
+import { selectCurrentUser } from "../../redux/auth/authSlice";
 
 const { confirm } = Modal;
 
@@ -62,6 +63,20 @@ const PaymentList = () => {
   const currentLimit = Number(searchParams.get("limit") || 10);
   const [page, setPage] = useState(currentPage);
   const [pageSize, setPageSize] = useState(currentLimit);
+  const currentUser = useSelector(selectCurrentUser);
+
+  const normalizeRole = (u) => {
+    if (!u) return null;
+    if (typeof u === "string") return u.toLowerCase();
+    if (u.role) {
+      if (typeof u.role === "string") return u.role.toLowerCase();
+      if (u.role.name) return String(u.role.name).toLowerCase();
+    }
+    if (u.user) return normalizeRole(u.user);
+    return null;
+  };
+
+  const currentRole = normalizeRole(currentUser) || "superadmin";
 
   const fetchSummary = async () => {
     try {
@@ -315,6 +330,11 @@ const PaymentList = () => {
     },
   ];
 
+  const tableColumns =
+    currentRole === "host"
+      ? columns.filter((c) => c.dataIndex !== "action")
+      : columns;
+
   return (
     <div>
       <div className="flex gap-2 mb-6 flex-wrap px-6 my-3">
@@ -470,7 +490,7 @@ const PaymentList = () => {
       <div className="hidden md:block">
         <CommonTable
           data={payments}
-          columns={columns}
+          columns={tableColumns}
           total={total}
           loading={loading}
           currentPage={page}
@@ -500,10 +520,20 @@ const PaymentList = () => {
                 status: "Status",
                 hostEarnings: "Host Earnings",
               }}
-              actionItems={[
-                { key: "refund", label: <Button type="text">Refund</Button> },
-                { key: "release", label: <Button type="text">Release</Button> },
-              ]}
+              {...(currentRole === "host"
+                ? {}
+                : {
+                    actionItems: [
+                      {
+                        key: "refund",
+                        label: <Button type="text">Refund</Button>,
+                      },
+                      {
+                        key: "release",
+                        label: <Button type="text">Release</Button>,
+                      },
+                    ],
+                  })}
               onActionClick={(info, item) => handleAction(info.key, item)}
               onCardClick={(record) => {
                 const id = record.id || record._id;

@@ -28,6 +28,19 @@ const ChatDetails = () => {
     (JSON.parse(localStorage.getItem("user")) || {})?.id ||
     null;
 
+  const isHostUser = (user) => {
+    if (!user) return false;
+    const u = user || JSON.parse(localStorage.getItem("user")) || {};
+    const roleCandidates = [u.role, u?.role?.name];
+    return roleCandidates.some((r) => {
+      if (!r) return false;
+      const v = String(typeof r === "object" ? r : r).toLowerCase();
+      return v.includes("host");
+    });
+  };
+
+  const canSendMessage = isHostUser(currentUser);
+
   const [text, setText] = useState("");
   const [optimistic, setOptimistic] = useState([]);
   const messagesRef = React.useRef(null);
@@ -138,10 +151,10 @@ const ChatDetails = () => {
     try {
       const target = e.target;
       if (!target) return;
-    
+
       if (target.scrollTop <= 10 && !isLoadingMore && hasMore) {
         const nextPage = page + 1;
-        if (requestedPagesRef.current.has(nextPage)) return; 
+        if (requestedPagesRef.current.has(nextPage)) return;
         requestedPagesRef.current.add(nextPage);
         setIsLoadingMore(true);
         // capture current scroll height to preserve position after prepend
@@ -159,7 +172,7 @@ const ChatDetails = () => {
           setTimeout(() => {
             const newScrollHeight = messagesRef.current?.scrollHeight || 0;
             const delta = newScrollHeight - prevScrollHeight;
-            if (messagesRef.current) messagesRef.current.scrollTop = delta + 20; 
+            if (messagesRef.current) messagesRef.current.scrollTop = delta + 20;
           }, 50);
         } catch (err) {
           console.error("Failed to load older messages", err);
@@ -404,18 +417,24 @@ const ChatDetails = () => {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={2}
-          placeholder="Write a message..."
+          placeholder={
+            canSendMessage
+              ? "Write a message..."
+              : "Only host and guest can send messages"
+          }
           style={{ resize: "none", borderRadius: 8 }}
-          disabled={sending}
+          disabled={sending || !canSendMessage}
         />
         <Button
           type="primary"
           onClick={handleSend}
+          disabled={!canSendMessage}
           style={{
             height: 40,
             color: "white",
-            backgroundColor: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
+            backgroundColor: canSendMessage ? "var(--color-primary)" : "#ccc",
+            borderColor: canSendMessage ? "var(--color-primary)" : "#ccc",
+            cursor: canSendMessage ? "pointer" : "not-allowed",
           }}
           loading={sending}
         >
