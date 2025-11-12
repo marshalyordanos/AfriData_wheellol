@@ -67,8 +67,17 @@ const notificationSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.data || [];
-        state.total = action.payload.pagination?.total || state.items.length;
+        const page = action.meta?.arg?.page || 1;
+        const data = action.payload.data || [];
+        // If this was a subsequent page, append new items (avoid duplicates)
+        if (page && page > 1) {
+          const existingIds = new Set((state.items || []).map((i) => i.id));
+          const toAdd = data.filter((d) => !existingIds.has(d.id));
+          state.items = (state.items || []).concat(toAdd);
+        } else {
+          state.items = data;
+        }
+        state.total = action.payload.pagination?.total ?? state.items.length;
       })
       .addCase(fetchUnreadNotifications.fulfilled, (state, action) => {
         const payload = action.payload;
