@@ -22,6 +22,36 @@ const getNestedValue = (obj, path) => {
     .reduce((acc, part) => (acc ? acc[part] : undefined), obj);
 };
 
+// Normalize different value types to a renderable string
+const formatValue = (raw) => {
+  if (raw === null || raw === undefined) return "-";
+  if (Array.isArray(raw)) {
+    // join array of primitives or objects by name/id
+    const parts = raw.map((r) => {
+      if (r == null) return "";
+      if (typeof r === "object")
+        return r.name || r.title || r.id || JSON.stringify(r);
+      return String(r);
+    });
+    return parts.filter(Boolean).join(", ");
+  }
+  if (typeof raw === "object") {
+    // prefer common fields
+    if (raw.name) return String(raw.name);
+    if (raw.title) return String(raw.title);
+    if (raw.firstName || raw.lastName)
+      return `${raw.firstName || ""} ${raw.lastName || ""}`.trim();
+    if (raw.id) return String(raw.id);
+    try {
+      return JSON.stringify(raw);
+    } catch (e) {
+      return "-";
+    }
+  }
+  // primitive -> string
+  return String(raw);
+};
+
 const CommonCard = ({
   item,
   fieldMap,
@@ -71,30 +101,28 @@ const CommonCard = ({
     setColor();
   }, [status]);
 
-  // Build details array dynamically
+  // Build details array dynamically and normalize values
   const details = Object.entries(fieldMap).map(([key, labelOrSuffix]) => {
-    const parts = labelOrSuffix.split("__");
+    const parts = String(labelOrSuffix).split("__");
     const label = parts[0]; // Display label
     const suffix = parts[1] || "";
-    console.log("item", item, key);
-    const rawValue = getNestedValue(item, key) ?? "";
-    const cleanValue =
-      typeof rawValue === "string"
-        ? rawValue.replace(/<[^>]*>/g, "").trim()
-        : rawValue;
+    const rawValue = getNestedValue(item, key);
+    let value = formatValue(rawValue);
 
-    const value = suffix
-      ? suffix === "ETB"
-        ? `${formatNumberHuman(
-            Number(cleanValue.toString().replace(/,/g, ""))
-          )} ${suffix}`
-        : `${cleanValue} ${suffix}`
-      : cleanValue;
+    if (suffix) {
+      if (suffix === "ETB") {
+        // attempt numeric formatting
+        const n = Number(String(value).replace(/,/g, ""));
+        value = isNaN(n) ? value : `${formatNumberHuman(n)} ${suffix}`;
+      } else {
+        value = `${value} ${suffix}`;
+      }
+    }
 
     return { label, value };
   });
 
-  console.log(details);
+  // details prepared for rendering
 
   return (
     <div
@@ -122,16 +150,19 @@ const CommonCard = ({
             {Array.isArray(title)
               ? title.map((t, i) => (
                   <span key={i} style={{ marginRight: 5 }}>
-                    {getNestedValue(item, t) || t}
+                    {formatValue(getNestedValue(item, t)) || t}
                   </span>
                 ))
-              : getNestedValue(item, title) || title}
+              : formatValue(getNestedValue(item, title)) || title}
           </div>
         )}
         <Dropdown
           menu={{
             items: actionItems,
-            onClick: (value) => onActionClick(value, item),
+            onClick: ({ key, domEvent, item: menuItem }) => {
+              domEvent && domEvent.stopPropagation();
+              onActionClick && onActionClick({ key, domEvent, menuItem }, item);
+            },
           }}
           trigger={["click"]}
           placement="bottomLeft"

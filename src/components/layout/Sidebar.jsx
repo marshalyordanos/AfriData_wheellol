@@ -204,6 +204,8 @@ const SidebarStyle = styled(Sider)`
     overflow: auto;
     overflow-x: hidden;
     height: calc(100vh - 100px);
+    /* ensure bottom nav (60px) doesn't cover last items on small screens */
+    padding-bottom: 20px;
     scrollbar-width: thin;
     scrollbar-color: var(--color-primary) #f1f1f1;
     background-color: var(--color-secondary);
@@ -246,6 +248,16 @@ const SidebarStyle = styled(Sider)`
 
   .ant-menu-item-selected span {
     color: white !important;
+  }
+
+  /* On small screens, reduce menu height to leave space for BottomNav */
+  @media (max-width: 767px) {
+    .sidebar__menus {
+      height: calc(
+        100vh - 100px - 60px
+      ); /* header(70) + extra(30) already accounted, subtract bottom nav 60 */
+      padding-bottom: 80px; /* extra safe space so last menu items are visible */
+    }
   }
 `;
 
