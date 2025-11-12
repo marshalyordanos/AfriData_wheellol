@@ -11,12 +11,11 @@ class MessagesService {
       return response.data;
     });
   }
-  getAllMessagesOfABooking(id) {
-    return api
-      .get("/messages/booking/" + id + "?pageSize=50")
-      .then((response) => {
-        return response.data;
-      });
+  getAllMessagesOfABooking(id, page = 1, pageSize = 10) {
+    const qs = `?page=${page}&pageSize=${pageSize}`;
+    return api.get(`/messages/booking/${id}${qs}`).then((response) => {
+      return response.data;
+    });
   }
   getAllMessageChatsOfAUser(id) {
     return api.get("/messages/chats/user/" + id).then((response) => {

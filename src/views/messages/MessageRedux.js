@@ -17,10 +17,13 @@ export const fetchChatsForUser = createAsyncThunk(
 // Fetch messages for a booking (chat)
 export const fetchMessagesForBooking = createAsyncThunk(
   "messages/fetchMessagesForBooking",
-  async ({ bookingId }, { rejectWithValue }) => {
+  async ({ bookingId, page = 1 } = {}, { rejectWithValue }) => {
     try {
-      const res = await MessagesService.getAllMessagesOfABooking(bookingId);
-      return { bookingId, ...res };
+      const res = await MessagesService.getAllMessagesOfABooking(
+        bookingId,
+        page
+      );
+      return { bookingId, page, ...res };
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -33,6 +36,18 @@ export const sendMessage = createAsyncThunk(
     try {
       const res = await MessagesService.sendMessage(payload);
       return res;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const markMessagesAsRead = createAsyncThunk(
+  "messages/markAsRead",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await MessagesService.markAsRead(payload);
+      return { payload, res };
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -130,10 +145,30 @@ const messagesSlice = createSlice({
       .addCase(fetchMessagesForBooking.fulfilled, (state, action) => {
         state.messagesLoading = false;
         const bookingId = action.payload.bookingId;
-        state.messages[bookingId] = {
-          items: action.payload?.data || [],
-          pagination: action.payload?.pagination || {},
+        const page = action.payload.page || 1;
+        const data = action.payload?.data || [];
+        const pagination = action.payload?.pagination || {};
+
+        state.messages[bookingId] = state.messages[bookingId] || {
+          items: [],
+          pagination: {},
         };
+
+        if (page && page > 1) {
+          // prepend older messages (assuming API returns older messages for next pages)
+          const existingIds = new Set(
+            (state.messages[bookingId].items || []).map((m) => m.id || m._id)
+          );
+          const toAdd = data.filter((d) => !existingIds.has(d.id || d._id));
+          state.messages[bookingId].items = [
+            ...toAdd,
+            ...(state.messages[bookingId].items || []),
+          ];
+        } else {
+          state.messages[bookingId].items = data;
+        }
+
+        state.messages[bookingId].pagination = pagination;
       })
       .addCase(fetchMessagesForBooking.rejected, (state, action) => {
         state.messagesLoading = false;
@@ -151,6 +186,27 @@ const messagesSlice = createSlice({
           state.messages[b].items = [...state.messages[b].items, msg];
         }
       });
+    builder.addCase(markMessagesAsRead.fulfilled, (state, action) => {
+      // payload contains { bookingId, userId } typically
+      const { payload } = action.payload || {};
+      const bookingId = payload?.bookingId || payload?.booking || null;
+      if (!bookingId) return;
+
+      // mark chat unreadCount to 0 in chats
+      const idx = state.chats.findIndex(
+        (c) => String(c.bookingId) === String(bookingId)
+      );
+      if (idx > -1) {
+        state.chats[idx] = { ...state.chats[idx], unreadCount: 0 };
+      }
+
+      // update messages in that booking to mark read
+      if (state.messages[bookingId]?.items) {
+        state.messages[bookingId].items = state.messages[bookingId].items.map(
+          (m) => ({ ...m, isRead: true })
+        );
+      }
+    });
   },
 });
 

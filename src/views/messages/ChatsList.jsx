@@ -5,6 +5,7 @@ import {
   selectChats,
   selectChatsLoading,
   upsertChat,
+  markMessagesAsRead,
 } from "./MessageRedux";
 import { List, Avatar, Badge, Empty, Spin, Input } from "antd";
 import MessagesService from "./MessagesService";
@@ -96,16 +97,21 @@ const ChatsList = () => {
       </div>
     );
 
-  if (!chats || chats.length === 0) return <Empty description="No chats" />;
-
-  const filtered = chats.filter((c) => {
+  const filtered = (chats || []).filter((c) => {
     if (!query) return true;
     const summary = c.bookingSummary || {};
     const partner = c.withUser || {};
+    const q = query.toLowerCase();
     return (
-      (summary.id || "").toLowerCase().includes(query.toLowerCase()) ||
-      (partner.fullName || "").toLowerCase().includes(query.toLowerCase()) ||
-      (c.lastMessage?.content || "").toLowerCase().includes(query.toLowerCase())
+      String(summary.id || "")
+        .toLowerCase()
+        .includes(q) ||
+      String(partner.fullName || "")
+        .toLowerCase()
+        .includes(q) ||
+      String(c.lastMessage?.content || "")
+        .toLowerCase()
+        .includes(q)
     );
   });
 
@@ -140,14 +146,22 @@ const ChatsList = () => {
           const summary = chat.bookingSummary || {};
           return (
             <List.Item
-              onClick={() =>
+              onClick={async () => {
+                try {
+                  // mark messages as read for this booking
+                  await dispatch(
+                    markMessagesAsRead({ bookingId: chat.bookingId, userId })
+                  );
+                } catch (err) {
+                  console.error("Failed to mark messages as read:", err);
+                }
                 navigate(`/dash/messages/${chat.bookingId}`, {
                   state: {
                     from: "chatsList",
                     chatPartner: chat.withUser,
                   },
-                })
-              }
+                });
+              }}
               style={{
                 cursor: "pointer",
                 padding: 12,

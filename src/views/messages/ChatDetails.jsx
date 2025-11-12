@@ -31,6 +31,10 @@ const ChatDetails = () => {
   const [text, setText] = useState("");
   const [optimistic, setOptimistic] = useState([]);
   const messagesRef = React.useRef(null);
+  const [page, setPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const requestedPagesRef = React.useRef(new Set());
   const [sending, setSending] = useState(false);
 
   // get partner user from navigation state or messages
@@ -39,9 +43,7 @@ const ChatDetails = () => {
   const bookingSummary = location.state?.bookingSummary || null;
 
   const derivePartner = () => {
-    // console.log("Deriving partner user...", chatPartner);
     if (chatPartner) return chatPartner;
-    // look into messages to find a user object that's not the current user
     if (Array.isArray(messages) && messages.length > 0) {
       for (const m of messages) {
         // prefer sender/receiver as objects
@@ -66,7 +68,16 @@ const ChatDetails = () => {
 
   useEffect(() => {
     if (id) {
-      dispatch(fetchMessagesForBooking({ bookingId: id }));
+      setPage(1);
+      setHasMore(true);
+      requestedPagesRef.current = new Set([1]);
+      dispatch(fetchMessagesForBooking({ bookingId: id, page: 1 })).then(
+        (res) => {
+          const total =
+            res.payload?.pagination?.total ?? (res.payload?.data || []).length;
+          setHasMore((res.payload?.data || []).length < total);
+        }
+      );
     }
   }, [id]);
 
@@ -121,6 +132,45 @@ const ChatDetails = () => {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
   }, [messages, optimistic]);
+
+  // load previous messages when scrolling to top
+  const handleScroll = async (e) => {
+    try {
+      const target = e.target;
+      if (!target) return;
+    
+      if (target.scrollTop <= 10 && !isLoadingMore && hasMore) {
+        const nextPage = page + 1;
+        if (requestedPagesRef.current.has(nextPage)) return; 
+        requestedPagesRef.current.add(nextPage);
+        setIsLoadingMore(true);
+        // capture current scroll height to preserve position after prepend
+        const prevScrollHeight = messagesRef.current?.scrollHeight || 0;
+        try {
+          const res = await dispatch(
+            fetchMessagesForBooking({ bookingId: id, page: nextPage })
+          );
+          const data = res.payload?.data || [];
+          const total =
+            res.payload?.pagination?.total ?? messages.length + data.length;
+          // update hasMore
+          setHasMore(messages.length + (data.length || 0) < total);
+          if ((data.length || 0) > 0) setPage(nextPage);
+          setTimeout(() => {
+            const newScrollHeight = messagesRef.current?.scrollHeight || 0;
+            const delta = newScrollHeight - prevScrollHeight;
+            if (messagesRef.current) messagesRef.current.scrollTop = delta + 20; 
+          }, 50);
+        } catch (err) {
+          console.error("Failed to load older messages", err);
+        } finally {
+          setIsLoadingMore(false);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // console.log("Message info in chatState : ^^^^^^^^^^^^^^^^^", location.state);
 
@@ -246,6 +296,7 @@ const ChatDetails = () => {
 
       <div
         ref={messagesRef}
+        onScroll={handleScroll}
         style={{
           flex: 1,
           overflowY: "auto",
