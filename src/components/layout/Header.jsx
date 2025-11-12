@@ -19,10 +19,10 @@ import { useTranslation } from "react-i18next";
 import NotificationsList from "../../views/notification/NotificationList";
 import {
   fetchNotifications,
+  markAllNotificationsRead,
   selectUnreadCount,
 } from "../../views/notification/NotificationRedux";
 import Logo from "../../assets/icon orange.svg";
-
 
 const { Header } = Layout;
 
@@ -34,6 +34,12 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
   const { t, i18n } = useTranslation();
 
   const [notifOpen, setNotifOpen] = React.useState(false);
+
+  const currentUserId =
+    currentUser?.id ||
+    currentUser?.user?.id ||
+    (JSON.parse(localStorage.getItem("user") || "{}") || {}).id ||
+    null;
 
   const handleBack = () => {
     navigate(-1);
@@ -106,7 +112,12 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
           <img
             src={Logo}
             alt="logo"
-            style={{ width: "40px", left: "50%", transform: "translateX(27%)", height: "auto" }}
+            style={{
+              width: "40px",
+              left: "50%",
+              transform: "translateX(27%)",
+              height: "auto",
+            }}
           />
         </div>
 
@@ -164,9 +175,20 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
                     style={{ fontSize: 18, color: "var(--color-primary)" }}
                   />
                 }
-                onClick={() => {
+                onClick={async () => {
                   setNotifOpen(true);
-                  dispatch(fetchNotifications());
+                  dispatch(fetchNotifications({ userid: currentUserId }));
+
+                  if (currentUserId) {
+                    try {
+                      await dispatch(markAllNotificationsRead(currentUserId));
+                    } catch (err) {
+                      console.error(
+                        "Failed to mark all notifications read",
+                        err
+                      );
+                    }
+                  }
                 }}
               />
             </Badge>

@@ -54,8 +54,13 @@ const NotificationsList = ({ open, onClose }) => {
   const unreadCount = useSelector((state) => selectUnreadCount(state));
 
   const authUser = useSelector(selectCurrentUser);
+
   const currentUserId =
-    authUser?.id || authUser?.userId || authUser?.user?.id || null;
+    authUser?.id ||
+    authUser?.userId ||
+    authUser?.user?.id ||
+    (JSON.parse(localStorage.getItem("user")) || {})?.id ||
+    null;
 
   useEffect(() => {
     if (open && currentUserId) {
@@ -67,15 +72,7 @@ const NotificationsList = ({ open, onClose }) => {
     dispatch(markNotificationRead({ id, userId: currentUserId }));
   };
 
-  const handleMarkAllAndClose = async () => {
-    if (!currentUserId) return;
-    try {
-      await dispatch(markAllNotificationsRead(currentUserId));
-      if (typeof onClose === "function") onClose();
-    } catch (err) {
-      console.error("Failed to mark all notifications read:", err);
-    }
-  };
+
 
   return (
     <Drawer
@@ -96,22 +93,6 @@ const NotificationsList = ({ open, onClose }) => {
       width={400}
       styles={{ body: { padding: "12px" } }}
     >
-      <div
-        style={{
-          marginBottom: 12,
-          display: "flex",
-          justifyContent: "flex-end",
-        }}
-      >
-        <Button
-          size="small"
-          onClick={handleMarkAllAndClose}
-          disabled={!notifications.length || loading}
-          loading={loading}
-        >
-          Mark all as read
-        </Button>
-      </div>
 
       {loading ? (
         <div style={{ textAlign: "center", padding: 40 }}>
