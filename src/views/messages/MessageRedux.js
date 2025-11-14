@@ -4,10 +4,14 @@ import MessagesService from "./MessagesService";
 // Fetch chat list for a user
 export const fetchChatsForUser = createAsyncThunk(
   "messages/fetchChatsForUser",
-  async (userId, { rejectWithValue }) => {
+  async ({ userId, page = 1, pageSize = 20 } = {}, { rejectWithValue }) => {
     try {
-      const res = await MessagesService.getAllMessageChatsOfAUser(userId);
-      return res; // whole response
+      const res = await MessagesService.getAllMessageChatsOfAUser(
+        userId,
+        page,
+        pageSize
+      );
+      return { userId, page, pageSize, ...res }; // include page info
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -133,7 +137,21 @@ const messagesSlice = createSlice({
       })
       .addCase(fetchChatsForUser.fulfilled, (state, action) => {
         state.chatsLoading = false;
-        state.chats = action.payload?.data || [];
+        const page = action.payload?.page || 1;
+        const data = action.payload?.data || [];
+
+        if (page && page > 1) {
+          // append, dedupe by bookingId
+          const existingIds = new Set(
+            (state.chats || []).map((c) => String(c.bookingId))
+          );
+          const toAdd = data.filter(
+            (d) => !existingIds.has(String(d.bookingId))
+          );
+          state.chats = [...(state.chats || []), ...toAdd];
+        } else {
+          state.chats = data;
+        }
       })
       .addCase(fetchChatsForUser.rejected, (state, action) => {
         state.chatsLoading = false;

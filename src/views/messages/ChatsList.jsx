@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchChatsForUser,
@@ -7,7 +7,7 @@ import {
   upsertChat,
   markMessagesAsRead,
 } from "./MessageRedux";
-import { List, Avatar, Badge, Empty, Spin, Input } from "antd";
+import { List, Avatar, Badge, Spin, Input } from "antd";
 import MessagesService from "./MessagesService";
 import { useNavigate } from "react-router-dom";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
@@ -28,19 +28,28 @@ const ChatsList = () => {
       return null;
     }
   })();
+
   const userId = currentUser?.id || storedUser?.id || null;
+
   const [unreadCount, setUnreadCount] = useState(0);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-  //SOCKET FOR CHATLIST
+  const requestedPagesRef = useRef(new Set());
+  const containerRef = useRef(null);
+  const prevScrollHeightRef = useRef(0);
+  const restoreScrollRef = useRef(false);
+
+  /* -------------------------------------------
+   * SOCKET LISTENERS
+  --------------------------------------------*/
   useEffect(() => {
     if (!connected || !userId) return;
 
-    // Update chat list event
     const onUpdateChatList = (data) => {
       try {
-        console.log("update_chat_list socket event:", data);
-
         const lastMsgObj = {
           content: data?.content || data?.lastMessage?.content || "",
           createdAt:
@@ -54,6 +63,7 @@ const ChatsList = () => {
           lastMessage: lastMsgObj,
           unreadCount: data?.unreadCount ?? 1,
           withUser: data?.withUser || null,
+          bookingSummary: data?.bookingSummary || null,
         };
 
         dispatch(upsertChat(chatSummary));
@@ -69,11 +79,11 @@ const ChatsList = () => {
     };
   }, [connected]);
 
-  // Fetch chats for user
   useEffect(() => {
     if (!userId) return;
 
-    dispatch(fetchChatsForUser(userId));
+    requestedPagesRef.current.add(1);
+    dispatch(fetchChatsForUser({ userId, page: 1 }));
 
     MessagesService.getAllUnreadMessagesOfAUser(userId)
       .then((res) => {
@@ -82,26 +92,85 @@ const ChatsList = () => {
       })
       .catch(() => {});
   }, [userId]);
-  // UI return
-  if (loading)
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "200px",
-        }}
-      >
-        <Spin size="large" />
-      </div>
-    );
+
+  useEffect(() => {
+    if (!chats) return;
+    if (chats.length === 0) setHasMore(false);
+  }, [chats]);
+
+  useEffect(() => {
+    try {
+      const total = (chats || []).reduce((acc, c) => {
+        const v = Number(c?.unreadCount || 0);
+        return acc + (Number.isFinite(v) ? v : 0);
+      }, 0);
+      setUnreadCount(total);
+    } catch (err) {
+      // ignore
+    }
+  }, [chats]);
+
+  const loadNextPage = async (next) => {
+    if (!userId || !hasMore) return;
+
+    setIsLoadingMore(true);
+
+    // Save scroll height before new items come
+    const container = containerRef.current;
+    if (container) {
+      prevScrollHeightRef.current = container.scrollHeight;
+      restoreScrollRef.current = true;
+    }
+
+    try {
+      const res = await dispatch(fetchChatsForUser({ userId, page: next }));
+      const data = res.payload?.data || [];
+      const total =
+        res.payload?.pagination?.total ?? chats.length + data.length;
+
+      if (data.length > 0) setPage(next);
+      setHasMore(chats.length + data.length < total);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (!restoreScrollRef.current) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const newHeight = container.scrollHeight;
+    const oldHeight = prevScrollHeightRef.current;
+
+    container.scrollTop += newHeight - oldHeight;
+
+    restoreScrollRef.current = false;
+  }, [chats]);
+
+  const handleScroll = (e) => {
+    const target = e.target;
+
+    const distanceFromBottom =
+      target.scrollHeight - (target.scrollTop + target.clientHeight);
+
+    if (distanceFromBottom < 150 && !isLoadingMore && hasMore) {
+      const next = page + 1;
+      if (!requestedPagesRef.current.has(next)) {
+        requestedPagesRef.current.add(next);
+        loadNextPage(next);
+      }
+    }
+  };
 
   const filtered = (chats || []).filter((c) => {
     if (!query) return true;
-    const summary = c.bookingSummary || {};
-    const partner = c.withUser || {};
+
     const q = query.toLowerCase();
+    const partner = c.withUser || {};
+    const summary = c.bookingSummary || {};
+
     return (
       String(summary.id || "")
         .toLowerCase()
@@ -115,125 +184,126 @@ const ChatsList = () => {
     );
   });
 
+  if (loading)
+    return (
+      <div
+        style={{
+          height: 200,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+
   return (
     <div style={{ padding: 20 }}>
       <div
         style={{
+          marginBottom: 12,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 12,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <h2 style={{ margin: 0 }}>Chats</h2>
-          <Badge count={unreadCount} />
-        </div>
+        <h2 style={{ margin: 0 }}>
+          Chats <Badge count={unreadCount} />
+        </h2>
+
         <Input.Search
-          placeholder="Search by booking id or message"
+          placeholder="Search by booking or message"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ width: 320 }}
           allowClear
+          style={{ width: 320 }}
         />
       </div>
 
-      <List
-        itemLayout="horizontal"
-        dataSource={filtered}
-        renderItem={(chat) => {
-          const last = chat.lastMessage || {};
-          const summary = chat.bookingSummary || {};
-          return (
-            <List.Item
-              onClick={async () => {
-                try {
-                  // mark messages as read for this booking
-                  await dispatch(
-                    markMessagesAsRead({ bookingId: chat.bookingId, userId })
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        style={{ maxHeight: "65vh", overflowY: "auto" }}
+      >
+        <List
+          itemLayout="horizontal"
+          dataSource={filtered}
+          renderItem={(chat) => {
+            const last = chat.lastMessage || {};
+            const summary = chat.bookingSummary || {};
+            return (
+              <List.Item
+                style={{
+                  cursor: "pointer",
+                  padding: 12,
+                  marginBottom: 8,
+                  borderRadius: 8,
+                  background: "white",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                }}
+                onClick={() => {
+                  dispatch(
+                    markMessagesAsRead({
+                      bookingId: chat.bookingId,
+                      userId,
+                    })
                   );
-                } catch (err) {
-                  console.error("Failed to mark messages as read:", err);
-                }
-                navigate(`/dash/messages/${chat.bookingId}`, {
-                  state: {
-                    from: "chatsList",
-                    chatPartner: chat.withUser,
-                  },
-                });
-              }}
-              style={{
-                cursor: "pointer",
-                padding: 12,
-                borderRadius: 8,
-                marginBottom: 8,
-                background: "white",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-              }}
-            >
-              <List.Item.Meta
-                avatar={
-                  <Avatar
-                    size={48}
-                    src={chat.withUser?.profilePhoto || undefined}
-                  >
-                    {(!chat.withUser?.profilePhoto &&
-                      (chat.withUser?.fullName || "").charAt(0)) ||
-                      (summary.status || "").charAt(0)}
-                  </Avatar>
-                }
-                title={
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div style={{ fontWeight: 600 }}>
-                      {chat.withUser?.fullName || summary.id || chat.bookingId}
-                    </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+
+                  navigate(`/dash/messages/${chat.bookingId}`, {
+                    state: {
+                      from: "chatsList",
+                      chatPartner: chat.withUser,
+                    },
+                  });
+                }}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <Avatar
+                      size={48}
+                      src={chat.withUser?.profilePhoto || undefined}
                     >
-                      <div style={{ fontSize: 12, color: "#666" }}>
+                      {chat.withUser?.fullName?.charAt(0)}
+                    </Avatar>
+                  }
+                  title={
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        width: "100%",
+                      }}
+                    >
+                      <b>{chat.withUser?.fullName || chat.bookingId}</b>
+                      <span style={{ fontSize: 12, color: "#666" }}>
                         {last.createdAt
                           ? new Date(last.createdAt).toLocaleString()
                           : ""}
-                      </div>
+                      </span>
+
                       {chat.unreadCount > 0 && (
                         <Badge count={chat.unreadCount} />
                       )}
                     </div>
-                  </div>
-                }
-                description={
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: "#333",
-                        whiteSpace: "nowrap",
-                        textOverflow: "ellipsis",
-                        overflow: "hidden",
-                        maxWidth: 420,
-                      }}
-                    >
+                  }
+                  description={
+                    <span style={{ color: "#444" }}>
                       {last.content || "No messages yet"}
-                    </div>
-                  </div>
-                }
-              />
-            </List.Item>
-          );
-        }}
-      />
+                    </span>
+                  }
+                />
+              </List.Item>
+            );
+          }}
+        />
+
+        {isLoadingMore && (
+          <div style={{ textAlign: "center", padding: 12 }}>
+            <Spin />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

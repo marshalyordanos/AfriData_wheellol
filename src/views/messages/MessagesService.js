@@ -17,8 +17,9 @@ class MessagesService {
       return response.data;
     });
   }
-  getAllMessageChatsOfAUser(id) {
-    return api.get("/messages/chats/user/" + id).then((response) => {
+  getAllMessageChatsOfAUser(id, page = 1, pageSize = 20) {
+    const qs = `?page=${page}&pageSize=${pageSize}`;
+    return api.get(`/messages/chats/user/${id}${qs}`).then((response) => {
       return response.data;
     });
   }
