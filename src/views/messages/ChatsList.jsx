@@ -184,7 +184,8 @@ const ChatsList = () => {
     );
   });
 
-  if (loading)
+  // show full-page loader only on initial load when there are no chats yet
+  if (loading && (!chats || chats.length === 0))
     return (
       <div
         style={{

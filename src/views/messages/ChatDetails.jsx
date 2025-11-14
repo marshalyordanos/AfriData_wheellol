@@ -49,6 +49,9 @@ const ChatDetails = () => {
   const [hasMore, setHasMore] = useState(true);
   const requestedPagesRef = React.useRef(new Set());
   const [sending, setSending] = useState(false);
+  // track last message time and optimistic key to decide when to auto-scroll
+  const prevLastCreatedAtRef = React.useRef(0);
+  const optimisticKeyRef = React.useRef("");
 
   // get partner user from navigation state or messages
   const navFrom = location.state?.from || null;
@@ -152,13 +155,32 @@ const ChatDetails = () => {
     return [...src, ...opts];
   }, [messages, optimistic]);
 
-  // auto-scroll to bottom when visible message list grows or optimistic changes
+  // auto-scroll to bottom only when new messages are appended (incoming or optimistic)
   useEffect(() => {
-    if (messagesRef.current) {
-      // scroll to bottom to show newest messages
+    if (!messagesRef.current) return;
+
+    const last = sortedMessages.length
+      ? new Date(
+          sortedMessages[sortedMessages.length - 1].createdAt
+        ).getTime() || 0
+      : 0;
+
+    const optKey = (optimistic || []).map((m) => m.id || m.content).join("|");
+
+    const prevLast = prevLastCreatedAtRef.current || 0;
+    const prevOpt = optimisticKeyRef.current || "";
+
+    // If optimistic messages changed, scroll to bottom
+    if (optKey !== prevOpt) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    } else if (last > prevLast) {
+      // a new server message was appended at the bottom
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
-  }, [sortedMessages.length]);
+
+    prevLastCreatedAtRef.current = last;
+    optimisticKeyRef.current = optKey;
+  }, [sortedMessages.length, optimistic]);
 
   // load previous messages when scrolling to top
   const handleScroll = async (e) => {
@@ -273,7 +295,8 @@ const ChatDetails = () => {
     }
   };
 
-  if (loading)
+  // show full-page loader only on initial load (no messages yet)
+  if (loading && (!messages || messages.length === 0))
     return (
       <div
         style={{
@@ -333,6 +356,11 @@ const ChatDetails = () => {
           marginBottom: 12,
         }}
       >
+        {isLoadingMore && (
+          <div style={{ textAlign: "center", marginBottom: 8 }}>
+            <Spin size="small" />
+          </div>
+        )}
         {(!messages || messages.length === 0) && (
           <div style={{ textAlign: "center", color: "#888" }}>
             No messages yet

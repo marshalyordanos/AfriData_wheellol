@@ -143,7 +143,9 @@ const NotificationsList = ({ open, onClose }) => {
       width={400}
       bodyStyle={{ padding: 12 }}
     >
-      {loading && page === 1 ? (
+      {loading &&
+      page === 1 &&
+      (!notifications || notifications.length === 0) ? (
         <div style={{ textAlign: "center", padding: 40 }}>
           <Spin size="large" />
         </div>
