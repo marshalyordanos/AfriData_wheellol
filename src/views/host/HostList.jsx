@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 //import { HeaderStyle, SearchInputStyle } from '../../components/commons/CommonStyles';
 import { useDispatch, useSelector } from "react-redux";
 import { searchHost, updateHostState, hostSearchText } from "./HostRedux";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const UserList = () => {
   const navigate = useNavigate();
@@ -367,6 +368,10 @@ const UserList = () => {
       </div>
 
       <div className="block md:hidden px-6">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {userData && userData.length > 0 ? (
           userData.map((u) => (
             <CommonCard

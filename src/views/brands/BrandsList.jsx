@@ -13,6 +13,7 @@ import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import BrandsEdit from "./BrandsEdit";
 import brandsService from "./BrandsService";
 import { updateBrandsState, brandsSearchText } from "./BrandsRedux";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const BrandsList = () => {
   const [brandsData, setBrandsData] = useState([]);
@@ -270,6 +271,10 @@ const BrandsList = () => {
 
       {/* Mobile cards */}
       <div className="block md:hidden px-4">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {brandsData && brandsData.length > 0 ? (
           brandsData.map((b) => (
             <CommonCard

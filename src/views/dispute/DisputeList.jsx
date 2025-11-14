@@ -26,6 +26,7 @@ import {
   disputeQuery,
   disputeList,
 } from "./DisputetRedux";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const { confirm } = Modal;
 
@@ -308,6 +309,10 @@ const DisputeList = () => {
 
       {/* Mobile cards */}
       <div className="block md:hidden px-6">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {disputes && disputes.length > 0 ? (
           disputes.map((d) => (
             <CommonCard

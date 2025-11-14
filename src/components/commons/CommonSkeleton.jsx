@@ -12,7 +12,6 @@ const CommonCardSkeleton = () => {
       }}
       className="shadow-lg"
     >
-      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -22,11 +21,9 @@ const CommonCardSkeleton = () => {
       >
         <Skeleton.Input active size="small" style={{ width: 150 }} />
 
-        {/* Dropdown button placeholder */}
         <Skeleton.Input active size="small" style={{ width: 25 }} />
       </div>
 
-      {/* Details – render 3 to 5 rows */}
       {[1, 2, 3, 4].map((i) => (
         <div key={i} style={{ marginBottom: 10 }}>
           <div

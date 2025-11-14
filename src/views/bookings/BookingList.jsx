@@ -37,6 +37,7 @@ import {
   selectbookingSummary,
   selectCurrentUser,
 } from "../../redux/auth/authSlice";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const BookingList = () => {
   const dispatch = useDispatch();
@@ -663,6 +664,11 @@ const BookingList = () => {
             pageSize={Number(limit) || 10}
           />
         </div>
+
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
 
         <div className="block md:hidden px-6">
           {bookingData && bookingData.length > 0 ? (

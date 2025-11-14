@@ -22,6 +22,7 @@ import RolesService from "./RoleService";
 import PermissionService from "../permissions/PermissionService";
 import CommonCard from "../../components/commons/CommonCard";
 import { Pagination } from "antd";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const PAGE_SIZE = 10;
 
@@ -642,6 +643,10 @@ const RoleList = () => {
 
       {/* Mobile cards */}
       <div className="block md:hidden px-4">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {data && data.length > 0 ? (
           data.map((role) => (
             <CommonCard

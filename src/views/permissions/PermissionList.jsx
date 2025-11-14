@@ -27,6 +27,7 @@ import {
   permissionsLimit,
   permissionsSearchText,
 } from "./PermissionRedux";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const PAGE_SIZE = 10;
 
@@ -258,6 +259,10 @@ const PermissionList = () => {
 
       {/* Mobile card list */}
       <div className="block md:hidden px-4">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {data && data.length > 0 ? (
           data.map((rec) => (
             <CommonCard

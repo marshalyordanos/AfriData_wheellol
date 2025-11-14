@@ -610,11 +610,11 @@ const CarsList = () => {
         />
       </div>
 
-      {loading &&
-        Array(5)
-          .fill(1)
-          .map((_) => <CommonCardSkeleton />)}
       <div className="block md:hidden">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {filteredCars.length > 0 &&
           filteredCars.map((car) => {
             return (

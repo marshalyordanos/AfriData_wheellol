@@ -17,6 +17,7 @@ import {
   updateCartypesState,
   cartypesSearchText,
 } from "./CartypesRedux";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const CartypesList = () => {
   const [cartypesData, setCartypesData] = useState([]);
@@ -305,6 +306,10 @@ const CartypesList = () => {
       </div>
 
       <div className="block md:hidden px-4">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {cartypesData && cartypesData.length > 0 ? (
           cartypesData.map((ct) => (
             <CommonCard

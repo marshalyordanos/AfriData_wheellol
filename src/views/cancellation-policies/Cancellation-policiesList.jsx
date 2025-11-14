@@ -27,6 +27,7 @@ import {
   selectCancellationLoading,
   setQuery,
 } from "./Cancellation-policiesRedux";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const CancellationPoliciesList = () => {
   const navigate = useNavigate();
@@ -372,6 +373,10 @@ const CancellationPoliciesList = () => {
       </div>
 
       <div className="block md:hidden px-4">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {policies && policies.length > 0 ? (
           policies.map((p) => (
             <CommonCard

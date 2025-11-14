@@ -20,6 +20,7 @@ import StaffAddEdit from "./StaffAddEdit";
 import { useDispatch, useSelector } from "react-redux";
 import { searchStaff, updateStaffState, staffSearchText } from "./StaffRedux";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const StaffList = () => {
   const navigate = useNavigate();
@@ -348,6 +349,10 @@ const StaffList = () => {
 
       {/* Mobile card list */}
       <div className="block md:hidden px-6">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {staffData && staffData.length > 0 ? (
           staffData.map((s) => (
             <CommonCard

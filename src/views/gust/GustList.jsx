@@ -7,6 +7,7 @@ import GustService from "./GustService";
 import { useDispatch, useSelector } from "react-redux";
 import { searchGust, updateGustState, gustSearchText } from "./GustRedux";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const GustList = () => {
   const navigate = useNavigate();
@@ -226,6 +227,10 @@ const GustList = () => {
       </div>
 
       <div className="block md:hidden px-6">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {gustData && gustData.length > 0 ? (
           gustData.map((g) => (
             <CommonCard

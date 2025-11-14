@@ -30,6 +30,7 @@ import {
 import { useSelector } from "react-redux";
 import { selectpaymentSummary } from "../../redux/auth/authSlice";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const { confirm } = Modal;
 
@@ -508,6 +509,10 @@ const PaymentList = () => {
       </div>
 
       <div className="block md:hidden px-6">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_) => <CommonCardSkeleton />)}
         {payments && payments.length > 0 ? (
           payments.map((p) => (
             <CommonCard
