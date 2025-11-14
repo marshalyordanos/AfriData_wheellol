@@ -146,14 +146,38 @@ const CommonCard = ({
         }}
       >
         {title && (
-          <div>
-            {Array.isArray(title)
-              ? title.map((t, i) => (
-                  <span key={i} style={{ marginRight: 5 }}>
-                    {formatValue(getNestedValue(item, t)) || t}
-                  </span>
-                ))
-              : formatValue(getNestedValue(item, title)) || title}
+          <div style={{ maxWidth: "72%" }}>
+            {Array.isArray(title) ? (
+              title.map((t, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "inline-block",
+                    marginRight: 6,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  {formatValue(getNestedValue(item, t)) || t}
+                </div>
+              ))
+            ) : (
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {formatValue(getNestedValue(item, title)) || title}
+              </div>
+            )}
           </div>
         )}
         <Dropdown

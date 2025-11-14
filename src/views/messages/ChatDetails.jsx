@@ -139,12 +139,26 @@ const ChatDetails = () => {
     };
   }, [connected, currentUserId, id]);
 
-  // auto-scroll to bottom when messages change
+  // prepare messages in ascending order (oldest -> newest)
+  const sortedMessages = React.useMemo(() => {
+    const src = Array.isArray(messages) ? [...messages] : [];
+    src.sort((a, b) => {
+      const ta = new Date(a.createdAt).getTime() || 0;
+      const tb = new Date(b.createdAt).getTime() || 0;
+      return ta - tb;
+    });
+    // optimistic messages should appear after server messages (newest at bottom)
+    const opts = Array.isArray(optimistic) ? [...optimistic] : [];
+    return [...src, ...opts];
+  }, [messages, optimistic]);
+
+  // auto-scroll to bottom when visible message list grows or optimistic changes
   useEffect(() => {
     if (messagesRef.current) {
+      // scroll to bottom to show newest messages
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
-  }, [messages, optimistic]);
+  }, [sortedMessages.length]);
 
   // load previous messages when scrolling to top
   const handleScroll = async (e) => {
@@ -326,12 +340,11 @@ const ChatDetails = () => {
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {[...(messages || []), ...optimistic]?.map((m) => {
+          {sortedMessages.map((m) => {
             const senderId =
               m.senderId || m.sender?._id || m.sender?.id || m.sender;
             const mine = String(senderId) === String(currentUserId);
 
-            // prefer sender object profile, otherwise fallback
             const senderObj =
               m.sender || (mine ? currentUser : partnerUser) || {};
             const avatarSrc =
@@ -340,7 +353,9 @@ const ChatDetails = () => {
 
             return (
               <div
-                key={m._id || m.id || Math.random()}
+                key={
+                  m._id || m.id || `${m.bookingId || ""}-${m.createdAt || ""}`
+                }
                 style={{
                   display: "flex",
                   justifyContent: mine ? "flex-end" : "flex-start",
