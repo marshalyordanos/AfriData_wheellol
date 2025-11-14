@@ -232,7 +232,7 @@ const RegistrationPage = () => {
 
             <Form.Item>
               <button
-                className="bg-[var(--color-primary)] text-white w-full h-[40px] rounded-lg text-base font-medium shadow hover:opacity-80"
+                className="bg-[var(--color-primary)] text-white w-full h-[40px] rounded-lg text-xl  font-medium shadow hover:opacity-80"
                 type="primary"
                 htmlType="submit"
                 loading={loading}
