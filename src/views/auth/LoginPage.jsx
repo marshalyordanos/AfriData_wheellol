@@ -198,14 +198,14 @@ const LoginPage = () => {
             </Form.Item>
 
             <div className="flex justify-between items-center">
-              <Button
-                className="bg-[var(--color-primary)] text-white rounded-lg w-full py-5 text-base font-medium shadow hover:opacity-90"
+              <button
+                className="bg-[var(--color-primary)] text-xl text-white rounded-lg w-full h-[40px]  font-medium shadow hover:opacity-90"
                 type="primary"
                 htmlType="submit"
                 loading={loading}
               >
-                Submit
-              </Button>
+                Login
+              </button>
             </div>
 
             <div className="text-right mt-2">
