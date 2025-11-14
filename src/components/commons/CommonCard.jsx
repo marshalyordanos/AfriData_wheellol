@@ -4,6 +4,9 @@ import { AiOutlineClockCircle, AiOutlineEdit } from "react-icons/ai";
 import { MdDelete } from "react-icons/md";
 import { Button, Dropdown } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "../../redux/auth/authSlice";
 
 // Helper function to format numbers
 export function formatNumberHuman(value) {
@@ -69,6 +72,22 @@ const CommonCard = ({
   actionItems = [],
   onCardClick,
 }) => {
+  const navigate = useNavigate();
+  const User = useSelector(selectCurrentUser);
+  const currentUser = User || User.user;
+
+  const normalizeRole = (u) => {
+    if (!u) return null;
+    if (typeof u === "string") return u.toLowerCase();
+    if (u.role) {
+      if (typeof u.role === "string") return u.role.toLowerCase();
+      if (u.role.name) return String(u.role.name).toLowerCase();
+    }
+    if (u.user) return normalizeRole(u.user);
+    return null;
+  };
+
+  const currentRole = normalizeRole(currentUser) || "superadmin";
   const [modalVisible, setModalVisible] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [remark, setRemark] = useState("");
@@ -255,6 +274,24 @@ const CommonCard = ({
             </button>
           )}
       </div>
+
+      {/* Chat button for disputes visible to non-hosts / superadmin */}
+      {item && item.dispute && currentRole !== "host" && (
+        <div style={{ marginTop: 10 }}>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              const bookingId = item.id || item._id;
+              if (bookingId)
+                navigate(`/dash/messages/${bookingId}`, {
+                  state: { from: "card", chatPartner: item.guest },
+                });
+            }}
+          >
+           Go To Chat
+          </Button>
+        </div>
+      )}
 
       {/* Delete Modal */}
       {modalVisible && (

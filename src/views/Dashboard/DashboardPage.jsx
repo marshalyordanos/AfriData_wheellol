@@ -392,7 +392,7 @@ const DashboardPage = () => {
                   startDate: "Start Date",
                   endDate: "End Date",
                 }}
-                // title={["make.name", "model.name"]}
+                title={["car.make.name", "car.model.name"]}
                 actionItems={[]}
                 onActionClick={() => {}}
                 onCardClick={(item) => {

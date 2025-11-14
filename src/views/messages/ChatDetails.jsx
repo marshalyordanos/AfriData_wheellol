@@ -411,7 +411,7 @@ const ChatDetails = () => {
                       background: mine
                         ? "var(--color-primary)"
                         : "var(--color-secondary)",
-                      color: mine ? "#fff" : "#111",
+                      color: mine ? "#fff" : "#fcf5f5ff",
                       padding: "10px 14px",
                       borderRadius: 12,
                       boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
@@ -479,7 +479,7 @@ const ChatDetails = () => {
             borderColor: canSendMessage ? "var(--color-primary)" : "#ccc",
             cursor: canSendMessage ? "pointer" : "not-allowed",
           }}
-          loading={sending}
+          // loading={sending}
         >
           Send
         </Button>
