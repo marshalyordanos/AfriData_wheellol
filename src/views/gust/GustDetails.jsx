@@ -34,6 +34,8 @@ const GustDetail = () => {
     }
   }, [id]);
 
+  console.log("GUESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSST", gust);
+
   const refreshGust = async () => {
     if (!id) return;
     try {
@@ -152,6 +154,15 @@ const GustDetail = () => {
         <p className="detail_value">{gust?.phone}</p>
       </div>
 
+      {/* guestProfile extra fields */}
+      {gust?.guestProfile?.address && (
+        <div className="detail_child">
+          <p className="detail_key">Address:</p>
+          <p className="detail_value">{gust.guestProfile.address}</p>
+        </div>
+      )}
+
+
       {gust?.profilePhoto && (
         <div className="detail_child">
           <p className="detail_key">Profile Photo:</p>
@@ -167,29 +178,29 @@ const GustDetail = () => {
         </div>
       )}
 
-      {gust?.driverLicense && (
+      {gust?.guestProfile?.driverLicenseId && (
         <div className="detail_child">
           <p className="detail_key">Driver License:</p>
           <img
             src={
-              typeof gust.driverLicense === "string"
-                ? gust.driverLicense
-                : URL.createObjectURL(gust.driverLicense)
+              typeof gust.guestProfile.driverLicenseId === "string"
+                ? gust.guestProfile.driverLicenseId
+                : URL.createObjectURL(gust.guestProfile.driverLicenseId)
             }
             alt="Driver License"
             style={{ maxWidth: 120, borderRadius: 8 }}
           />
         </div>
       )}
-
-      {gust?.nationalId && (
+  
+      {gust?.guestProfile?.nationalId && (
         <div className="detail_child">
           <p className="detail_key">National ID:</p>
           <img
             src={
-              typeof gust.nationalId === "string"
-                ? gust.nationalId
-                : URL.createObjectURL(gust.nationalId)
+              typeof gust.guestProfile.nationalId === "string"
+                ? gust.guestProfile.nationalId
+                : URL.createObjectURL(gust.guestProfile.nationalId)
             }
             alt="National ID"
             style={{ maxWidth: 120, borderRadius: 8 }}
