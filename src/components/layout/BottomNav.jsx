@@ -17,11 +17,12 @@ const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentUser = useSelector(selectCurrentUser);
+  const isSuperAdmin = currentUser.user?.isSuperAdmin || currentUser.isSuperAdmin;
 
   const buttons = [
     { icon: <HomeOutlined />, path: "/dash" },
     { icon: <SiBookstack />, path: "/dash/bookings" },
-    currentUser?.isSuperAdmin
+    isSuperAdmin
       ? { icon: <UserOutlined />, path: "/dash/gust" }
       : { icon: <MessageOutlined />, path: "/dash/messages" },
 

@@ -231,14 +231,20 @@ const RegistrationPage = () => {
             </Form.Item>
 
             <Form.Item>
-              <button
-                className="bg-[var(--color-primary)] text-white w-full h-[40px] rounded-lg text-xl  font-medium shadow hover:opacity-80"
+              <Button
                 type="primary"
                 htmlType="submit"
                 loading={loading}
+                block
+                size="large"
+                className="rounded-lg h-[40px] text-xl font-medium"
+                style={{
+                  background: "var(--color-primary)",
+                  borderColor: "var(--color-primary)",
+                }}
               >
                 Register
-              </button>
+              </Button>
             </Form.Item>
 
             <div className="text-center mt-6 text-sm text-gray-600">

@@ -63,7 +63,7 @@ const PaymentDetails = () => {
   }, [id]);
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 768px)");
+    const mq = window.matchMedia("(max-width: 555px)");
     const handler = (e) => setIsMobile(e.matches);
     handler(mq);
     mq.addEventListener?.("change", handler);
@@ -113,19 +113,35 @@ const PaymentDetails = () => {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: isMobile ? "flex-start" : "space-between",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: isMobile ? 12 : 0,
           marginBottom: 20,
         }}
       >
-        <Space>
+        <Space style={{ width: isMobile ? "100%" : "auto" }}>
           <CreditCardOutlined style={{ fontSize: 26, color: "#1677ff" }} />
-          <Title level={3} style={{ margin: 0 }}>
+          <Title
+            level={3}
+            style={{
+              margin: 0,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: isMobile ? "100%" : 420,
+            }}
+          >
             Payment Overview
           </Title>
         </Space>
 
-        <Space>
+        <Space
+          style={{
+            width: isMobile ? "100%" : "auto",
+            marginTop: isMobile ? 10 : 0,
+          }}
+        >
           <Button
             icon={<SyncOutlined />}
             onClick={() => {
@@ -134,7 +150,8 @@ const PaymentDetails = () => {
             }}
             type="default"
             loading={loading}
-            style={{ marginRight: 8 }}
+            style={{ marginRight: isMobile ? 0 : 8 }}
+            block={isMobile}
           >
             Refresh
           </Button>
@@ -142,6 +159,7 @@ const PaymentDetails = () => {
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate(-1)}
             type="primary"
+            block={isMobile}
           >
             Back
           </Button>
