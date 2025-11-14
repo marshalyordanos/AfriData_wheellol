@@ -41,6 +41,7 @@ import {
 } from "react-icons/fa";
 import { selectcarSummary } from "../../redux/auth/authSlice";
 import CommonCard from "../../components/commons/CommonCard";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 // ✅ Helper: find brand/model name from ID
 const findNameById = (items, id) => {
@@ -609,6 +610,10 @@ const CarsList = () => {
         />
       </div>
 
+      {loading &&
+        Array(5)
+          .fill(1)
+          .map((_) => <CommonCardSkeleton />)}
       <div className="block md:hidden">
         {filteredCars.length > 0 &&
           filteredCars.map((car) => {

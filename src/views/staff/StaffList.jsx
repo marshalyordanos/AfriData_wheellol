@@ -361,7 +361,7 @@ const StaffList = () => {
                 active: "Active",
               }}
               actionItems={items(s)}
-              onActionClick={(info, item) => onClick(info, item)}
+              onActionClick={onClick}
               onCardClick={(record) => {
                 const id = record?._id || record?.id;
                 if (id)
