@@ -101,6 +101,13 @@ const DisputeList = () => {
       title,
       onOk: fn,
       onCancel() {},
+      okButtonProps: {
+        style: {
+          backgroundColor: "var(--color-primary)",
+          borderColor: "var(--color-primary)",
+          color: "white",
+        },
+      },
     });
   };
 
@@ -356,6 +363,13 @@ const DisputeList = () => {
         title="Resolve Dispute"
         open={resolveModalVisible}
         onCancel={() => setResolveModalVisible(false)}
+        okButtonProps={{
+          style: {
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "white",
+          },
+        }}
         onOk={async () => {
           try {
             const values = await resolveForm.validateFields();

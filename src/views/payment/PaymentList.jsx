@@ -158,6 +158,13 @@ const PaymentList = () => {
       title,
       onOk: fn,
       onCancel() {},
+      okButtonProps: {
+        style: {
+          backgroundColor: "var(--color-primary)",
+          borderColor: "var(--color-primary)",
+          color: "white",
+        },
+      },
     });
   };
 
@@ -570,6 +577,13 @@ const PaymentList = () => {
         }}
         onOk={() => refundForm.submit()}
         confirmLoading={refundSubmitting}
+        okButtonProps={{
+          style: {
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "white",
+          },
+        }}
       >
         <Form form={refundForm} layout="vertical" onFinish={submitRefund}>
           {/* <Form.Item label="Booking ID">

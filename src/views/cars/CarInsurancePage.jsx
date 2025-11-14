@@ -64,7 +64,6 @@ const CarInsurancePage = () => {
         type="link"
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate("/dash/cars")}
-    
         style={{
           marginBottom: 16,
           background: "var(--color-primary)",
@@ -114,6 +113,11 @@ const CarInsurancePage = () => {
                     icon={<PlusOutlined />}
                     onClick={() => {
                       setIsModalOpen(true);
+                    }}
+                    style={{
+                      background: "var(--color-primary)",
+                      borderColor: "var(--color-primary)",
+                      color: "#fff",
                     }}
                   >
                     Add Insurance

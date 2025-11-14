@@ -38,6 +38,7 @@ const StaffList = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [roles, setRoles] = useState([]);
   const [selectedRoleId, setSelectedRoleId] = useState(null);
+  const [assignSubmitting, setAssignSubmitting] = useState(false);
   const delayTimerRef = useRef(null);
 
   const getPaginationInfo = () => [
@@ -223,6 +224,7 @@ const StaffList = () => {
       return;
     }
     try {
+      setAssignSubmitting(true);
       const payload = { userId: modeID, roleId: selectedRoleId };
       const res = await StaffService.assignRoleToStaff(payload);
       message.success(res?.message || "Role assigned successfully");
@@ -232,6 +234,8 @@ const StaffList = () => {
     } catch (err) {
       console.error(err);
       message.error(err?.response?.data?.message || "Failed to assign role");
+    } finally {
+      setAssignSubmitting(false);
     }
   };
 
@@ -285,6 +289,14 @@ const StaffList = () => {
         }}
         onOk={handleAssignRole}
         okText="Assign"
+        confirmLoading={assignSubmitting}
+        okButtonProps={{
+          style: {
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "white",
+          },
+        }}
       >
         <div>
           <Select

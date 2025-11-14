@@ -160,6 +160,10 @@ const PaymentDetails = () => {
             onClick={() => navigate(-1)}
             type="primary"
             block={isMobile}
+            style={{
+              borderColor: "var(--color-primary)",
+              backgroundColor: "var(--color-primary)",
+            }}
           >
             Back
           </Button>
@@ -248,11 +252,11 @@ const PaymentDetails = () => {
               whiteSpace: "nowrap",
             }}
           >
-            <CheckCircleOutlined style={{ color: "#1677ff" }} />
+            <CheckCircleOutlined style={{ color: "var(--color-primary)" }} />
             <Text strong style={{ whiteSpace: "nowrap" }}>
               Transactions
             </Text>
-            <Tag color="blue" style={{ marginLeft: 6 }}>
+            <Tag color="var(--color-primary)" style={{ marginLeft: 6 }}>
               {Array.isArray(payment.transactions)
                 ? payment.transactions.length
                 : 0}

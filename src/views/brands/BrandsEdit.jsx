@@ -54,8 +54,21 @@ const BrandsEdit = ({ mode, setMode, setIsModalOpen, searchData }) => {
       </Form.Item>
 
       <div className="flex justify-end gap-4">
-        <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-        <Button type="primary" htmlType="submit">
+        <Button
+          onClick={() => setIsModalOpen(false)}
+          
+        >
+          Cancel
+        </Button>
+        <Button
+          type="primary"
+          htmlType="submit"
+          style={{
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "white",
+          }}
+        >
           {mode ? "Update" : "Create"}
         </Button>
       </div>

@@ -132,8 +132,22 @@ const DisputeDetails = () => {
                 message.error("Operation failed");
               }
             }}
+            okButtonProps={{
+              style: {
+                backgroundColor: "var(--color-primary)",
+                borderColor: "var(--color-primary)",
+                color: "white",
+              },
+            }}
           >
-            <Button type="default" size={isMobile ? "small" : "middle"}>
+            <Button
+              size={isMobile ? "small" : "middle"}
+              style={{
+                backgroundColor: "var(--color-primary)",
+                borderColor: "var(--color-primary)",
+                color: "white",
+              }}
+            >
               Review
             </Button>
           </Popconfirm>
@@ -162,6 +176,13 @@ const DisputeDetails = () => {
               } catch {
                 message.error("Operation failed");
               }
+            }}
+            okButtonProps={{
+              style: {
+                backgroundColor: "var(--color-primary)",
+                borderColor: "var(--color-primary)",
+                color: "white",
+              },
             }}
           >
             <Button danger size={isMobile ? "small" : "middle"}>
@@ -315,6 +336,13 @@ const DisputeDetails = () => {
         title="Resolve Dispute"
         open={resolveModalVisible}
         onCancel={() => setResolveModalVisible(false)}
+        okButtonProps={{
+          style: {
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "white",
+          },
+        }}
         onOk={async () => {
           try {
             const values = await resolveForm.validateFields();

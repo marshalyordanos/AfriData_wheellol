@@ -275,8 +275,11 @@ const CancellationPoliciesList = () => {
           </button>
 
           <button
-            className="px-4  py-2 border border-[var(--color-primary)] 
-            text-white bg-[var(--color-primary)] rounded"
+            className="px-4  py-2 border border-[var(--color-primary)] rounded"
+            style={{
+              backgroundColor: "var(--color-primary)",
+              color: "white",
+            }}
             onClick={() => {
               // open create modal
               setEditingId(null);
@@ -335,7 +338,7 @@ const CancellationPoliciesList = () => {
           </Form.Item>
           {/* Status removed per request */}
           <Form.Item>
-            <Space>
+            <div style={{ display: "flex", gap: 8 }}>
               <Button
                 onClick={() => {
                   setIsModalVisible(false);
@@ -345,10 +348,18 @@ const CancellationPoliciesList = () => {
               >
                 Cancel
               </Button>
-              <Button type="primary" htmlType="submit" loading={saving}>
+              <Button
+                htmlType="submit"
+                loading={saving}
+                style={{
+                  backgroundColor: "var(--color-primary)",
+                  borderColor: "var(--color-primary)",
+                  color: "white",
+                }}
+              >
                 Save
               </Button>
-            </Space>
+            </div>
           </Form.Item>
         </Form>
       </Modal>
@@ -389,8 +400,28 @@ const CancellationPoliciesList = () => {
                 createdAt: "Created At",
               }}
               actionItems={[
-                { key: "update", label: <Button type="text">Update</Button> },
-                { key: "delete", label: <Button type="text">Delete</Button> },
+                {
+                  key: "update",
+                  label: (
+                    <Button
+                      type="text"
+                      style={{ color: "var(--color-primary)" }}
+                    >
+                      Update
+                    </Button>
+                  ),
+                },
+                {
+                  key: "delete",
+                  label: (
+                    <Button
+                      type="text"
+                      style={{ color: "var(--color-primary)" }}
+                    >
+                      Delete
+                    </Button>
+                  ),
+                },
               ]}
               onActionClick={(info, item) => handleAction(info.key, item)}
             />

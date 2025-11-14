@@ -143,11 +143,17 @@ const CarModelsList = () => {
             icon={<ReloadOutlined />}
             onClick={fetchData}
             loading={loading}
-            style={{ borderColor: "var(--color-primary)", color: "var(--color-primary)" }}
+            style={{
+              borderColor: "var(--color-primary)",
+              color: "var(--color-primary)",
+            }}
+          ></Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            style={{ backgroundColor: "var(--color-primary)" }}
+            onClick={openCreate}
           >
-            Refresh
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: "var(--color-primary)" }} onClick={openCreate}>
             Add Model
           </Button>
         </div>

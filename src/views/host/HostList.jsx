@@ -136,6 +136,13 @@ const UserList = () => {
             setLoading(false);
           }
         },
+        okButtonProps: {
+          style: {
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "white",
+          },
+        },
       });
       return;
     }
