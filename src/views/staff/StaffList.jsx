@@ -357,7 +357,7 @@ const StaffList = () => {
               fieldMap={{
                 email: "Email",
                 phone: "Phone",
-                role: "Role",
+                "role.name": "Role",
                 active: "Active",
               }}
               actionItems={items(s)}
