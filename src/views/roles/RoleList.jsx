@@ -228,6 +228,15 @@ const RoleList = () => {
   const [submitting, setSubmitting] = useState(false);
   const searchDebounceRef = useRef();
   const [form] = Form.useForm();
+  const [isNarrow, setIsNarrow] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 640 : false
+  );
+
+  useEffect(() => {
+    const onResize = () => setIsNarrow(window.innerWidth < 640);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const fetchList = useCallback(
     async (opts = {}) => {
@@ -451,6 +460,7 @@ const RoleList = () => {
   return (
     <div className="p-4">
       {/* Modal to show all permissions and actions for a role */}
+      
       <Modal
         open={permissionModal.open}
         onCancel={() => setPermissionModal({ open: false, role: null })}
@@ -460,124 +470,161 @@ const RoleList = () => {
             : "Permissions"
         }
         footer={null}
-        width={800}
-        bodyStyle={{ minHeight: 350, padding: 32 }}
+        width={Math.min(700, window.innerWidth - 40)}
+        style={{ maxWidth: "95vw" }}
+        bodyStyle={{ minHeight: 200, padding: 12 }}
       >
         {permissionModal.role &&
         permissionModal.role.rolePermissions &&
         permissionModal.role.rolePermissions.length > 0 ? (
-          <ul style={{ paddingLeft: 0 }}>
-            {permissionModal.role.rolePermissions.map((perm) => (
-              <li
-                key={perm.id}
-                style={{
-                  marginBottom: 16,
-                  display: "flex",
-                  alignItems: "center",
-                  borderBottom: "1px solid #eee",
-                  paddingBottom: 8,
-                }}
-              >
-                <div
+          <div
+            style={{
+              maxHeight: "60vh",
+              overflowY: "auto",
+              paddingRight: 6,
+            }}
+          >
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {permissionModal.role.rolePermissions.map((perm) => (
+                <li
+                  key={perm.id}
                   style={{
+                    marginBottom: 14,
+                    paddingBottom: 12,
+                    borderBottom: "1px solid #eee",
                     display: "flex",
-                    alignItems: "center",
-                    flex: 1,
-                    gap: 18,
+                    flexDirection: window.innerWidth < 600 ? "column" : "row",
+                    gap: 12,
                   }}
                 >
-                  <span style={{ fontWeight: 600, minWidth: 140 }}>
-                    {perm.permission?.resource || perm.permissionId}
-                  </span>
-                  <span>
-                    {perm.createAction && (
-                      <span
-                        style={{
-                          color: "#22c55e",
-                          fontWeight: 500,
-                          marginRight: 8,
-                        }}
-                      >
-                        Create
-                      </span>
-                    )}
-                    {perm.readAction && (
-                      <span
-                        style={{
-                          color: "#3b82f6",
-                          fontWeight: 500,
-                          marginRight: 8,
-                        }}
-                      >
-                        Read
-                      </span>
-                    )}
-                    {perm.updateAction && (
-                      <span
-                        style={{
-                          color: "#f59e42",
-                          fontWeight: 500,
-                          marginRight: 8,
-                        }}
-                      >
-                        Update
-                      </span>
-                    )}
-                    {perm.deleteAction && (
-                      <span
-                        style={{
-                          color: "#ef4444",
-                          fontWeight: 500,
-                          marginRight: 8,
-                        }}
-                      >
-                        Delete
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    marginLeft: "auto",
-                  }}
-                >
-                  <Button
-                    size="small"
-                    type="dashed"
+                  {/* RESOURCE NAME + ACTION BADGES */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 15,
+                        display: "block",
+                        marginBottom: 6,
+                        color: "#333",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {perm.permission?.resource || perm.permissionId}
+                    </span>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 8,
+                      }}
+                    >
+                      {perm.createAction && (
+                        <span
+                          style={{
+                            background: "#dcfce7",
+                            color: "#15803d",
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            fontSize: 13,
+                            fontWeight: 500,
+                          }}
+                        >
+                          Create
+                        </span>
+                      )}
+                      {perm.readAction && (
+                        <span
+                          style={{
+                            background: "#dbeafe",
+                            color: "#1d4ed8",
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            fontSize: 13,
+                            fontWeight: 500,
+                          }}
+                        >
+                          Read
+                        </span>
+                      )}
+                      {perm.updateAction && (
+                        <span
+                          style={{
+                            background: "#fef3c7",
+                            color: "#b45309",
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            fontSize: 13,
+                            fontWeight: 500,
+                          }}
+                        >
+                          Update
+                        </span>
+                      )}
+                      {perm.deleteAction && (
+                        <span
+                          style={{
+                            background: "#fee2e2",
+                            color: "#b91c1c",
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            fontSize: 13,
+                            fontWeight: 500,
+                          }}
+                        >
+                          Delete
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ACTION BUTTONS */}
+                  <div
                     style={{
-                      borderColor: "#4096ff",
-                      color: "#4096ff",
-                      fontWeight: 500,
+                      display: "flex",
+                      gap: 10,
+                      justifyContent:
+                        window.innerWidth < 600 ? "flex-start" : "flex-end",
                     }}
-                    onClick={() => openUpdateModal(permissionModal.role, perm)}
                   >
-                    Edit
-                  </Button>
-                  <Button
-                    size="small"
-                    type="default"
-                    danger
-                    style={{
-                      borderColor: "#ef4444",
-                      color: "#ef4444",
-                      fontWeight: 500,
-                      background: "#fff",
-                    }}
-                    onClick={() => openRemoveModal(permissionModal.role, perm)}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                    <Button
+                      size="small"
+                      type="default"
+                      style={{
+                        borderColor: "#4096ff",
+                        color: "#4096ff",
+                        fontWeight: 500,
+                      }}
+                      onClick={() =>
+                        openUpdateModal(permissionModal.role, perm)
+                      }
+                    >
+                      Edit
+                    </Button>
+
+                    <Button
+                      size="small"
+                      danger
+                      style={{
+                        fontWeight: 500,
+                        whiteSpace: "nowrap",
+                      }}
+                      onClick={() =>
+                        openRemoveModal(permissionModal.role, perm)
+                      }
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
           <span>No permissions assigned.</span>
         )}
       </Modal>
+
       <div className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700 mb-5">
         <div className="flex flex-col p-6 md:w-[45vw] w-full">
           <h1 className="text-2xl font-bold pb-4">Roles</h1>
@@ -699,6 +746,13 @@ const RoleList = () => {
         okText={editing ? "Save" : "Create"}
         onOk={handleSubmit}
         confirmLoading={submitting}
+        okButtonProps={{
+          style: {
+            background: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "#fff",
+          },
+        }}
         destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
@@ -744,6 +798,13 @@ const RoleList = () => {
         }
         onOk={handleAssignPermission}
         confirmLoading={assignPermissionLoading}
+        okButtonProps={{
+          style: {
+            background: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "#fff",
+          },
+        }}
         destroyOnClose
         width={700}
       >
@@ -953,7 +1014,12 @@ const RoleList = () => {
                 type="primary"
                 onClick={handleUpdatePermission}
                 loading={updatePermissionLoading}
-                style={{ minWidth: 100 }}
+                style={{
+                  minWidth: 100,
+                  background: "var(--color-primary)",
+                  borderColor: "var(--color-primary)",
+                  color: "#fff",
+                }}
               >
                 {updatePermissionLoading ? (
                   <span>
@@ -1002,6 +1068,13 @@ const RoleList = () => {
         }
         onOk={handleRemovePermission}
         confirmLoading={removePermissionLoading}
+        okButtonProps={{
+          style: {
+            background: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "#fff",
+          },
+        }}
         destroyOnClose
         width={350}
       >
