@@ -118,7 +118,9 @@ const StaffList = () => {
     },
   ];
 
-  const onClick = ({ key }, record) => {
+  const onClick = ({ key, domEvent }, record) => {
+    domEvent?.stopPropagation();
+
     const id = record?._id || record?.id;
     setModeID(id);
     setSelectedRecord(record);
