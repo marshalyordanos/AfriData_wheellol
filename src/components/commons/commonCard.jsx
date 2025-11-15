@@ -199,23 +199,31 @@ const CommonCard = ({
             )}
           </div>
         )}
-        <Dropdown
-          menu={{
-            items: actionItems,
-            onClick: ({ key, domEvent, item: menuItem }) => {
-              domEvent && domEvent.stopPropagation();
-              onActionClick && onActionClick({ key, domEvent, menuItem }, item);
-            },
-          }}
-          trigger={["click"]}
-          placement="bottomLeft"
-        >
-          <Button
-            type="text"
-            icon={<MoreOutlined style={{ fontSize: 20 }} />}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </Dropdown>
+        <div onClick={(e) => e.stopPropagation()}>
+          <Dropdown
+            menu={{
+              items: actionItems.map((action) => ({
+                ...action,
+                label: (
+                  <div style={{ pointerEvents: "none" }}>{action.label}</div>
+                ),
+              })),
+              onClick: ({ key, domEvent, item: menuItem }) => {
+                domEvent.stopPropagation();
+                onActionClick &&
+                  onActionClick({ key, domEvent, menuItem }, item);
+              },
+            }}
+            trigger={["click"]}
+            placement="bottomLeft"
+          >
+            <Button
+              type="text"
+              icon={<MoreOutlined style={{ fontSize: 20 }} />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
+        </div>
       </div>
 
       {/* Details */}
@@ -288,7 +296,7 @@ const CommonCard = ({
                 });
             }}
           >
-           Go To Chat
+            Go To Chat
           </Button>
         </div>
       )}
