@@ -460,7 +460,7 @@ const RoleList = () => {
   return (
     <div className="p-4">
       {/* Modal to show all permissions and actions for a role */}
-      
+
       <Modal
         open={permissionModal.open}
         onCancel={() => setPermissionModal({ open: false, role: null })}
@@ -641,7 +641,6 @@ const RoleList = () => {
         <div className="flex ml-6 mb-6 md:mr-6">
           <button
             onClick={() => {
-              // reset to first page and re-fetch using current limit
               setPage(1);
               setLimit(PAGE_SIZE);
               fetchList({ page: 1, limit: PAGE_SIZE });
