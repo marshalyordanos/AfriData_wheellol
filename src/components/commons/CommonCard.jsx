@@ -4,6 +4,9 @@ import { AiOutlineClockCircle, AiOutlineEdit } from "react-icons/ai";
 import { MdDelete } from "react-icons/md";
 import { Button, Dropdown } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "../../redux/auth/authSlice";
 
 // Helper function to format numbers
 export function formatNumberHuman(value) {
@@ -20,6 +23,36 @@ const getNestedValue = (obj, path) => {
   return path
     .split(".")
     .reduce((acc, part) => (acc ? acc[part] : undefined), obj);
+};
+
+// Normalize different value types to a renderable string
+const formatValue = (raw) => {
+  if (raw === null || raw === undefined) return "-";
+  if (Array.isArray(raw)) {
+    // join array of primitives or objects by name/id
+    const parts = raw.map((r) => {
+      if (r == null) return "";
+      if (typeof r === "object")
+        return r.name || r.title || r.id || JSON.stringify(r);
+      return String(r);
+    });
+    return parts.filter(Boolean).join(", ");
+  }
+  if (typeof raw === "object") {
+    // prefer common fields
+    if (raw.name) return String(raw.name);
+    if (raw.title) return String(raw.title);
+    if (raw.firstName || raw.lastName)
+      return `${raw.firstName || ""} ${raw.lastName || ""}`.trim();
+    if (raw.id) return String(raw.id);
+    try {
+      return JSON.stringify(raw);
+    } catch (e) {
+      return "-";
+    }
+  }
+  // primitive -> string
+  return String(raw);
 };
 
 const CommonCard = ({
@@ -39,6 +72,22 @@ const CommonCard = ({
   actionItems = [],
   onCardClick,
 }) => {
+  const navigate = useNavigate();
+  const User = useSelector(selectCurrentUser);
+  const currentUser = User || User.user;
+
+  const normalizeRole = (u) => {
+    if (!u) return null;
+    if (typeof u === "string") return u.toLowerCase();
+    if (u.role) {
+      if (typeof u.role === "string") return u.role.toLowerCase();
+      if (u.role.name) return String(u.role.name).toLowerCase();
+    }
+    if (u.user) return normalizeRole(u.user);
+    return null;
+  };
+
+  const currentRole = normalizeRole(currentUser) || "superadmin";
   const [modalVisible, setModalVisible] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [remark, setRemark] = useState("");
@@ -71,30 +120,28 @@ const CommonCard = ({
     setColor();
   }, [status]);
 
-  // Build details array dynamically
+  // Build details array dynamically and normalize values
   const details = Object.entries(fieldMap).map(([key, labelOrSuffix]) => {
-    const parts = labelOrSuffix.split("__");
+    const parts = String(labelOrSuffix).split("__");
     const label = parts[0]; // Display label
     const suffix = parts[1] || "";
-    console.log("item", item, key);
-    const rawValue = getNestedValue(item, key) ?? "";
-    const cleanValue =
-      typeof rawValue === "string"
-        ? rawValue.replace(/<[^>]*>/g, "").trim()
-        : rawValue;
+    const rawValue = getNestedValue(item, key);
+    let value = formatValue(rawValue);
 
-    const value = suffix
-      ? suffix === "ETB"
-        ? `${formatNumberHuman(
-            Number(cleanValue.toString().replace(/,/g, ""))
-          )} ${suffix}`
-        : `${cleanValue} ${suffix}`
-      : cleanValue;
+    if (suffix) {
+      if (suffix === "ETB") {
+        // attempt numeric formatting
+        const n = Number(String(value).replace(/,/g, ""));
+        value = isNaN(n) ? value : `${formatNumberHuman(n)} ${suffix}`;
+      } else {
+        value = `${value} ${suffix}`;
+      }
+    }
 
     return { label, value };
   });
 
-  console.log(details);
+  // details prepared for rendering
 
   return (
     <div
@@ -118,30 +165,65 @@ const CommonCard = ({
         }}
       >
         {title && (
-          <div>
-            {Array.isArray(title)
-              ? title.map((t, i) => (
-                  <span key={i} style={{ marginRight: 5, fontSize: 17 }}>
-                    {getNestedValue(item, t) || t}
-                  </span>
-                ))
-              : getNestedValue(item, title) || title}
+          <div style={{ maxWidth: "72%" }}>
+            {Array.isArray(title) ? (
+              title.map((t, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "inline-block",
+                    marginRight: 6,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  {formatValue(getNestedValue(item, t)) || t}
+                </div>
+              ))
+            ) : (
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {formatValue(getNestedValue(item, title)) || title}
+              </div>
+            )}
           </div>
         )}
-        <Dropdown
-          menu={{
-            items: actionItems,
-            onClick: (value) => onActionClick(value, item),
-          }}
-          trigger={["click"]}
-          placement="bottomLeft"
-        >
-          <Button
-            type="text"
-            icon={<MoreOutlined style={{ fontSize: 20 }} />}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </Dropdown>
+        <div onClick={(e) => e.stopPropagation()}>
+          <Dropdown
+            menu={{
+              items: actionItems.map((action) => ({
+                ...action,
+                label: (
+                  <div style={{ pointerEvents: "none" }}>{action.label}</div>
+                ),
+              })),
+              onClick: ({ key, domEvent, item: menuItem }) => {
+                domEvent.stopPropagation();
+                onActionClick &&
+                  onActionClick({ key, domEvent, menuItem }, item);
+              },
+            }}
+            trigger={["click"]}
+            placement="bottomLeft"
+          >
+            <Button
+              type="text"
+              icon={<MoreOutlined style={{ fontSize: 20 }} />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
+        </div>
       </div>
 
       {/* Details */}
@@ -200,6 +282,24 @@ const CommonCard = ({
             </button>
           )}
       </div>
+
+      {/* Chat button for disputes visible to non-hosts / superadmin */}
+      {item && item.dispute && currentRole !== "host" && (
+        <div style={{ marginTop: 10 }}>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              const bookingId = item.id || item._id;
+              if (bookingId)
+                navigate(`/dash/messages/${bookingId}`, {
+                  state: { from: "card", chatPartner: item.guest },
+                });
+            }}
+          >
+            Go To Chat
+          </Button>
+        </div>
+      )}
 
       {/* Delete Modal */}
       {modalVisible && (
