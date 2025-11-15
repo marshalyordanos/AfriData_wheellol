@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Input,
   Button,
@@ -7,63 +7,66 @@ import {
   Modal,
   message,
   Select,
-  DatePicker,
+  Pagination,
+  Form,
+  InputNumber,
 } from "antd";
-import { ReloadOutlined, MoreOutlined } from "@ant-design/icons";
+import { ReloadOutlined, MoreOutlined, PlusOutlined } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import api from "../../api/api";
-
+import { useDispatch, useSelector } from "react-redux";
+import { selectCurrentUser } from "../../redux/auth/authSlice";
+import {
+  fetchPayouts,
+  approvePayout,
+  rejectPayout,
+  selectPayouts,
+  selectPayoutsLoading,
+  selectPayoutsPagination,
+} from "./PayoutRedux";
 import CommonTable from "../../components/commons/CommonTable";
 import CommonCard from "../../components/commons/CommonCard";
-import { Pagination } from "antd";
-import PaymentService from "./PayoutService";
-import { Form, InputNumber } from "antd";
-import SummaryCard from "../../components/commons/SummaryCard";
-import {
-  FaCheckCircle,
-  FaDollarSign,
-  FaHourglassHalf,
-  FaTimesCircle,
-  FaUndoAlt,
-  FaWallet,
-} from "react-icons/fa";
-import { useSelector } from "react-redux";
-import { selectpaymentSummary } from "../../redux/auth/authSlice";
-import { selectCurrentUser } from "../../redux/auth/authSlice";
+import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
+import PayoutService from "./PayoutService";
 
 const { confirm } = Modal;
 
-const PaymentList = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const delayTimerRef = useRef(null);
-  const amountDebounceRef = useRef(null);
+const PayoutList = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [loading, setLoading] = useState(false);
-  const [payments, setPayments] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [localSearch, setLocalSearch] = useState("");
+  const payouts = useSelector(selectPayouts);
+  const loading = useSelector(selectPayoutsLoading);
+  const pagination = useSelector(selectPayoutsPagination);
+  const currentUser = useSelector(selectCurrentUser);
+
+  // derive host earnings safely
+  const hostEarnings =
+    currentUser?.user?.hostProfile?.earnings ||
+    currentUser?.hostProfile?.earnings ||
+    0;
+
+  // Payout modal state
+  const [payoutModalOpen, setPayoutModalOpen] = useState(false);
+  const [payoutSubmitting, setPayoutSubmitting] = useState(false);
+  const [payoutForm] = Form.useForm();
+  // Approve/Reject reason modal state
+  const [actionModalOpen, setActionModalOpen] = useState(false);
+  const [actionType, setActionType] = useState(null); // 'approve' | 'reject'
+  const [selectedPayout, setSelectedPayout] = useState(null);
+  const [actionSubmitting, setActionSubmitting] = useState(false);
+  const [actionForm] = Form.useForm();
+
+  const [searchText, setSearchText] = useState("");
   const [filters, setFilters] = useState({
     status: null,
-    method: null,
-    amountRange: [null, null],
+    bankType: null,
   });
-  const [refundModalOpen, setRefundModalOpen] = useState(false);
-  const [refundRecord, setRefundRecord] = useState(null);
-  const [refundSubmitting, setRefundSubmitting] = useState(false);
-  const [refundForm] = Form.useForm();
 
-  const getPaginationInfo = () => [
-    Number(searchParams.get("page") || 1),
-    Number(searchParams.get("limit") || 10),
-  ];
+  const debounceRef = useRef(null);
 
-  const [paymentSummary, setPaymentSummary] = useState("");
-  const currentPage = Number(searchParams.get("page") || 1);
-  const currentLimit = Number(searchParams.get("limit") || 10);
-  const [page, setPage] = useState(currentPage);
-  const [pageSize, setPageSize] = useState(currentLimit);
-  const currentUser = useSelector(selectCurrentUser);
+  const page = Number(searchParams.get("page") || 1);
+  const pageSize = Number(searchParams.get("limit") || 10);
 
   const normalizeRole = (u) => {
     if (!u) return null;
@@ -78,478 +81,412 @@ const PaymentList = () => {
 
   const currentRole = normalizeRole(currentUser) || "superadmin";
 
-  const fetchSummary = async () => {
-    try {
-      const res = await api.get("users/summary?entity=payment");
-      setPaymentSummary(res.data.data?.payment);
-
-      console.log("fetchSummary: ", res.data);
-    } catch (error) {
-      console.error("fetchSummary: ", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchSummary();
-  }, []);
-  const loadPayments = async ({
+  const loadData = ({
     page = 1,
-    pageSize = 10,
+    limit = 10,
     search = "",
     filter = null,
   } = {}) => {
-    setLoading(true);
-    try {
-      const res = await PaymentService.searchPayments({
-        page,
-        limit: pageSize,
-        searchText: search,
-        filter,
-      });
-      const list = Array.isArray(res.data) ? res.data : [];
-      setPayments(list);
-      setTotal(res.pagination?.total || res.total || list.length || 0);
-    } catch (err) {
-      console.error(err);
-      message.error("Failed to load payments");
-    } finally {
-      setLoading(false);
-    }
+    dispatch(fetchPayouts({ page, limit, searchText: search, filter }));
   };
 
   useEffect(() => {
-    const [pg, lm] = getPaginationInfo();
-    loadPayments({ page: pg, pageSize: lm });
-  }, []);
+    loadData({ page, limit: pageSize });
+  }, []); // Initial load
 
-  const handleSearch = (e) => {
-    const v = e.target.value;
-    setLocalSearch(v);
-    clearTimeout(delayTimerRef.current);
-    delayTimerRef.current = setTimeout(() => {
-      const [pg, lm] = getPaginationInfo();
-      setSearchParams({ page: 1, limit: lm });
-      // include current filters
-      const curFilter = buildFilterFromState(filters);
-      loadPayments({ page: 1, pageSize: lm, search: v, filter: curFilter });
-    }, 400);
-  };
-
-  const handlePagination = (pg, pageSize) => {
-    setSearchParams({ page: pg, limit: pageSize });
-    setPage(pg);
-    setPageSize(pageSize);
-    loadPayments({
-      page: pg,
-      pageSize,
-      search: localSearch,
-      filter: buildFilterFromState(filters),
-    });
-  };
-
-  useEffect(() => {
-    setPage(currentPage);
-    setPageSize(currentLimit);
-  }, [currentPage, currentLimit]);
-
-  const confirmAndRun = (title, fn) => {
-    confirm({
-      title,
-      onOk: fn,
-      onCancel() {},
-    });
-  };
-
-  const handleAction = async (action, record) => {
-    const id = record.id || record._id;
-    if (!id) return;
-    if (action === "refund") {
-      // open refund modal to collect amount and reason
-      setRefundRecord(record);
-      setRefundModalOpen(true);
-      return;
-    }
-
-    if (action === "release") {
-      confirmAndRun("Release payment to host?", async () => {
-        try {
-          await PaymentService.releasePayment({
-            bookingId: record.bookingId,
-            hostId: record.recipientId,
-          });
-          message.success("Release initiated");
-          loadPayments({
-            page: getPaginationInfo()[0],
-            pageSize: getPaginationInfo()[1],
-            search: localSearch,
-          });
-        } catch (err) {
-          console.error(err);
-          message.error("Release failed");
-        }
-      });
-      return;
-    }
-  };
-
-  // build filter object
-  const buildFilterFromState = (s) => {
+  /** Build filters for API */
+  const buildFilter = () => {
     const f = {};
-    if (s?.status) f.status = s.status;
-    if (s?.method) f.method = s.method;
-    const [min, max] = s?.amountRange || [];
-    if (min !== null && min !== undefined) f.amount_gte = min;
-    if (max !== null && max !== undefined) f.amount_lte = max;
+    if (filters.status) f.status = filters.status;
+    if (filters.bankType) f.bankType = filters.bankType;
     return Object.keys(f).length ? f : null;
   };
 
-  const handleFilterChange = (newFilters) => {
-    const merged = { ...filters, ...newFilters };
-    setFilters(merged);
-    const f = buildFilterFromState(merged);
-    const [pg, lm] = getPaginationInfo();
-    setSearchParams({ page: 1, limit: lm });
-    setPage(1);
-    loadPayments({ page: 1, pageSize: lm, search: localSearch, filter: f });
+  /** Handle search with debounce */
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchText(val);
+
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearchParams({ page: 1, limit: pageSize });
+      loadData({
+        page: 1,
+        limit: pageSize,
+        search: val,
+        filter: buildFilter(),
+      });
+    }, 500);
   };
 
-  const submitRefund = async (values) => {
-    if (!refundRecord) return;
-    const payload = {
-      bookingId: refundRecord.bookingId,
-      refundAmount: Number(values.refundAmount),
-      reason: values.reason || "",
-    };
-    try {
-      setRefundSubmitting(true);
-      await PaymentService.refundPayment(payload);
-      message.success("Refund sent");
-      setRefundModalOpen(false);
-      refundForm.resetFields();
-      loadPayments({ page: page, pageSize: pageSize, search: localSearch });
-    } catch (err) {
-      console.error(err);
-      message.error("Refund failed");
-    } finally {
-      setRefundSubmitting(false);
-    }
+  /** Handle filters */
+  const handleFilterChange = (type, value) => {
+    const newFilters = { ...filters, [type]: value };
+    setFilters(newFilters);
+
+    setSearchParams({ page: 1, limit: pageSize });
+    loadData({
+      page: 1,
+      limit: pageSize,
+      search: searchText,
+      filter: buildFilter(),
+    });
   };
 
-  const columns = [
-    {
-      title: " ",
-      dataIndex: "action",
-      render: (_, record) => (
+  /** Approve / Reject payout actions: open modal to collect reason */
+  const handleAction = (action, record) => {
+    setSelectedPayout(record);
+    setActionType(action);
+    actionForm.resetFields();
+    setActionModalOpen(true);
+  };
+
+  /** Table columns (hide action for hosts) */
+  const columns = [];
+
+  if (currentRole !== "host") {
+    columns.push({
+      title: "",
+      render: (_, r) => (
         <Dropdown
           menu={{
             items: [
-              { key: "refund", label: <Button type="text">Refund</Button> },
-              { key: "release", label: <Button type="text">Release</Button> },
+              { key: "approve", label: "Approve" },
+              { key: "reject", label: "Reject" },
             ],
-            onClick: (info) => {
-              try {
-                info.domEvent.stopPropagation();
-              } catch (e) {}
-              handleAction(info.key, record);
-            },
+            onClick: (i) => handleAction(i.key, r),
           }}
           trigger={["click"]}
         >
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-            onClick={(e) => e.stopPropagation()}
-          />
+          <Button type="text" icon={<MoreOutlined />} />
         </Dropdown>
       ),
-    },
-    {
-      title: "Payer",
-      dataIndex: ["payer", "firstName"],
-      key: "payer",
-      render: (_, r) =>
-        r.payer ? `${r.payer.firstName || ""} ${r.payer.lastName || ""}` : "-",
-    },
+    });
+  }
+
+  columns.push(
     {
       title: "Amount",
       dataIndex: "amount",
-      key: "amount",
-      render: (a, r) => `${a} ${r.currency || ""}`,
+      render: (a) => `${a} ETB`,
     },
     {
-      title: "Method",
-      dataIndex: "method",
-      key: "method",
-      render: (m) => m || "-",
+      title: "Bank",
+      dataIndex: "bankType",
+    },
+    {
+      title: "Account Number",
+      dataIndex: "accountNumber",
     },
     {
       title: "Status",
       dataIndex: "status",
-      key: "status",
       render: (s) => {
-        if (!s) return "-";
-        const st = String(s).toLowerCase();
-        let color = "default";
-        if (st.includes("completed") || st === "completed") color = "green";
-        else if (st.includes("refunded") || st === "refunded") color = "blue";
-        else if (st.includes("pending") || st === "pending") color = "orange";
+        const color =
+          s === "APPROVED" ? "green" : s === "REJECTED" ? "red" : "orange";
         return <Tag color={color}>{s}</Tag>;
       },
     },
     {
-      title: "Host Earnings",
-      dataIndex: "hostEarnings",
-      key: "hostEarnings",
-      render: (v, r) => (v || v === 0 ? `${v} ${r.currency || ""}` : "-"),
-    },
-    {
-      title: "Platform Fee",
-      dataIndex: "platformFee",
-      key: "platformFee",
-      render: (v, r) => (v || v === 0 ? `${v} ${r.currency || ""}` : "-"),
-    },
-    {
-      title: "Insurance Fee",
-      dataIndex: "insuranceFee",
-      key: "insuranceFee",
-      render: (v, r) => (v || v === 0 ? `${v} ${r.currency || ""}` : "-"),
-    },
-
-    { title: "Type", dataIndex: "type", key: "type" },
-    {
-      title: "Transactions",
-      dataIndex: "transactions",
-      key: "transactions",
-      render: (t) => (Array.isArray(t) ? t.length : 0),
-    },
-    {
       title: "Created At",
       dataIndex: "createdAt",
-      key: "createdAt",
-      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
-    },
-  ];
+      render: (d) => new Date(d).toLocaleString(),
+    }
+  );
 
-  const tableColumns =
-    currentRole === "host"
-      ? columns.filter((c) => c.dataIndex !== "action")
-      : columns;
+  /** On page change */
+  const handlePagination = (pg, ps) => {
+    setSearchParams({ page: pg, limit: ps });
+    loadData({
+      page: pg,
+      limit: ps,
+      search: searchText,
+      filter: buildFilter(),
+    });
+  };
 
   return (
-    <div>
-      <div className="flex gap-2 mb-6 flex-wrap px-6 my-3">
-        {/* Booking Cards */}
-
-        <SummaryCard
-          title="Total Payments"
-          value={paymentSummary?.totalPayments ?? 0}
-          Icon={FaWallet}
-          iconBgColor="bg-indigo-100"
-          iconColor="text-indigo-500"
-          description="All payments"
-        />
-
-        {/* Pending Payments */}
-        <SummaryCard
-          title="Pending Payments"
-          value={paymentSummary?.pending ?? 0}
-          Icon={FaHourglassHalf}
-          iconBgColor="bg-yellow-100"
-          iconColor="text-yellow-500"
-          description="Awaiting processing"
-        />
-
-        {/* Completed Payments */}
-        <SummaryCard
-          title="Completed Payments"
-          value={paymentSummary?.completed ?? 0}
-          Icon={FaCheckCircle}
-          iconBgColor="bg-green-100"
-          iconColor="text-green-500"
-          description="Successfully completed"
-        />
-
-        {/* Failed Payments */}
-        <SummaryCard
-          title="Failed Payments"
-          value={paymentSummary?.failed ?? 0}
-          Icon={FaTimesCircle}
-          iconBgColor="bg-red-100"
-          iconColor="text-red-500"
-          description="Payments failed"
-        />
-
-        {/* Refunded Payments */}
-        <SummaryCard
-          title="Refunded Payments"
-          value={paymentSummary?.refunded ?? 0}
-          Icon={FaUndoAlt}
-          iconBgColor="bg-purple-100"
-          iconColor="text-purple-500"
-          description="Refunded transactions"
-        />
-
-        {/* Total Amount */}
-        <SummaryCard
-          title="Total Amount"
-          value={`${(
-            paymentSummary?.totals?.amount ?? 0
-          ).toLocaleString()} ETB`}
-          Icon={FaDollarSign}
-          iconBgColor="bg-green-100"
-          iconColor="text-green-600"
-          description="Total collected"
-        />
-      </div>
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-end px-6">
-        <div className="flex flex-col md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Payments</h1>
-
-          <div className="flex gap-3 flex-wrap items-center">
-            <Input
-              placeholder="Search"
-              value={localSearch}
-              onChange={handleSearch}
-              allowClear
-              style={{ borderRadius: "0px 0px 0px 0px" }}
-              className=" drop-shadow-sm rounded-r  py-2"
-            />
-
-            <Select
-              placeholder="Status"
-              allowClear
-              style={{ width: 160 }}
-              onChange={(v) => handleFilterChange({ status: v })}
-              value={filters.status}
-            >
-              <Select.Option value="COMPLETED">COMPLETED</Select.Option>
-              <Select.Option value="PENDING">PENDING</Select.Option>
-              <Select.Option value="REFUNDED">REFUNDED</Select.Option>
-            </Select>
-
-            <Select
-              placeholder="Method"
-              allowClear
-              style={{ width: 160 }}
-              onChange={(v) => handleFilterChange({ method: v })}
-              value={filters.method}
-            >
-              <Select.Option value="CBE">CBE</Select.Option>
-              <Select.Option value="TELEBIRR">TELEBIRR</Select.Option>
-              <Select.Option value="AWASH">AWASH</Select.Option>
-            </Select>
-
-            <Input
-              placeholder="Min Amount"
-              value={filters.amountRange?.[0] ?? ""}
-              onChange={(e) => {
-                // update filters state immediately
-                const newMin = e.target.value ? Number(e.target.value) : null;
-                const newRange = [newMin, filters.amountRange?.[1] ?? null];
-                setFilters((prev) => ({ ...prev, amountRange: newRange }));
-
-                // debounce sending the request until typing stops
-                clearTimeout(amountDebounceRef.current);
-                amountDebounceRef.current = setTimeout(() => {
-                  handleFilterChange({ amountRange: newRange });
-                }, 600);
-              }}
-              style={{ width: 120 }}
-            />
-            <Input
-              placeholder="Max Amount"
-              value={filters.amountRange?.[1] ?? ""}
-              onChange={(e) => {
-                const newMax = e.target.value ? Number(e.target.value) : null;
-                const newRange = [filters.amountRange?.[0] ?? null, newMax];
-                setFilters((prev) => ({ ...prev, amountRange: newRange }));
-
-                clearTimeout(amountDebounceRef.current);
-                amountDebounceRef.current = setTimeout(() => {
-                  handleFilterChange({ amountRange: newRange });
-                }, 600);
-              }}
-              style={{ width: 120 }}
-            />
+    <div className="px-6 py-4">
+      {/* Earnings banner */}
+      <div className="mb-6 p-5 rounded-2xl bg-green-50 shadow-[4px_4px_12px_#e5e7eb,-4px_-4px_12px_#ffffff] border border-green-100 flex items-center justify-between">
+        <div>
+          <div className="text-sm text-gray-600">Your Current Earnings</div>
+          <div className="text-3xl font-bold text-gray-800 mt-1">
+            {Number(hostEarnings).toLocaleString()} ETB
           </div>
         </div>
-        <div className="flex items-center mt-4 md:mt-0">
+
+        <div className="p-3 rounded-full bg-green-100 text-green-700 shadow-inner">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-7 w-7"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8c-1.657 0-3 1.343-3 3v3m6-3a3 3 0 00-3-3m9 3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+      </div>
+
+      <h1 className="text-2xl font-bold mb-4">Payout Requests</h1>
+
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+        <div className="flex gap-3 items-center flex-wrap">
+          <Input
+            placeholder="Search by account or host"
+            value={searchText}
+            onChange={handleSearchChange}
+            allowClear
+            style={{ width: 250 }}
+            className="drop-shadow-sm py-2"
+          />
+
+          <Select
+            placeholder="Status"
+            allowClear
+            style={{ width: 160 }}
+            value={filters.status}
+            onChange={(val) => handleFilterChange("status", val)}
+          >
+            <Select.Option value="PENDING">PENDING</Select.Option>
+            <Select.Option value="APPROVED">APPROVED</Select.Option>
+            <Select.Option value="REJECTED">REJECTED</Select.Option>
+          </Select>
+
+          <Select
+            placeholder="Bank"
+            allowClear
+            style={{ width: 200 }}
+            value={filters.bankType}
+            onChange={(val) => handleFilterChange("bankType", val)}
+          >
+            <Select.Option value="TELEBIRR">TELEBIRR</Select.Option>
+            <Select.Option value="ABYSSINIA">ABYSSINIA</Select.Option>
+            <Select.Option value="AWASH">AWASH</Select.Option>
+            <Select.Option value="COMMERCIAL_BANK_OF_ETHIOPIA">
+              COMMERCIAL_BANK_OF_ETHIOPIA
+            </Select.Option>
+            <Select.Option value="DASHEN">DASHEN</Select.Option>
+            <Select.Option value="NIB">NIB</Select.Option>
+            <Select.Option value="ZEMEN">ZEMEN</Select.Option>
+            <Select.Option value="ABAY">ABAY</Select.Option>
+            <Select.Option value="WEGAGEN">WEGAGEN</Select.Option>
+            <Select.Option value="UNITED">UNITED</Select.Option>
+            <Select.Option value="ADDIS_INTERNATIONAL">
+              ADDIS_INTERNATIONAL
+            </Select.Option>
+            <Select.Option value="BERHAN">BERHAN</Select.Option>
+            <Select.Option value="COOPERATIVE_BANK_OF_OROMIA">
+              COOPERATIVE_BANK_OF_OROMIA
+            </Select.Option>
+            <Select.Option value="ENAT">ENAT</Select.Option>
+            <Select.Option value="HIWOT">HIWOT</Select.Option>
+            <Select.Option value="LION">LION</Select.Option>
+            <Select.Option value="BUNA">BUNA</Select.Option>
+            <Select.Option value="DEBUB_GLOBAL">DEBUB_GLOBAL</Select.Option>
+            <Select.Option value="OROMIA_INTERNATIONAL">
+              OROMIA_INTERNATIONAL
+            </Select.Option>
+            <Select.Option value="AMHARA">AMHARA</Select.Option>
+            <Select.Option value="HIJRA">HIJRA</Select.Option>
+            <Select.Option value="SIINQEE">SIINQEE</Select.Option>
+            <Select.Option value="SHABELLE">SHABELLE</Select.Option>
+            <Select.Option value="GADA">GADA</Select.Option>
+            <Select.Option value="GEBEYA">GEBEYA</Select.Option>
+            <Select.Option value="TSEDEY">TSEDEY</Select.Option>
+            <Select.Option value="RAYAN">RAYAN</Select.Option>
+            <Select.Option value="TSEDAY">TSEDAY</Select.Option>
+            <Select.Option value="LILA_ABBISINIA">LILA_ABBISINIA</Select.Option>
+            <Select.Option value="OTHER">OTHER</Select.Option>
+          </Select>
+        </div>
+
+        <div className="flex items-center">
           <button
-            onClick={() => {
-              const [pg, lm] = getPaginationInfo();
-              loadPayments({ page: pg, pageSize: lm, search: localSearch });
-              setSearchParams({ page: pg, limit: lm });
-            }}
+            onClick={() => loadData({ page, limit: pageSize })}
             className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4"
           >
             <ReloadOutlined />
           </button>
+          <button
+            className="px-4 py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-2 flex items-center"
+            onClick={() => setPayoutModalOpen(true)}
+          >
+            <PlusOutlined className="mr-2" /> Withdraw
+          </button>
         </div>
       </div>
 
+      <Modal
+        title={`Withdraw Funds`}
+        open={payoutModalOpen}
+        onCancel={() => {
+          setPayoutModalOpen(false);
+          payoutForm.resetFields();
+        }}
+        onOk={() => payoutForm.submit()}
+        confirmLoading={payoutSubmitting}
+        okText="Withdraw"
+        okButtonProps={{
+          style: {
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "white",
+          },
+        }}
+      >
+        <Form
+          form={payoutForm}
+          layout="vertical"
+          onFinish={async (values) => {
+            try {
+              setPayoutSubmitting(true);
+              // values: { amount, accountNumber, bankType }
+              await PayoutService.withdraw(values);
+              message.success("Withdraw request sent");
+              setPayoutModalOpen(false);
+              payoutForm.resetFields();
+              // refresh list
+              loadData({ page, limit: pageSize });
+            } catch (err) {
+              console.error(err);
+              message.error(
+                err?.response?.data?.message || "Failed to create payout"
+              );
+            } finally {
+              setPayoutSubmitting(false);
+            }
+          }}
+        >
+          <Form.Item
+            label="Amount"
+            name="amount"
+            rules={[{ required: true, message: "Enter amount" }]}
+          >
+            <InputNumber min={0} style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item
+            label="Account Number"
+            name="accountNumber"
+            rules={[{ required: true, message: "Enter account number" }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Bank Type"
+            name="bankType"
+            rules={[{ required: true, message: "Select bank type" }]}
+          >
+            <Select placeholder="Select bank type">
+              <Select.Option value="TELEBIRR">TELEBIRR</Select.Option>
+              <Select.Option value="ABYSSINIA">ABYSSINIA</Select.Option>
+              <Select.Option value="AWASH">AWASH</Select.Option>
+              <Select.Option value="COMMERCIAL_BANK_OF_ETHIOPIA">
+                COMMERCIAL_BANK_OF_ETHIOPIA
+              </Select.Option>
+              <Select.Option value="DASHEN">DASHEN</Select.Option>
+              <Select.Option value="NIB">NIB</Select.Option>
+              <Select.Option value="ZEMEN">ZEMEN</Select.Option>
+              <Select.Option value="ABAY">ABAY</Select.Option>
+              <Select.Option value="WEGAGEN">WEGAGEN</Select.Option>
+              <Select.Option value="UNITED">UNITED</Select.Option>
+              <Select.Option value="ADDIS_INTERNATIONAL">
+                ADDIS_INTERNATIONAL
+              </Select.Option>
+              <Select.Option value="BERHAN">BERHAN</Select.Option>
+              <Select.Option value="COOPERATIVE_BANK_OF_OROMIA">
+                COOPERATIVE_BANK_OF_OROMIA
+              </Select.Option>
+              <Select.Option value="ENAT">ENAT</Select.Option>
+              <Select.Option value="HIWOT">HIWOT</Select.Option>
+              <Select.Option value="LION">LION</Select.Option>
+              <Select.Option value="BUNA">BUNA</Select.Option>
+              <Select.Option value="DEBUB_GLOBAL">DEBUB_GLOBAL</Select.Option>
+              <Select.Option value="OROMIA_INTERNATIONAL">
+                OROMIA_INTERNATIONAL
+              </Select.Option>
+              <Select.Option value="AMHARA">AMHARA</Select.Option>
+              <Select.Option value="HIJRA">HIJRA</Select.Option>
+              <Select.Option value="SIINQEE">SIINQEE</Select.Option>
+              <Select.Option value="SHABELLE">SHABELLE</Select.Option>
+              <Select.Option value="GADA">GADA</Select.Option>
+              <Select.Option value="GEBEYA">GEBEYA</Select.Option>
+              <Select.Option value="TSEDEY">TSEDEY</Select.Option>
+              <Select.Option value="RAYAN">RAYAN</Select.Option>
+              <Select.Option value="TSEDAY">TSEDAY</Select.Option>
+              <Select.Option value="LILA_ABBISINIA">
+                LILA_ABBISINIA
+              </Select.Option>
+              <Select.Option value="OTHER">OTHER</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
       <div className="hidden md:block">
         <CommonTable
-          data={payments}
-          columns={tableColumns}
-          total={total}
+          data={payouts}
+          columns={columns}
           loading={loading}
+          total={pagination?.total || 0}
           currentPage={page}
           pageSize={pageSize}
-          rowKey={(r) => r?.id}
-          handlePagination={(p, ps) => handlePagination(p, ps)}
-          onRow={(record) => ({
-            onClick: () => {
-              const id = record.id || record._id;
-              if (id) navigate(`/dash/payments/${id}`, { state: record });
-            },
-            style: { cursor: "pointer" },
-          })}
+          handlePagination={handlePagination}
+          rowKey={(r) => r.id}
         />
       </div>
 
-      <div className="block md:hidden px-6">
-        {payments && payments.length > 0 ? (
-          payments.map((p) => (
+      {/* Mobile cards */}
+      <div className="block md:hidden px-0">
+        {loading &&
+          Array(5)
+            .fill(1)
+            .map((_, i) => <CommonCardSkeleton key={i} />)}
+
+        {payouts && payouts.length > 0 ? (
+          payouts.map((p) => (
             <CommonCard
-              key={p?.id || p?._id}
+              key={p?.id}
               item={p}
-              title={["payer.firstName", "payer.lastName"]}
+              title={["accountNumber"]}
               fieldMap={{
                 amount: "Amount",
-                method: "Method",
+                bankType: "Bank",
                 status: "Status",
-                hostEarnings: "Host Earnings",
               }}
               {...(currentRole === "host"
                 ? {}
                 : {
                     actionItems: [
                       {
-                        key: "refund",
-                        label: <Button type="text">Refund</Button>,
+                        key: "approve",
+                        label: <Button type="text">Approve</Button>,
                       },
                       {
-                        key: "release",
-                        label: <Button type="text">Release</Button>,
+                        key: "reject",
+                        label: <Button type="text">Reject</Button>,
                       },
                     ],
                   })}
               onActionClick={(info, item) => handleAction(info.key, item)}
-              onCardClick={(record) => {
-                const id = record.id || record._id;
-                if (id) navigate(`/dash/payments/${id}`, { state: record });
-              }}
             />
           ))
         ) : (
-          <div className="p-6">No payments found</div>
+          <div className="p-6">No payout requests found</div>
         )}
 
         <div className="my-4 flex justify-center">
           <Pagination
             current={page}
             pageSize={pageSize}
-            total={total}
+            total={pagination?.total || 0}
             onChange={handlePagination}
             showSizeChanger
           />
@@ -557,28 +494,58 @@ const PaymentList = () => {
       </div>
 
       <Modal
-        title={`Refund Payment`}
-        open={refundModalOpen}
+        title={actionType === "approve" ? "Approve payout" : "Reject payout"}
+        open={actionModalOpen}
         onCancel={() => {
-          setRefundModalOpen(false);
-          refundForm.resetFields();
+          setActionModalOpen(false);
+          setSelectedPayout(null);
         }}
-        onOk={() => refundForm.submit()}
-        confirmLoading={refundSubmitting}
+        onOk={() => actionForm.submit()}
+        confirmLoading={actionSubmitting}
+        okButtonProps={{
+          style: {
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "white",
+          },
+        }}
       >
-        <Form form={refundForm} layout="vertical" onFinish={submitRefund}>
-          {/* <Form.Item label="Booking ID">
-            <Input disabled value={refundRecord?.bookingId || ""} />
-          </Form.Item> */}
+        <Form
+          form={actionForm}
+          layout="vertical"
+          onFinish={async (values) => {
+            if (!selectedPayout) return;
+            const id = selectedPayout.id;
+            try {
+              setActionSubmitting(true);
+              if (actionType === "approve") {
+                await dispatch(
+                  approvePayout({ payoutId: id, reason: values.reason })
+                ).unwrap();
+                message.success("Payout approved");
+              } else {
+                await dispatch(
+                  rejectPayout({ payoutId: id, reason: values.reason })
+                ).unwrap();
+                message.success("Payout rejected");
+              }
+              setActionModalOpen(false);
+              setSelectedPayout(null);
+              loadData({ page, limit: pageSize });
+            } catch (err) {
+              console.error(err);
+              message.error("Action failed");
+            } finally {
+              setActionSubmitting(false);
+            }
+          }}
+        >
           <Form.Item
-            label="Refund Amount"
-            name="refundAmount"
-            rules={[{ required: true, message: "Enter refund amount" }]}
+            label="Reason"
+            name="reason"
+            rules={[{ required: true, message: "Please provide a reason" }]}
           >
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item label="Reason" name="reason">
-            <Input.TextArea rows={3} />
+            <Input.TextArea rows={4} />
           </Form.Item>
         </Form>
       </Modal>
@@ -586,4 +553,4 @@ const PaymentList = () => {
   );
 };
 
-export default PaymentList;
+export default PayoutList;  

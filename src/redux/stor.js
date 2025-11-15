@@ -18,6 +18,7 @@ import cartypesReducer from "../views/cartypes/CartypesRedux";
 import notificationsReducer from "../views/notification/NotificationRedux";
 import cancellationPoliciesReducer from "../views/cancellation-policies/Cancellation-policiesRedux";
 import socketReducer from "./socketSlice";
+import payoutReducer from "../views/payout/PayoutRedux";
 
 export const store = configureStore({
   reducer: {
@@ -33,6 +34,7 @@ export const store = configureStore({
     notifications: notificationsReducer,
     dispute: disputeReducer,
     cancellationPolicies: cancellationPoliciesReducer,
+    payout: payoutReducer,
     permissions: permissionsReducer,
     roles: rolesReducer,
     host: hostReducer,

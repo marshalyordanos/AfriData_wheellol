@@ -38,6 +38,7 @@ import BookingDetails from "./views/bookings/BookingDetails";
 
 import PaymentList from "./views/payment/PaymentList";
 import PaymentDetails from "./views/payment/PaymentDetails";
+import PayoutList from "./views/payout/PayoutList";
 
 import CancellationPoliciesList from "./views/cancellation-policies/Cancellation-policiesList";
 
@@ -142,10 +143,11 @@ const LayoutRouting = () => {
     { path: "messages/:id", element: <ChatDetails /> },
     { path: "payments", element: <PaymentList /> },
     { path: "payments/:id", element: <PaymentDetails /> },
+    { path: "payouts", element: <PayoutList /> },
     { path: "profile/:id", element: <ProfileDetails /> },
     { path: "/change-password", element: <ChangePassword /> },
   ];
-  
+
   const adminRoutes = [
     { path: "", element: <DashboardPage /> },
     { path: "brands", element: <BrandsList /> },
@@ -166,6 +168,7 @@ const LayoutRouting = () => {
     { path: "bookings/:id", element: <BookingDetails /> },
     { path: "payments", element: <PaymentList /> },
     { path: "payments/:id", element: <PaymentDetails /> },
+    { path: "payouts", element: <PayoutList /> },
     { path: "cancellation-policies", element: <CancellationPoliciesList /> },
     { path: "disputes", element: <DisputeList /> },
     { path: "disputes/:id", element: <DisputeDetails /> },

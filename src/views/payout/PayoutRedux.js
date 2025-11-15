@@ -1,150 +1,121 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import bookingService from "./PayoutService";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import PayoutService from "./PayoutService";
 
-// --- Thunks ---
-export const fetchBookingsThunk = createAsyncThunk(
-  "bookings/fetchBookings",
-  async (params, { rejectWithValue }) => {
+// Thunks
+export const fetchPayouts = createAsyncThunk(
+  "payout/fetchPayouts",
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const data = await bookingService.searchBookings(params);
-      return data;
+      const res = await PayoutService.searchPayouts(params);
+      return res;
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      return rejectWithValue(err?.response?.data || err.message);
     }
   }
 );
 
-export const createBookingThunk = createAsyncThunk(
-  "bookings/create",
-  async (data, { rejectWithValue }) => {
+export const releasePayout = createAsyncThunk(
+  "payout/releasePayout",
+  async ({ payoutId, data }, { rejectWithValue }) => {
     try {
-      const response = await bookingService.createBooking(data);
-      return response; // created booking object
-    } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  }
-);
-
-export const updateBookingThunk = createAsyncThunk(
-  "bookings/update",
-  async ({ id, data }, { rejectWithValue }) => {
-    try {
-      const response = await bookingService.updateBooking(data, id);
-      return response; // updated booking object
-    } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  }
-);
-
-export const cancelBookingThunk = createAsyncThunk(
-  "bookings/cancelBooking",
-  async (id, { rejectWithValue }) => {
-    try {
-      const data = await bookingService.cancelBooking(id);
-      return data;
+      const res = await PayoutService.releasePayment(payoutId, data);
+      return { payoutId, data: res };
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      return rejectWithValue(err?.response?.data || err.message);
     }
   }
 );
 
-export const completeBookingThunk = createAsyncThunk(
-  "bookings/completeBooking",
-  async (id, { rejectWithValue }) => {
+export const approvePayout = createAsyncThunk(
+  "payout/approvePayout",
+  async ({ payoutId, reason }, { rejectWithValue }) => {
     try {
-      const data = await bookingService.completeBooking(id);
-      return data;
+      const res = await PayoutService.releasePayment(payoutId, {
+        status: "APPROVED",
+        reason: reason || undefined,
+      });
+      return { payoutId, data: res };
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      return rejectWithValue(err?.response?.data || err.message);
     }
   }
 );
 
-export const deleteBookingThunk = createAsyncThunk(
-  "bookings/deleteBooking",
-  async (id, { rejectWithValue }) => {
+export const rejectPayout = createAsyncThunk(
+  "payout/rejectPayout",
+  async ({ payoutId, reason }, { rejectWithValue }) => {
     try {
-      const data = await bookingService.deleteBooking(id);
-      return data;
+      const res = await PayoutService.releasePayment(payoutId, {
+        status: "REJECTED",
+        reason: reason || undefined,
+      });
+      return { payoutId, data: res };
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      return rejectWithValue(err?.response?.data || err.message);
     }
   }
 );
 
-// --- Slice ---
-const bookingSlice = createSlice({
-  name: "booking",
-  initialState: {
-    bookings: [],
-    query: { page: 1, limit: 10, searchText: "", sort: "", order: "" },
-    loading: false,
-    error: null,
-    total: 0,
-  },
+const initialState = {
+  items: [],
+  pagination: {},
+  loading: false,
+  error: null,
+};
+
+const payoutSlice = createSlice({
+  name: "payout",
+  initialState,
   reducers: {
-    updateBookingState: (state, action) => {
-      state.query = { ...state.query, ...action.payload };
+    clearError(state) {
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch bookings
-      .addCase(fetchBookingsThunk.pending, (state) => {
+      .addCase(fetchPayouts.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
-      .addCase(fetchBookingsThunk.fulfilled, (state, action) => {
+      .addCase(fetchPayouts.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookings = action.payload.data;
-        state.total = action.payload.total;
+        state.items = Array.isArray(action.payload.data)
+          ? action.payload.data
+          : [];
+        state.pagination = action.payload.pagination || {};
       })
-      .addCase(fetchBookingsThunk.rejected, (state, action) => {
+      .addCase(fetchPayouts.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload || action.error;
       })
-
-      // Create booking
-      .addCase(createBookingThunk.fulfilled, (state, action) => {
-        state.bookings = [action.payload.data, ...state.bookings];
-        state.total += 1;
+      .addCase(releasePayout.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
-
-      // Update booking
-      .addCase(updateBookingThunk.fulfilled, (state, action) => {
-        const updated = action.payload.data;
-        state.bookings = state.bookings.map((b) =>
-          b._id === updated._id ? updated : b
+      .addCase(releasePayout.fulfilled, (state, action) => {
+        state.loading = false;
+        // update single payout in items if present
+        const idx = state.items.findIndex(
+          (i) =>
+            i.id === action.payload.payoutId ||
+            i._id === action.payload.payoutId
         );
+        if (idx !== -1) {
+          state.items[idx] = { ...state.items[idx], ...action.payload.data };
+        }
       })
-
-      // Cancel booking
-      .addCase(cancelBookingThunk.fulfilled, (state, action) => {
-        const updated = action.payload.data;
-        state.bookings = state.bookings.map((b) =>
-          b._id === updated._id ? updated : b
-        );
-      })
-
-      // Complete booking
-      .addCase(completeBookingThunk.fulfilled, (state, action) => {
-        const updated = action.payload.data;
-        state.bookings = state.bookings.map((b) =>
-          b._id === updated._id ? updated : b
-        );
-      })
-
-      // Delete booking
-      .addCase(deleteBookingThunk.fulfilled, (state, action) => {
-        const deletedId = action.meta.arg;
-        state.bookings = state.bookings.filter((b) => b._id !== deletedId);
-        state.total -= 1;
+      .addCase(releasePayout.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error;
       });
   },
 });
 
-export const { updateBookingState } = bookingSlice.actions;
-export const bookingQuery = (state) => state.booking.query;
-export const bookingSearchText = (state) => state.booking.query.searchText;
-export default bookingSlice.reducer;
+export const { clearError } = payoutSlice.actions;
+export default payoutSlice.reducer;
+
+// Selectors
+export const selectPayoutState = (s) => s.payout || initialState;
+export const selectPayouts = (s) => selectPayoutState(s).items;
+export const selectPayoutsLoading = (s) => selectPayoutState(s).loading;
+export const selectPayoutsPagination = (s) => selectPayoutState(s).pagination;

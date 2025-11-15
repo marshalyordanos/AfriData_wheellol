@@ -76,6 +76,7 @@ const Sidebar = ({ collapsed }) => {
       sel = "cancellation-policies";
     else if (p.startsWith("/dash/bookings")) sel = "bookings";
     else if (p.startsWith("/dash/payments")) sel = "payments";
+    else if (p.startsWith("/dash/payouts")) sel = "payouts";
     else if (p.startsWith("/dash/disputes")) sel = "disputes";
     else if (p.startsWith("/dash/messages")) sel = "messages";
     else if (p.startsWith("/dash/permissions")) sel = "permissions";
@@ -119,6 +120,7 @@ const Sidebar = ({ collapsed }) => {
       getItem("Hosts", "host", <FaUserTie />),
       getItem("Guests", "gust", <UserOutlined />),
       getItem("Bookings", "bookings", <SiBookstack />),
+      getItem("Payouts", "payouts", <CreditCardOutlined />),
       getItem("Payments", "payments", <CreditCardOutlined />),
       getItem("Disputes", "disputes", <WarningOutlined />),
       getItem("Messages", "messages", <MessageOutlined />),
@@ -144,6 +146,7 @@ const Sidebar = ({ collapsed }) => {
         "payments",
         "messages",
         "dashboard",
+        "payouts"
       ];
       visibleItems = allItems.filter((item) => allowedKeys.includes(item.key));
     }

@@ -1,11 +1,7 @@
 import api from "../../api/api";
 
 class PayoutService {
-  getPayout(payoutId) {
-    return api.get(`/users/host/${payoutId}/status`, data).then((response) => {
-      return response.data.data;
-    });
-  }
+ 
   releasePayment(payoutId,data) {
     // data={ status: 'APPROVED' | 'REJECTED'; reason?: string }
     return api.patch(`/users/host/${payoutId}/status`, data).then((response) => {
@@ -13,12 +9,7 @@ class PayoutService {
     });
   }
   withdraw(data) {
-    // data = {
-    //   amount: number,
-    //   accountNumber: string,
-    //   bankType: BankType,
-    // };
-
+   
     return api.post("/users/host/withdraw", data).then((response) => {
       return response.data.data;
     });
