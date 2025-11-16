@@ -65,6 +65,13 @@ class PayoutService {
     });
   }
 
+   getUserProfileById(id) {
+      return api.get("/users/me/" + id).then((response) => {
+        return response.data.data;
+      });
+    }
+
+
 }
 
 export default new PayoutService();

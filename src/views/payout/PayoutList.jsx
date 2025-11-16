@@ -41,16 +41,18 @@ const PayoutList = () => {
   const currentUser = useSelector(selectCurrentUser);
 
   // derive host earnings safely
-  const hostEarnings =
+  const initialHostEarnings =
     currentUser?.user?.hostProfile?.earnings ||
     currentUser?.hostProfile?.earnings ||
     0;
 
-  // Payout modal state
+  // local earnings state to reflect immediate changes after withdraw
+  const [hostEarningsLocal, setHostEarningsLocal] =
+    useState(initialHostEarnings);
+
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
   const [payoutForm] = Form.useForm();
-  // Approve/Reject reason modal state
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [actionType, setActionType] = useState(null); // 'approve' | 'reject'
   const [selectedPayout, setSelectedPayout] = useState(null);
@@ -81,6 +83,13 @@ const PayoutList = () => {
 
   const currentRole = normalizeRole(currentUser) || "superadmin";
 
+  const getUserId = () => {
+    if (!currentUser) return null;
+    if (currentUser.id) return currentUser.id;
+    if (currentUser.user && currentUser.user.id) return currentUser.user.id;
+    return null;
+  };
+
   const loadData = ({
     page = 1,
     limit = 10,
@@ -92,13 +101,30 @@ const PayoutList = () => {
 
   useEffect(() => {
     loadData({ page, limit: pageSize });
-  }, []); // Initial load
+  }, []);
 
-  /** Build filters for API */
-  const buildFilter = () => {
+  // fetch fresh user profile
+  const refreshProfile = async () => {
+    const id = getUserId();
+    if (!id) return;
+    try {
+      const user = await PayoutService.getUserProfileById(id);
+      const earnings = user?.hostProfile?.earnings || 0;
+      setHostEarningsLocal(earnings);
+    } catch (err) {
+      console.error("Failed to refresh user profile:", err);
+    }
+  };
+
+  useEffect(() => {
+    refreshProfile();
+  }, [currentUser]);
+
+  const buildFilter = (src) => {
+    const s = src || filters;
     const f = {};
-    if (filters.status) f.status = filters.status;
-    if (filters.bankType) f.bankType = filters.bankType;
+    if (s.status) f.status = s.status;
+    if (s.bankType) f.bankType = s.bankType;
     return Object.keys(f).length ? f : null;
   };
 
@@ -114,7 +140,7 @@ const PayoutList = () => {
         page: 1,
         limit: pageSize,
         search: val,
-        filter: buildFilter(),
+        filter: buildFilter(filters),
       });
     }, 500);
   };
@@ -129,11 +155,10 @@ const PayoutList = () => {
       page: 1,
       limit: pageSize,
       search: searchText,
-      filter: buildFilter(),
+      filter: buildFilter(newFilters),
     });
   };
 
-  /** Approve / Reject payout actions: open modal to collect reason */
   const handleAction = (action, record) => {
     setSelectedPayout(record);
     setActionType(action);
@@ -194,7 +219,6 @@ const PayoutList = () => {
     }
   );
 
-  /** On page change */
   const handlePagination = (pg, ps) => {
     setSearchParams({ page: pg, limit: ps });
     loadData({
@@ -207,32 +231,34 @@ const PayoutList = () => {
 
   return (
     <div className="px-6 py-4">
-      {/* Earnings banner */}
-      <div className="mb-6 p-5 rounded-2xl bg-green-50 shadow-[4px_4px_12px_#e5e7eb,-4px_-4px_12px_#ffffff] border border-green-100 flex items-center justify-between">
-        <div>
-          <div className="text-sm text-gray-600">Your Current Earnings</div>
-          <div className="text-3xl font-bold text-gray-800 mt-1">
-            {Number(hostEarnings).toLocaleString()} ETB
+      {/* Earnings banner (hosts only) */}
+      {currentRole === "host" && (
+        <div className="mb-6 p-5 rounded-2xl bg-green-50 shadow-[4px_4px_12px_#e5e7eb,-4px_-4px_12px_#ffffff] border border-green-100 flex items-center justify-between">
+          <div>
+            <div className="text-sm text-gray-600">Your Current Earnings</div>
+            <div className="text-3xl font-bold text-gray-800 mt-1">
+              {Number(hostEarningsLocal).toLocaleString()} ETB
+            </div>
+          </div>
+
+          <div className="p-3 rounded-full bg-green-100 text-green-700 shadow-inner">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-7 w-7"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8c-1.657 0-3 1.343-3 3v3m6-3a3 3 0 00-3-3m9 3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
           </div>
         </div>
-
-        <div className="p-3 rounded-full bg-green-100 text-green-700 shadow-inner">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-7 w-7"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8c-1.657 0-3 1.343-3 3v3m6-3a3 3 0 00-3-3m9 3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        </div>
-      </div>
+      )}
 
       <h1 className="text-2xl font-bold mb-4">Payout Requests</h1>
 
@@ -314,12 +340,14 @@ const PayoutList = () => {
           >
             <ReloadOutlined />
           </button>
-          <button
-            className="px-4 py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-2 flex items-center"
-            onClick={() => setPayoutModalOpen(true)}
-          >
-            <PlusOutlined className="mr-2" /> Withdraw
-          </button>
+          {currentRole === "host" && (
+            <button
+              className="px-4 py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-2 flex items-center"
+              onClick={() => setPayoutModalOpen(true)}
+            >
+              <PlusOutlined className="mr-2" /> Withdraw
+            </button>
+          )}
         </div>
       </div>
 
@@ -347,13 +375,14 @@ const PayoutList = () => {
           onFinish={async (values) => {
             try {
               setPayoutSubmitting(true);
-              // values: { amount, accountNumber, bankType }
               await PayoutService.withdraw(values);
               message.success("Withdraw request sent");
+              const amt = Number(values.amount || 0);
+              setHostEarningsLocal((prev) => Math.max(0, prev - amt));
               setPayoutModalOpen(false);
               payoutForm.resetFields();
-              // refresh list
               loadData({ page, limit: pageSize });
+              refreshProfile();
             } catch (err) {
               console.error(err);
               message.error(
@@ -553,4 +582,4 @@ const PayoutList = () => {
   );
 };
 
-export default PayoutList;  
+export default PayoutList;
