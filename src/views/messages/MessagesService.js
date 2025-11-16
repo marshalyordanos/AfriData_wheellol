@@ -1,6 +1,68 @@
 import api from "../../api/api";
 
 class MessagesService {
+  searchChatPartners({
+    page = 1,
+    limit = 10,
+    searchText = null,
+    filter = null,
+    sort = null,
+    order = null,
+    startDate = null,
+    endDate = null,
+    userid
+  } = {}) {
+    let params = [];
+
+    // Pagination
+    params.push(`page=${page}`);
+    params.push(`pageSize=${limit}`);
+
+    //search
+    if (searchText) {
+      params.push(`search=all:${encodeURIComponent(searchText)}`);
+    }
+
+    // Filter
+    if (filter) {
+      const filterParams = Object.entries(filter)
+        .map(([key, value]) => {
+          if (Array.isArray(value)) {
+            return `${key}:[${value.join(",")} ]`;
+          }
+          return `${key}:${value}`;
+        })
+        .join(",");
+      params.push(`filter=${encodeURIComponent(filterParams)}`);
+    }
+
+    // Sort
+    if (sort) {
+      let sortValue = `${sort}:${order || "asc"}`;
+      params.push(`sort=${sortValue}`);
+    }
+    // Date range
+    if (startDate) {
+      params.push(`startDate=${encodeURIComponent(startDate)}`);
+    }
+    if (endDate) {
+      params.push(`endDate=${encodeURIComponent(endDate)}`);
+    }
+
+    const url = `messages/chats/user/${userid}?${params.join("&")}`;
+
+    return api.get(url).then((r) => {
+      return {
+        data: r.data?.data || [],
+        pagination: r.data?.pagination || {},
+        message: r.data?.message || null,
+      };
+    });
+  }
+
+
+
+
   sendMessage(data) {
     return api.post("/messages", data).then((response) => {
       return response.data;

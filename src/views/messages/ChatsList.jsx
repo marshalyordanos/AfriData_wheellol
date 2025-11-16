@@ -33,6 +33,9 @@ const ChatsList = () => {
 
   const [unreadCount, setUnreadCount] = useState(0);
   const [query, setQuery] = useState("");
+  const [searchChats, setSearchChats] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimerRef = useRef(null);
   const [page, setPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -164,27 +167,12 @@ const ChatsList = () => {
     }
   };
 
-  const filtered = (chats || []).filter((c) => {
-    if (!query) return true;
+  const displayedChats = query
+    ? Array.isArray(searchChats)
+      ? searchChats
+      : []
+    : chats || [];
 
-    const q = query.toLowerCase();
-    const partner = c.withUser || {};
-    const summary = c.bookingSummary || {};
-
-    return (
-      String(summary.id || "")
-        .toLowerCase()
-        .includes(q) ||
-      String(partner.fullName || "")
-        .toLowerCase()
-        .includes(q) ||
-      String(c.lastMessage?.content || "")
-        .toLowerCase()
-        .includes(q)
-    );
-  });
-
-  // show full-page loader only on initial load when there are no chats yet
   if (loading && (!chats || chats.length === 0))
     return (
       <div
@@ -200,26 +188,57 @@ const ChatsList = () => {
     );
 
   return (
-    <div style={{ padding: 20 }}>
-      <div
-        style={{
-          marginBottom: 12,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h2 style={{ margin: 0 }}>
-          Chats <Badge count={unreadCount} />
-        </h2>
+    <div>
+      <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
+        <div className="flex flex-col md:w-[45vw] w-full">
+          <h1 className="text-2xl font-bold pb-4">Chats</h1>
+          <div className="flex gap-3 flex-wrap items-center">
+            <Input
+              placeholder="Search by booking or message"
+              value={query}
+              onChange={(e) => {
+                const q = e.target.value;
+                setQuery(q);
+                // clear previous timer
+                if (searchTimerRef.current)
+                  clearTimeout(searchTimerRef.current);
 
-        <Input.Search
-          placeholder="Search by booking or message"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          allowClear
-          style={{ width: 320 }}
-        />
+                // no query -> clear results and stop loading
+                if (!q) {
+                  setSearchLoading(false);
+                  setSearchChats(null);
+                  return;
+                }
+
+                // start loading indicator (optimistic)
+                setSearchLoading(true);
+
+                // debounce backend search
+                searchTimerRef.current = setTimeout(async () => {
+                  if (!userId) {
+                    setSearchLoading(false);
+                    return;
+                  }
+                  try {
+                    const res = await MessagesService.searchChatPartners({
+                      userid: userId,
+                      searchText: q,
+                    });
+                    setSearchChats(Array.isArray(res.data) ? res.data : []);
+                  } catch (err) {
+                    console.error("searchChatPartners failed", err);
+                    setSearchChats([]);
+                  } finally {
+                    setSearchLoading(false);
+                  }
+                }, 450);
+              }}
+              allowClear
+              style={{ borderRadius: "0px 0px 0px 0px" }}
+              className="drop-shadow-sm rounded-r py-2"
+            />
+          </div>
+        </div>
       </div>
 
       <div
@@ -229,7 +248,8 @@ const ChatsList = () => {
       >
         <List
           itemLayout="horizontal"
-          dataSource={filtered}
+          dataSource={displayedChats}
+          loading={searchLoading}
           renderItem={(chat) => {
             const last = chat.lastMessage || {};
             const summary = chat.bookingSummary || {};
