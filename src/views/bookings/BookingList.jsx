@@ -596,13 +596,21 @@ const BookingList = () => {
             <Select
               placeholder="Status"
               allowClear
-              style={{ width: 160 }}
+              style={{ width: 190 }}
               onChange={(val) => handleFilterChange({ status: val })}
             >
               <Select.Option value="PENDING">PENDING</Select.Option>
               <Select.Option value="CONFIRMED">CONFIRMED</Select.Option>
               <Select.Option value="COMPLETED">COMPLETED</Select.Option>
-              <Select.Option value="CANCELLED">CANCELLED</Select.Option>
+              <Select.Option value="CANCELLED_BY_HOST">
+                CANCELLED_BY_HOST
+              </Select.Option>
+              <Select.Option value="CANCELLED_BY_ADMIN">
+                CANCELLED_BY_ADMIN
+              </Select.Option>
+              <Select.Option value="CANCELLED_BY_GUEST">
+                CANCELLED_BY_GUEST
+              </Select.Option>
             </Select>
 
             <Select

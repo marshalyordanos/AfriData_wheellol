@@ -422,3 +422,5 @@ const CommonCard = ({
 };
 
 export default CommonCard;
+
+/**FINAL COMMON-CARD */
