@@ -30,6 +30,8 @@ class DisputeService {
     filter = null,
     sort = null,
     order = null,
+    startDate = null,
+    endDate = null,
   } = {}) {
     let params = [];
 
@@ -59,6 +61,13 @@ class DisputeService {
     if (sort) {
       let sortValue = `${sort}:${order || "asc"}`;
       params.push(`sort=${sortValue}`);
+    }
+    // Date range
+    if (startDate) {
+      params.push(`startDate=${encodeURIComponent(startDate)}`);
+    }
+    if (endDate) {
+      params.push(`endDate=${encodeURIComponent(endDate)}`);
     }
 
     const url = `disputes?${params.join("&")}`;

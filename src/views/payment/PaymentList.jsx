@@ -442,9 +442,45 @@ const PaymentList = () => {
               onChange={(v) => handleFilterChange({ method: v })}
               value={filters.method}
             >
-              <Select.Option value="CBE">CBE</Select.Option>
-              <Select.Option value="TELEBIRR">TELEBIRR</Select.Option>
+              <Select.Option value="ABYSSINIA">ABYSSINIA</Select.Option>
               <Select.Option value="AWASH">AWASH</Select.Option>
+              <Select.Option value="COMMERCIAL_BANK_OF_ETHIOPIA">
+                COMMERCIAL_BANK_OF_ETHIOPIA
+              </Select.Option>
+              <Select.Option value="DASHEN">DASHEN</Select.Option>
+              <Select.Option value="NIB">NIB</Select.Option>
+              <Select.Option value="ZEMEN">ZEMEN</Select.Option>
+              <Select.Option value="ABAY">ABAY</Select.Option>
+              <Select.Option value="WEGAGEN">WEGAGEN</Select.Option>
+              <Select.Option value="UNITED">UNITED</Select.Option>
+              <Select.Option value="ADDIS_INTERNATIONAL">
+                ADDIS_INTERNATIONAL
+              </Select.Option>
+              <Select.Option value="BERHAN">BERHAN</Select.Option>
+              <Select.Option value="COOPERATIVE_BANK_OF_OROMIA">
+                COOPERATIVE_BANK_OF_OROMIA
+              </Select.Option>
+              <Select.Option value="ENAT">ENAT</Select.Option>
+              <Select.Option value="HIWOT">HIWOT</Select.Option>
+              <Select.Option value="LION">LION</Select.Option>
+              <Select.Option value="BUNA">BUNA</Select.Option>
+              <Select.Option value="DEBUB_GLOBAL">DEBUB_GLOBAL</Select.Option>
+              <Select.Option value="OROMIA_INTERNATIONAL">
+                OROMIA_INTERNATIONAL
+              </Select.Option>
+              <Select.Option value="AMHARA">AMHARA</Select.Option>
+              <Select.Option value="HIJRA">HIJRA</Select.Option>
+              <Select.Option value="SIINQEE">SIINQEE</Select.Option>
+              <Select.Option value="SHABELLE">SHABELLE</Select.Option>
+              <Select.Option value="GADA">GADA</Select.Option>
+              <Select.Option value="GEBEYA">GEBEYA</Select.Option>
+              <Select.Option value="TSEDEY">TSEDEY</Select.Option>
+              <Select.Option value="RAYAN">RAYAN</Select.Option>
+              <Select.Option value="TSEDAY">TSEDAY</Select.Option>
+              <Select.Option value="LILA_ABBISINIA">
+                LILA_ABBISINIA
+              </Select.Option>
+              <Select.Option value="OTHER">OTHER</Select.Option>
             </Select>
 
             <Input
