@@ -136,6 +136,8 @@ const LayoutRouting = () => {
     { path: "overview", element: <DashboardPage /> },
     { path: "cars", element: <CarsList /> },
     { path: "cars/details/:id", element: <CarsDetails /> },
+    { path: "cars/:carId/insurance", element: <CarInsurancePage /> },
+
     { path: "cars/reviews/:id", element: <CartReview /> },
     { path: "bookings", element: <BookingList /> },
     { path: "bookings/:id", element: <BookingDetails /> },

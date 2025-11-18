@@ -270,12 +270,14 @@ const DisputeList = () => {
             <DatePicker.RangePicker
               onChange={(dates) => {
                 const filter = {};
+                let startDate = null;
+                let endDate = null;
                 if (dates && dates.length === 2) {
-                  filter.startDate = dates[0].toISOString();
-                  filter.endDate = dates[1].toISOString();
+                  startDate = dates[0].toISOString();
+                  endDate = dates[1].toISOString();
                 }
                 dispatch(updateDisputeState({ page: 1, filter }));
-                loadDisputes({ page: 1, filter });
+                loadDisputes({ page: 1, filter, startDate, endDate });
               }}
             />
           </div>

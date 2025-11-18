@@ -167,15 +167,18 @@ const BookingList = () => {
     // with driver filtering
     if (merged.withDriver !== null && merged.withDriver !== undefined)
       filter.withDriver = merged.withDriver;
+    let startDate = null;
+    let endDate = null;
     if (merged.dateRange && merged.dateRange.length === 2) {
-      filter.startDate = merged.dateRange[0].toISOString();
-      filter.endDate = merged.dateRange[1].toISOString();
+      startDate = merged.dateRange[0].toISOString();
+      endDate = merged.dateRange[1].toISOString();
     }
 
     const [pg, lm] = getPaginationInfo();
     dispatch(updateBookingState({ page: 1 }));
     setSearchParams({ page: 1, limit: lm });
-    loadBookings({ page: 1, limit: lm, filter });
+    // pass date range as top-level params to match BookingService.searchBookings
+    loadBookings({ page: 1, limit: lm, filter, startDate, endDate });
   };
 
   const handlePagination = (pg, pageSize) => {
@@ -393,11 +396,9 @@ const BookingList = () => {
       dataIndex: "chat",
       render: (_, record) => {
         if (!record) return null;
-        // console.log("##############", record);
         const status = String(record.status || "").toLowerCase();
 
         if (currentRole === "host") {
-          // host: only show chat when booking is confirmed
           if (status === "confirmed") {
             return (
               <Button
@@ -595,13 +596,21 @@ const BookingList = () => {
             <Select
               placeholder="Status"
               allowClear
-              style={{ width: 160 }}
+              style={{ width: 190 }}
               onChange={(val) => handleFilterChange({ status: val })}
             >
               <Select.Option value="PENDING">PENDING</Select.Option>
               <Select.Option value="CONFIRMED">CONFIRMED</Select.Option>
               <Select.Option value="COMPLETED">COMPLETED</Select.Option>
-              <Select.Option value="CANCELLED">CANCELLED</Select.Option>
+              <Select.Option value="CANCELLED_BY_HOST">
+                CANCELLED_BY_HOST
+              </Select.Option>
+              <Select.Option value="CANCELLED_BY_ADMIN">
+                CANCELLED_BY_ADMIN
+              </Select.Option>
+              <Select.Option value="CANCELLED_BY_GUEST">
+                CANCELLED_BY_GUEST
+              </Select.Option>
             </Select>
 
             <Select

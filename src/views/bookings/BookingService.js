@@ -3,7 +3,6 @@ import api from "../../api/api";
 
 class BookingService {
   createBooking(data) {
-
     return api.post("/bookings", data).then((response) => {
       return response.data.data;
     });
@@ -22,6 +21,8 @@ class BookingService {
     filter = null,
     sort = null,
     order = null,
+    startDate=null,
+    endDate=null,
   } = {}) {
     let params = [];
 
@@ -51,6 +52,14 @@ class BookingService {
     if (sort) {
       let sortValue = `${sort}:${order || "asc"}`;
       params.push(`sort=${sortValue}`);
+    }
+
+    // Date range
+    if (startDate) {
+      params.push(`startDate=${encodeURIComponent(startDate)}`);
+    }
+    if (endDate) {
+      params.push(`endDate=${encodeURIComponent(endDate)}`);
     }
 
     const url = `bookings?${params.join("&")}`;
