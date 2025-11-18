@@ -31,8 +31,19 @@ class AuthService {
     return api.post("/user/forgot-password", { email });
   }
 
-  resetPassword(newPassword, tokenFromEmail) {
-    return api.post(`/user/reset-password/${tokenFromEmail}`, { newPassword });
+  resetPassword(data) {
+    // data = {
+    //   phoneNumber: "1231231234",
+    //   newPassword: "12345678",
+    //   otp: "516974",
+    // };
+    return api.post(`/auth/reset-password`,data);
+  }
+  requestPasswordReset(data) {
+    // data = {
+    //   phoneNumber: "1231231234",
+    // };
+    return api.post(`/auth/request-password-reset`, data);
   }
 
   register(formData) {

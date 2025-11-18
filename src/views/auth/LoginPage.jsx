@@ -15,6 +15,8 @@ const LoginPage = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1: enter phone, 2: enter otp+newPassword
+  const [forgotPhone, setForgotPhone] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -55,17 +57,53 @@ const LoginPage = () => {
 
   const handleForgotPassword = async (values) => {
     setModalLoading(true);
-    console.log("Requesting password reset for email:", values.email);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    if (values.email === "notfound@gmail.com") {
-      message.error("No account found with that email address.");
-    } else {
-      message.success(
-        "If an account exists for that email, a reset link has been sent."
-      );
-      handleCancel();
+    try {
+      // Step 1: request password reset via phone
+      if (forgotStep === 1) {
+        const phone = values.phone;
+        if (!phone) {
+          message.error("Please enter your phone number.");
+          setModalLoading(false);
+          return;
+        }
+
+        // Call backend to request password reset (sends otp to phone)
+        const AuthService = (await import("../../api/auth.service.js")).default;
+        await AuthService.requestPasswordReset({ phoneNumber: phone });
+
+        setForgotPhone(phone);
+        setForgotStep(2);
+        message.success("Verification code sent to your phone.");
+      } else {
+        // Step 2: submit otp and new password
+        const phone = values.phone || forgotPhone;
+        const newPassword = values.newPassword;
+        const otp = values.otp;
+
+        if (!phone || !newPassword || !otp) {
+          message.error("Please provide phone, OTP and new password.");
+          setModalLoading(false);
+          return;
+        }
+
+        const AuthService = (await import("../../api/auth.service.js")).default;
+        await AuthService.resetPassword({
+          phoneNumber: phone,
+          newPassword,
+          otp,
+        });
+
+        message.success("Password reset successful. You may now login.");
+        handleCancel();
+      }
+    } catch (err) {
+      console.error("Forgot password error:", err);
+      const msg =
+        err?.response?.data?.message || err?.message || "Request failed.";
+      message.error(msg);
+    } finally {
+      setModalLoading(false);
     }
-    setModalLoading(false);
   };
 
   const containerVariants = {
@@ -228,36 +266,102 @@ const LoginPage = () => {
             footer={null}
             destroyOnClose
           >
-            <p className="mb-4 text-gray-500 text-sm">
-              Enter your email address and we’ll send a password reset link.
-            </p>
-            <Form form={form} onFinish={handleForgotPassword} layout="vertical">
-              <Form.Item
-                name="email"
-                label="Email Address"
-                rules={[
-                  { required: true, message: "Please input your email!" },
-                  { type: "email", message: "Please enter a valid email!" },
-                ]}
-              >
-                <Input
-                  size="large"
-                  placeholder="yourname@gmail.com"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-              <Form.Item>
-                <Button
-                  style={{ background: "black", color: "white" }}
-                  type="primary"
-                  htmlType="submit"
-                  loading={modalLoading}
-                  className="w-full py-5 rounded-lg"
+            {forgotStep === 1 ? (
+              <>
+                <p className="mb-4 text-gray-500 text-sm">
+                  Enter your phone number and we'll send a verification code
+                  (OTP) to your phone.
+                </p>
+                <Form
+                  form={form}
+                  onFinish={handleForgotPassword}
+                  layout="vertical"
                 >
-                  Send Reset Link
-                </Button>
-              </Form.Item>
-            </Form>
+                  <Form.Item
+                    name="phone"
+                    label="Phone Number"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please input your phone number!",
+                      },
+                    ]}
+                  >
+                    <Input
+                      size="large"
+                      placeholder="e.g. 251911123456"
+                      className="rounded-lg"
+                    />
+                  </Form.Item>
+                  <Form.Item>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={modalLoading}
+                      className="w-full py-3 rounded-lg"
+                      style={{
+                        background: "var(--color-primary)",
+                        color: "white",
+                      }}
+                    >
+                      Send Verification Code
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </>
+            ) : (
+              <>
+                <p className="mb-4 text-gray-500 text-sm">
+                  Enter the OTP you received and choose a new password. Phone is
+                  pre-filled.
+                </p>
+                <Form
+                  form={form}
+                  onFinish={handleForgotPassword}
+                  layout="vertical"
+                  initialValues={{ phone: forgotPhone }}
+                >
+                  <Form.Item
+                    name="phone"
+                    label="Phone Number"
+                    rules={[{ required: true }]}
+                  >
+                    <Input size="large" className="rounded-lg" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="otp"
+                    label="Verification Code (OTP)"
+                    rules={[{ required: true }]}
+                  >
+                    <Input size="large" className="rounded-lg" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="newPassword"
+                    label="New Password"
+                    rules={[{ required: true, min: 6 }]}
+                  >
+                    <Input.Password size="large" className="rounded-lg" />
+                  </Form.Item>
+
+                  <Form.Item>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={modalLoading}
+                      className="w-full py-3 rounded-lg"
+                      style={{
+                        background: "var(--color-primary)",
+                        color: "white",
+                      }}
+                    >
+                      Reset Password
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </>
+            )}
           </Modal>
 
           <div className="text-center mt-6 text-sm text-gray-600">
