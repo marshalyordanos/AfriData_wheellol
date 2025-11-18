@@ -33,6 +33,9 @@ class CarsService {
     order,
     notActiveOnly = false,
     notApprovedOnly = false,
+    brandId,
+    typeId,
+    modelId,
   }) {
     let url = `/cars/admin?page=${page}&limit=${limit}`;
     if (sort) {
@@ -45,14 +48,31 @@ class CarsService {
       url = url + `&search=all:${encodeURIComponent(searchText)}`;
     }
 
-    if (notActiveOnly) {
-      url = url + `&is_active=false`;
+    // if (searchText) {
+    //   url = url + `&search=all:${encodeURIComponent(searchText)}`;
+    // }
+
+    let filters = [];
+
+    if (brandId) {
+      filters.push(`makeId:${brandId}`);
+    }
+    if (modelId) {
+      filters.push(`modelId:${modelId}`);
+    }
+    if (typeId) {
+      filters.push(`carTypeId:${typeId}`);
     }
 
-    if (notApprovedOnly) {
-      // assuming backend uses status=pending (adjust if different)
-      url = url + `&status=pending`;
+    // Join filters with comma
+    const filterQuery = filters.join(",");
+    if (filterQuery) {
+      url += `&filter=${filterQuery}`;
     }
+    // if (notApprovedOnly) {
+    //   // assuming backend uses status=pending (adjust if different)
+    //   url = url + `&status=pending`;
+    // }
 
     return api.get(url).then((response) => {
       return { data: response.data.data, total: response.data.total };
@@ -124,6 +144,15 @@ class CarsService {
     console.log(brandId);
     let url = "/car-models";
     if (brandId) url += `?filter=makeId:${brandId}`;
+
+    return api.get(url).then((res) => {
+      const data = res.data.data || [];
+      console.log("Models data:", data);
+      return data;
+    });
+  }
+  getCarType() {
+    let url = "/cartypes";
 
     return api.get(url).then((res) => {
       const data = res.data.data || [];

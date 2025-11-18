@@ -15,6 +15,7 @@ export const searchCars = createAsyncThunk(
         notApprovedOnly,
       } = getState().cars.query; // Access state directly
 
+      console.log("cars/searchCars", data);
       const res = await CarsService.searchCar({
         page,
         limit,
@@ -23,6 +24,9 @@ export const searchCars = createAsyncThunk(
         order,
         notActiveOnly,
         notApprovedOnly,
+        brandId: data.selectedBrand,
+        typeId: data.selectedCarType,
+        modelId: data.selectedModel,
       });
 
       return res;

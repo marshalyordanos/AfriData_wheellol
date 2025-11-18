@@ -39,7 +39,10 @@ import {
   FaMoneyBillWave,
   FaUsers,
 } from "react-icons/fa";
-import { selectcarSummary } from "../../redux/auth/authSlice";
+import {
+  selectcarSummary,
+  selectCurrentUser,
+} from "../../redux/auth/authSlice";
 import CommonCard from "../../components/commons/CommonCard";
 import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
@@ -60,8 +63,11 @@ const CarsList = () => {
 
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [selectedModel, setSelectedModel] = useState(null);
+  const [selectedCarType, setSelectedCarType] = useState(null);
+
   const [selectedType, setSelectedType] = useState(null);
   const [filteredModels, setFilteredModels] = useState([]); // new state for filtered models
+  const [filteredCarType, setFilteredCarType] = useState([]); // new state for filtered models
 
   const [priceRange, setPriceRange] = useState([0, 99999]);
   const [total, setTotal] = useState(0);
@@ -71,6 +77,7 @@ const CarsList = () => {
   const [carSummary, setCarSUmmary] = useState({});
   const carpage = useSelector(carsPage);
   const carlimit = useSelector(carsLimit);
+  const userData = useSelector(selectCurrentUser);
 
   const [loading, setLoading] = useState(false);
 
@@ -89,6 +96,7 @@ const CarsList = () => {
     return [searchParams.get("page") || 1, searchParams.get("limit") || 5];
   };
 
+  console.log("userData: ", userData);
   useEffect(() => {
     const [page, limit] = getPaginationInfo();
     dispatch(updateCarsState({ page, limit }));
@@ -97,19 +105,21 @@ const CarsList = () => {
     loadBrandsAndModels().then(() => {
       searchData();
     });
-  }, []);
+  }, [selectedBrand, selectedCarType, selectedModel]);
 
   const loadBrandsAndModels = async () => {
     try {
       setLoading(true);
 
-      const [brandsData, modelsData] = await Promise.all([
+      const [brandsData, modelsData, getCarType] = await Promise.all([
         carsService.getBrands(),
         carsService.getModels(),
+        carsService.getCarType(),
       ]);
       setBrands(brandsData);
       setModels(modelsData);
       setFilteredModels(modelsData); // initialize filteredModels to all models
+      setFilteredCarType(getCarType);
     } catch (err) {
       setLoading(false);
 
@@ -120,7 +130,9 @@ const CarsList = () => {
   const searchData = async () => {
     try {
       setLoading(true);
-      const { payload } = await dispatch(searchCars());
+      const { payload } = await dispatch(
+        searchCars({ selectedBrand, selectedCarType, selectedModel })
+      );
 
       const mappedCars = (payload.data || []).map((car) => ({
         ...car,
@@ -158,90 +170,90 @@ const CarsList = () => {
     fetchSummary();
   }, []);
   // ✅ Filtering logic
-  useEffect(() => {
-    let filtered = [...carsData];
+  // useEffect(() => {
+  //   let filtered = [...carsData];
 
-    if (selectedBrand) {
-      filtered = filtered.filter(
-        (c) => c.brand?.id === selectedBrand || c.make?.id === selectedBrand
-      );
-    }
+  //   if (selectedBrand) {
+  //     filtered = filtered.filter(
+  //       (c) => c.brand?.id === selectedBrand || c.make?.id === selectedBrand
+  //     );
+  //   }
 
-    if (selectedModel) {
-      filtered = filtered.filter(
-        (c) =>
-          c.model?.id === selectedModel ||
-          c.modelId === selectedModel ||
-          c.model?.name === selectedModel
-      );
-    }
+  //   if (selectedModel) {
+  //     filtered = filtered.filter(
+  //       (c) =>
+  //         c.model?.id === selectedModel ||
+  //         c.modelId === selectedModel ||
+  //         c.model?.name === selectedModel
+  //     );
+  //   }
 
-    if (selectedType) {
-      filtered = filtered.filter(
-        (c) => c.carType?.toLowerCase() === selectedType.toLowerCase()
-      );
-    }
+  //   if (selectedType) {
+  //     filtered = filtered.filter(
+  //       (c) => c.carType?.toLowerCase() === selectedType.toLowerCase()
+  //     );
+  //   }
 
-    if (priceRange) {
-      filtered = filtered.filter(
-        (c) =>
-          c.rentalPricePerDay >= priceRange[0] &&
-          c.rentalPricePerDay <= priceRange[1]
-      );
-    }
+  //   if (priceRange) {
+  //     filtered = filtered.filter(
+  //       (c) =>
+  //         c.rentalPricePerDay >= priceRange[0] &&
+  //         c.rentalPricePerDay <= priceRange[1]
+  //     );
+  //   }
 
-    setFilteredCars(filtered);
-  }, [selectedBrand, selectedModel, selectedType, priceRange, carsData]);
+  //   setFilteredCars(filtered);
+  // }, [selectedBrand, selectedModel, selectedType, priceRange, carsData]);
   // ✅ Filtering logic for cars
-  useEffect(() => {
-    let filtered = [...carsData];
+  // useEffect(() => {
+  //   let filtered = [...carsData];
 
-    if (selectedBrand) {
-      filtered = filtered.filter(
-        (c) => c.brand?.id === selectedBrand || c.make?.id === selectedBrand
-      );
-    }
+  //   if (selectedBrand) {
+  //     filtered = filtered.filter(
+  //       (c) => c.brand?.id === selectedBrand || c.make?.id === selectedBrand
+  //     );
+  //   }
 
-    if (selectedModel) {
-      filtered = filtered.filter(
-        (c) =>
-          c.model?.id === selectedModel ||
-          c.modelId === selectedModel ||
-          c.model?.name === selectedModel
-      );
-    }
+  //   if (selectedModel) {
+  //     filtered = filtered.filter(
+  //       (c) =>
+  //         c.model?.id === selectedModel ||
+  //         c.modelId === selectedModel ||
+  //         c.model?.name === selectedModel
+  //     );
+  //   }
 
-    if (selectedType) {
-      filtered = filtered.filter(
-        (c) => c.carType?.toLowerCase() === selectedType.toLowerCase()
-      );
-    }
+  //   if (selectedType) {
+  //     filtered = filtered.filter(
+  //       (c) => c.carType?.toLowerCase() === selectedType.toLowerCase()
+  //     );
+  //   }
 
-    if (priceRange) {
-      filtered = filtered.filter(
-        (c) =>
-          c.rentalPricePerDay >= priceRange[0] &&
-          c.rentalPricePerDay <= priceRange[1]
-      );
-    }
+  //   if (priceRange) {
+  //     filtered = filtered.filter(
+  //       (c) =>
+  //         c.rentalPricePerDay >= priceRange[0] &&
+  //         c.rentalPricePerDay <= priceRange[1]
+  //     );
+  //   }
 
-    setFilteredCars(filtered);
-  }, [selectedBrand, selectedModel, selectedType, priceRange, carsData]);
+  //   setFilteredCars(filtered);
+  // }, [selectedBrand, selectedModel, selectedType, priceRange, carsData]);
 
   // ✅ Filtering logic for models based on selected brand
-  useEffect(() => {
-    if (selectedBrand) {
-      const filtered = models.filter(
-        (m) =>
-          m.brandId === selectedBrand ||
-          m.makeId === selectedBrand ||
-          m.brand?.id === selectedBrand
-      );
-      setFilteredModels(filtered);
-    } else {
-      setFilteredModels(models);
-    }
-  }, [selectedBrand, models]);
+  // useEffect(() => {
+  //   if (selectedBrand) {
+  //     const filtered = models.filter(
+  //       (m) =>
+  //         m.brandId === selectedBrand ||
+  //         m.makeId === selectedBrand ||
+  //         m.brand?.id === selectedBrand
+  //     );
+  //     setFilteredModels(filtered);
+  //   } else {
+  //     setFilteredModels(models);
+  //   }
+  // }, [selectedBrand, models]);
 
   const searchHandler = (e) => {
     const { value } = e.target;
@@ -550,19 +562,17 @@ const CarsList = () => {
           </Select>
 
           <Select
-            placeholder="Car Type"
+            placeholder="Filter by Type"
             allowClear
-            style={{ width: 160 }}
-            value={selectedType}
-            onChange={(val) => setSelectedType(val)}
+            style={{ width: 180 }}
+            value={selectedCarType}
+            onChange={(val) => setSelectedCarType(val)}
           >
-            {["SUV", "SEDAN", "VAN", "HATCHBACK", "TRUCK", "SPORTS"].map(
-              (t) => (
-                <Select.Option key={t} value={t}>
-                  {t}
-                </Select.Option>
-              )
-            )}
+            {filteredCarType.map((m) => (
+              <Select.Option key={m.id || m.name} value={m.id || m.name}>
+                {m.name}
+              </Select.Option>
+            ))}
           </Select>
 
           <Button
@@ -573,18 +583,20 @@ const CarsList = () => {
             Reset Filters
           </Button>
 
-          <button
-            className="px-4  py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-auto"
-            onClick={() => {
-              setCarId("");
-              setIsModalOpen(true);
-            }}
-          >
-            <span className="flex flex-row items-center">
-              <PlusOutlined />
-              <p className="pl-2 m-0">Add New Car</p>
-            </span>
-          </button>
+          {userData?.user?.role?.name == "HOST" && (
+            <button
+              className="px-4  py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-auto"
+              onClick={() => {
+                setCarId("");
+                setIsModalOpen(true);
+              }}
+            >
+              <span className="flex flex-row items-center">
+                <PlusOutlined />
+                <p className="pl-2 m-0">Add New Car</p>
+              </span>
+            </button>
+          )}
         </div>
       </div>
 

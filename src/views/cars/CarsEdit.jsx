@@ -317,7 +317,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         <Select placeholder="Eco Friendly">
           <Option value="HYBRID">Hybrid</Option>
           <Option value="ELECTRIC">Electric</Option>
-          <Option value="GAS">Gas</Option>
+          <Option value="NONE">Gas</Option>
         </Select>
       </Form.Item>
 
@@ -359,10 +359,11 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         )}
       </Form.Item>
 
-     {/* Buttons */}
+      {/* Buttons */}
       <div style={{ display: "flex", gap: "10px", marginTop: 20 }}>
         <Button onClick={() => setIsModalOpen?.(false)}>Cancel</Button>
         <Button
+          loading={loading}
           type="primary"
           htmlType="submit"
           style={{
