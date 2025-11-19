@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Card, Descriptions, Image, Tag, Spin, message } from "antd";
+import {
+  Card,
+  Descriptions,
+  Image,
+  Tag,
+  Spin,
+  message,
+  Row,
+  Col,
+  Divider,
+} from "antd";
 import { useParams } from "react-router-dom";
 import carsService from "./CarsService";
 
-// Helper to find name by ID from list
 const findNameById = (items, id) => {
   if (!items || !id) return "-";
   const found = items.find(
@@ -65,54 +74,54 @@ const CarDetails = () => {
   return (
     <div className="p-4 sm:p-6 md:p-8">
       <Card
-        title={`${brandName} ${modelName}`}
+        title={
+          <h2 style={{ margin: 0 }}>
+            {brandName} {modelName}
+          </h2>
+        }
         bordered
         style={{
           width: "100%",
-          maxWidth: 800,
+          maxWidth: 900,
           margin: "0 auto",
-          boxSizing: "border-box",
+          borderRadius: 12,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         }}
       >
-        {/* Images horizontal scroll */}
-        <div
-          className="flex gap-2 overflow-x-auto py-2"
-          style={{
-            scrollbarWidth: "thin",
-            paddingBottom: 5,
-          }}
-        >
-          {(car.photos || []).map((photo, index) => (
-            <div
-              key={index}
-              style={{
-                minWidth: 120,
-                flexShrink: 0,
-                borderRadius: 8,
-                overflow: "hidden",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
-              }}
-            >
-              <img
-                src={photo}
-                alt={`Car ${index + 1}`}
-                style={{
-                  width: "100%",
-                  height: 80,
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-            </div>
-          ))}
-        </div>
+        {/* Photos */}
+        {car.photos?.length > 0 && (
+          <div className="mb-4">
+            <Image.PreviewGroup>
+              <Row gutter={[8, 8]} wrap={false} style={{ overflowX: "auto" }}>
+                {car.photos.map((photo, idx) => (
+                  <Col key={idx} style={{ flex: "0 0 auto" }}>
+                    <Image
+                      src={photo}
+                      alt={`Car ${idx + 1}`}
+                      width={150}
+                      height={100}
+                      style={{
+                        objectFit: "cover",
+                        borderRadius: 8,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      }}
+                    />
+                  </Col>
+                ))}
+              </Row>
+            </Image.PreviewGroup>
+          </div>
+        )}
 
-        {/* Responsive Car Details */}
+        <Divider />
+
+        {/* Car Info */}
         <Descriptions
           bordered
           column={{ xs: 1, sm: 1, md: 2 }}
-          className="mt-4"
-          labelStyle={{ fontWeight: 600 }}
+          size="middle"
+          labelStyle={{ fontWeight: 600, width: 160 }}
+          contentStyle={{ color: "#555" }}
         >
           <Descriptions.Item label="Year">{car.year || "-"}</Descriptions.Item>
           <Descriptions.Item label="Color">
@@ -155,12 +164,85 @@ const CarDetails = () => {
           </Descriptions.Item>
         </Descriptions>
 
+        {/* GPS Info */}
+        {(car.hasGPS || car.gpsDeviceBrand || car.gpsPlatformUrl) && (
+          <>
+            <Divider>GPS Information</Divider>
+            <Descriptions
+              bordered
+              column={{ xs: 1, sm: 1, md: 2 }}
+              size="small"
+              labelStyle={{ fontWeight: 600 }}
+            >
+              <Descriptions.Item label="GPS Device Brand">
+                {car.gpsDeviceBrand || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="GPS IMEI Number">
+                {car.gpsImeiNumber || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="GPS Platform URL">
+                {car.gpsPlatformUrl || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="GPS Username">
+                {car.gpsPlatformUsername || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="GPS Password">
+                {car.gpsPlatformPassword || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Subscription Expiry">
+                {car.gpsSubscriptionExpiryDate
+                  ? new Date(car.gpsSubscriptionExpiryDate).toLocaleDateString()
+                  : "-"}
+              </Descriptions.Item>
+            </Descriptions>
+          </>
+        )}
+        {/* GPS & Technical Inspection Files */}
+        {(car.gpsInstallationReceiptUrl ||
+          car.technicalInspectionCertificateUrl) && (
+          <>
+            <Divider>Documents</Divider>
+            <Descriptions
+              bordered
+              column={{ xs: 1, sm: 1, md: 2 }}
+              size="small"
+              labelStyle={{ fontWeight: 600 }}
+            >
+              {car.gpsInstallationReceiptUrl && (
+                <Descriptions.Item label="GPS Installation Receipt">
+                  <a
+                    href={car.gpsInstallationReceiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View Receipt
+                  </a>
+                </Descriptions.Item>
+              )}
+              {car.technicalInspectionCertificateUrl && (
+                <Descriptions.Item label="Technical Inspection Certificate">
+                  <a
+                    href={car.technicalInspectionCertificateUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View Certificate
+                  </a>
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+          </>
+        )}
         {/* Description */}
         {car.description && (
-          <div className="mt-4">
-            <strong>Description:</strong>
-            <p style={{ wordWrap: "break-word" }}>{car.description}</p>
-          </div>
+          <>
+            <Divider>Description</Divider>
+            <p
+              style={{ color: "#555", lineHeight: 1.6, wordWrap: "break-word" }}
+            >
+              {car.description}
+            </p>
+          </>
         )}
       </Card>
     </div>

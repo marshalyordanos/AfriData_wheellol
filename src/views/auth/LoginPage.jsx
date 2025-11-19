@@ -260,12 +260,31 @@ const LoginPage = () => {
           </Form>
 
           <Modal
-            title="Forgot Password"
+            // title="Forgot Password"
             open={isModalVisible}
             onCancel={handleCancel}
             footer={null}
             destroyOnClose
           >
+            <div className="flex  gap-3 items-center my-4">
+              {forgotStep === 2 && (
+                <Button
+                  type="primary"
+                  loading={modalLoading}
+                  className=" h-[30px] rounded-lg"
+                  style={{
+                    background: "var(--color-primary)",
+                    color: "white",
+                  }}
+                  onClick={() => {
+                    setForgotStep(1);
+                  }}
+                >
+                  back{" "}
+                </Button>
+              )}
+              <p>Forgot Passowrd</p>
+            </div>
             {forgotStep === 1 ? (
               <>
                 <p className="mb-4 text-gray-500 text-sm">
@@ -298,7 +317,7 @@ const LoginPage = () => {
                       type="primary"
                       htmlType="submit"
                       loading={modalLoading}
-                      className="w-full py-3 rounded-lg"
+                      className="w-full h-[40px] rounded-lg"
                       style={{
                         background: "var(--color-primary)",
                         color: "white",
@@ -350,7 +369,7 @@ const LoginPage = () => {
                       type="primary"
                       htmlType="submit"
                       loading={modalLoading}
-                      className="w-full py-3 rounded-lg"
+                      className="w-full h-[40px] rounded-lg"
                       style={{
                         background: "var(--color-primary)",
                         color: "white",

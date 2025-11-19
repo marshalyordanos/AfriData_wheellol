@@ -168,21 +168,29 @@ class CarsService {
     return api.get(`/cars/insurance/${carId}`).then((res) => {
       // backend returns { success, message, data: [ ... ] }
       const list = res.data?.data || [];
-      return list.length > 0 ? list[0] : null; // return single insurance if exists
+      return list.length > 0 ? list : null; // return single insurance if exists
     });
   }
 
   // POST create new insurance
   createCarInsurance(data) {
     return api
-      .post("/cars/insurance", data)
+      .post("/cars/insurance", data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
       .then((res) => res.data?.data || res.data);
   }
 
   // PATCH update existing insurance
   updateCarInsurance(insuranceId, data) {
     return api
-      .patch(`/cars/insurance/${insuranceId}`, data)
+      .patch(`/cars/insurance/${insuranceId}`, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
       .then((res) => res.data?.data || res.data);
   }
 

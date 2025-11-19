@@ -5,10 +5,12 @@ import {
   Select,
   Switch,
   Upload,
-  Image,
-  message,
-  Spin,
   Button,
+  DatePicker,
+  message,
+  Row,
+  Col,
+  Typography,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import styled from "styled-components";
@@ -18,6 +20,7 @@ import { useSelector } from "react-redux";
 import CartypesService from "../cartypes/CartypesService";
 
 const { Option } = Select;
+const { Title } = Typography;
 
 const getBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -33,24 +36,26 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
   const [models, setModels] = useState([]);
   const [carTypes, setCarTypes] = useState([]);
 
-  const [fileList, setFileList] = useState([]);
+  const [photoList, setPhotoList] = useState([]);
+  const [techCertList, setTechCertList] = useState([]);
+  const [gpsReceiptList, setGpsReceiptList] = useState([]);
   const [previewImage, setPreviewImage] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [brandLoading, setBrandLoading] = useState(false);
   const [carTypesLoading, setCartypeLoading] = useState(false);
 
-  const [hostId, setHostId] = useState(null); // ✅ dynamic hostId
+  const [showGPS, setShowGPS] = useState(false);
+
   const isEdit = !!carId;
   const userData = useSelector(selectCurrentUser);
 
-  console.log("userdata:", "klsdmskmaks", userData);
-
-  // Load brands and car data (if editing)
   useEffect(() => {
     const loadInitialData = async () => {
       try {
         setLoading(true);
+
         const brandsList = await carsService.getBrands();
         setBrands(brandsList);
 
@@ -58,16 +63,14 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
           page: 1,
           limit: 1000,
         });
-        console;
         setCarTypes(typeList?.data);
 
         if (isEdit) {
           const carData = await carsService.getCar(carId);
           if (carData) {
-            setHostId(carData.hostId); // ✅ set dynamic hostId
+            setShowGPS(carData.hasGPS);
 
             form.setFieldsValue({
-              hostId: userData?.user?.id,
               makeId: carData.makeId,
               modelId: carData.modelId,
               year: carData.year,
@@ -86,17 +89,48 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
               isActive: carData.isActive,
               description: carData.description || "",
               location: carData.location || "",
+              hasGPS: carData.hasGPS,
+              gpsDeviceBrand: carData.gpsDeviceBrand,
+              gpsImeiNumber: carData.gpsImeiNumber,
+              gpsPlatformUrl: carData.gpsPlatformUrl,
+              gpsPlatformUsername: carData.gpsPlatformUsername,
+              gpsPlatformPassword: carData.gpsPlatformPassword,
+              gpsSubscriptionExpiryDate: carData.gpsSubscriptionExpiryDate
+                ? new Date(carData.gpsSubscriptionExpiryDate)
+                : null,
             });
 
-            if (carData.photos?.length) {
-              setFileList(
-                carData.photos.map((url, index) => ({
-                  uid: index,
-                  name: `photo${index + 1}`,
+            // if (carData.photos?.length) {
+            //   setPhotoList(
+            //     carData.photos.map((url, index) => ({
+            //       uid: index,
+            //       name: `photo${index + 1}`,
+            //       status: "done",
+            //       url,
+            //     }))
+            //   );
+            // }
+
+            if (carData.technicalInspectionCertificateUrl) {
+              setTechCertList([
+                {
+                  uid: "techCert",
+                  name: "certificate",
                   status: "done",
-                  url,
-                }))
-              );
+                  url: carData.technicalInspectionCertificateUrl,
+                },
+              ]);
+            }
+
+            if (carData.gpsInstallationReceiptUrl) {
+              setGpsReceiptList([
+                {
+                  uid: "gpsReceipt",
+                  name: "gps receipt",
+                  status: "done",
+                  url: carData.gpsInstallationReceiptUrl,
+                },
+              ]);
             }
 
             if (carData.makeId) {
@@ -138,23 +172,30 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
   };
 
   const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
+    if (!file.url && !file.preview && file.originFileObj) {
       file.preview = await getBase64(file.originFileObj);
     }
     setPreviewImage(file.url || file.preview);
     setPreviewOpen(true);
   };
 
-  const handleChange = ({ fileList: newFileList }) => setFileList(newFileList);
-
   const dummyRequest = ({ onSuccess }) => setTimeout(() => onSuccess("ok"), 0);
 
-  const beforeUpload = (file) => {
-    if (!file.type.startsWith("image/")) {
-      message.error("You can only upload image files!");
-      return Upload.LIST_IGNORE;
+  const beforeUpload = (file, pdf = false) => {
+    if (file.type.startsWith("image/")) {
+      return true;
     }
-    return true;
+
+    if (pdf && file.type === "application/pdf") {
+      return true;
+    }
+
+    message.error(
+      pdf
+        ? "You can only upload image or PDF files!"
+        : "You can only upload image files!"
+    );
+    return Upload.LIST_IGNORE;
   };
 
   const onFinish = async (values) => {
@@ -162,28 +203,31 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
       setLoading(true);
       const formData = new FormData();
 
-      // Append dynamic hostId if available
-      if (hostId) formData.append("hostId", hostId);
+      formData.append("hostId", userData?.id);
 
-      // Append all other form values
       Object.entries(values).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          formData.append(key, value);
+          if (value instanceof Date) {
+            formData.append(key, value.toISOString());
+          } else if (typeof value !== "object") {
+            formData.append(key, value);
+          }
         }
       });
 
-      console.log("userDatauserData:", userData);
+      photoList.forEach((file) => {
+        if (file.originFileObj) formData.append("photos", file.originFileObj);
+      });
 
-      formData.append("hostId", userData?.user?.id);
+      techCertList.forEach((file) => {
+        if (file.originFileObj)
+          formData.append("technicalInspectionCertificate", file.originFileObj);
+      });
 
-      // Append photos (only new ones)
-      if (fileList.length > 0) {
-        fileList.forEach((file) => {
-          if (file.originFileObj) {
-            formData.append("photos", file.originFileObj);
-          }
-        });
-      }
+      gpsReceiptList.forEach((file) => {
+        if (file.originFileObj)
+          formData.append("gpsInstallationReceipt", file.originFileObj);
+      });
 
       if (isEdit) {
         await carsService.updateCar(formData, carId);
@@ -205,121 +249,158 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
 
   return (
     <Form form={form} layout="vertical" onFinish={onFinish}>
-      {/* Brand */}
-      <Form.Item
-        label="Brand"
-        name="makeId"
-        rules={[{ required: true, message: "Brand is required" }]}
-      >
-        <Select
-          showSearch
-          placeholder="Select brand"
-          filterOption={false}
-          onSearch={handleSearchBrands}
-          onChange={handleBrandChange}
-          loading={brandLoading}
-          options={brands.map((b) => ({ label: b.name, value: b.id }))}
-        />
-      </Form.Item>
+      <Title level={4}>General Info</Title>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="Brand"
+            name="makeId"
+            rules={[{ required: true, message: "Brand is required" }]}
+          >
+            <Select
+              showSearch
+              placeholder="Select brand"
+              filterOption={false}
+              onSearch={handleSearchBrands}
+              onChange={handleBrandChange}
+              loading={brandLoading}
+              options={brands.map((b) => ({ label: b.name, value: b.id }))}
+            />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="Model"
+            name="modelId"
+            rules={[{ required: true, message: "Model is required" }]}
+          >
+            <Select
+              showSearch
+              placeholder="Select model"
+              options={models.map((m) => ({ label: m.name, value: m.id }))}
+              disabled={!form.getFieldValue("makeId")}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
 
-      {/* Model */}
-      <Form.Item
-        label="Model"
-        name="modelId"
-        rules={[{ required: true, message: "Model is required" }]}
-      >
-        <Select
-          showSearch
-          placeholder="Select model"
-          options={models.map((m) => ({ label: m.name, value: m.id }))}
-          disabled={!form.getFieldValue("makeId")}
-        />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="Car Type"
+            name="carType"
+            rules={[{ required: true, message: "Type is required" }]}
+          >
+            <Select
+              showSearch
+              placeholder="Select Type"
+              loading={carTypesLoading}
+              options={carTypes.map((b) => ({ label: b.name, value: b.id }))}
+            />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="Year" name="year" rules={[{ required: true }]}>
+            <Input type="number" placeholder="Year" />
+          </Form.Item>
+        </Col>
+      </Row>
 
-      {/* types */}
-      <Form.Item
-        label="Car Type"
-        name="carType"
-        rules={[{ required: true, message: "Model is required" }]}
-      >
-        <Select
-          showSearch
-          placeholder="Select Type"
-          filterOption={false}
-          //  onSearch={handleSearchBrands}
-          //  onChange={handleBrandChange}
-          loading={setCartypeLoading}
-          options={carTypes.map((b) => ({ label: b.name, value: b.id }))}
-        />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="Color" name="color" rules={[{ required: true }]}>
+            <Input placeholder="Color" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="License Plate"
+            name="licensePlate"
+            rules={[{ required: true }]}
+          >
+            <Input placeholder="License Plate" />
+          </Form.Item>
+        </Col>
+      </Row>
 
-      {/* <Form.Item label="Car Type" name="carType">
-        <Select placeholder="Car Type">
-          <Option value="SEDAN">Sedan</Option>
-          <Option value="VAN">Van</Option>
-          <Option value="SUV">SUV</Option>
-          <Option value="TRUCK">Truck</Option>
-        </Select>
-      </Form.Item> */}
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="VIN" name="vin" rules={[{ required: true }]}>
+            <Input placeholder="VIN" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="Transmission"
+            name="transmission"
+            rules={[{ required: true }]}
+          >
+            <Select placeholder="Transmission">
+              <Option value="AUTOMATIC">Automatic</Option>
+              <Option value="MANUAL">Manual</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
 
-      {/* Other fields */}
-      <Form.Item label="Year" name="year" rules={[{ required: true }]}>
-        <Input type="number" placeholder="Year" />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="Mileage"
+            name="mileage"
+            rules={[{ required: true }]}
+          >
+            <Input type="number" placeholder="Mileage" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="Location" name="location">
+            <Input placeholder="Location" />
+          </Form.Item>
+        </Col>
+      </Row>
 
-      <Form.Item label="Color" name="color">
-        <Input placeholder="Color" />
-      </Form.Item>
+      <Title level={4} style={{ marginTop: 24 }}>
+        Pricing & Capacity
+      </Title>
 
-      <Form.Item label="License Plate" name="licensePlate">
-        <Input placeholder="License Plate" />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="Rental Price / Day"
+            name="rentalPricePerDay"
+            rules={[{ required: true }]}
+          >
+            <Input type="number" placeholder="Rental Price per Day" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="Seating Capacity"
+            name="seatingCapacity"
+            rules={[{ required: true }]}
+          >
+            <Input type="number" placeholder="Seating Capacity" />
+          </Form.Item>
+        </Col>
+      </Row>
 
-      <Form.Item label="VIN" name="vin">
-        <Input placeholder="VIN" />
-      </Form.Item>
-
-      <Form.Item label="Transmission" name="transmission">
-        <Select placeholder="Transmission">
-          <Option value="AUTOMATIC">Automatic</Option>
-          <Option value="MANUAL">Manual</Option>
-        </Select>
-      </Form.Item>
-
-      <Form.Item label="Mileage" name="mileage">
-        <Input type="number" placeholder="Mileage" />
-      </Form.Item>
-      <Form.Item label="Location" name="location">
-        <Input placeholder="Location" />
-      </Form.Item>
-
-      {/* <Form.Item label="Daily Rate" name="dailyRate">
-        <Input type="number" placeholder="Daily Rate" />
-      </Form.Item> */}
-
-      <Form.Item label="Rental Price / Day" name="rentalPricePerDay">
-        <Input type="number" placeholder="Rental Price per Day" />
-      </Form.Item>
-
-      <Form.Item label="Long Term Discount (%)" name="longTermDiscount">
-        <Input type="number" placeholder="Long Term Discount" />
-      </Form.Item>
-
-      <Form.Item label="Seating Capacity" name="seatingCapacity">
-        <Input type="number" placeholder="Seating Capacity" />
-      </Form.Item>
-
-      <Form.Item label="Mileage Limit" name="mileageLimit">
-        <Input type="number" placeholder="Mileage Limit" />
-      </Form.Item>
-
-      <Form.Item label="Eco Friendly" name="ecoFriendly">
-        <Select placeholder="Eco Friendly">
-          <Option value="HYBRID">Hybrid</Option>
-          <Option value="ELECTRIC">Electric</Option>
-          <Option value="NONE">Gas</Option>
-        </Select>
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="Mileage Limit" name="mileageLimit">
+            <Input type="number" placeholder="Mileage Limit" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="Eco Friendly" name="ecoFriendly">
+            <Select placeholder="Eco Friendly">
+              <Option value="HYBRID">Hybrid</Option>
+              <Option value="ELECTRIC">Electric</Option>
+              <Option value="NONE">Gas</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
 
       <Form.Item label="Active" name="isActive" valuePropName="checked">
         <Switch />
@@ -329,37 +410,120 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         <Input.TextArea rows={3} placeholder="Description" />
       </Form.Item>
 
-      {/* Photos */}
       <Form.Item label="Photos">
+        <p style={{ marginBottom: 8, color: "#555" }}>
+          Please upload 6 photos of your car: Front, Rear, Driver Side,
+          Passenger Side, Dashboard, and Interior.
+        </p>
         <Upload
           customRequest={dummyRequest}
           listType="picture-card"
-          fileList={fileList}
+          fileList={photoList}
           onPreview={handlePreview}
-          onChange={handleChange}
+          onChange={({ fileList }) => setPhotoList(fileList)}
           beforeUpload={beforeUpload}
         >
-          {fileList.length >= 5 ? null : (
+          {photoList.length >= 6 ? null : (
             <div>
               <PlusOutlined />
               <div style={{ marginTop: 8 }}>Upload</div>
             </div>
           )}
         </Upload>
-        {previewImage && (
-          <Image
-            wrapperStyle={{ display: "none" }}
-            preview={{
-              visible: previewOpen,
-              onVisibleChange: (visible) => setPreviewOpen(visible),
-              afterOpenChange: (visible) => !visible && setPreviewImage(""),
-            }}
-            src={previewImage}
-          />
-        )}
       </Form.Item>
 
-      {/* Buttons */}
+      <Title level={4} style={{ marginTop: 24 }}>
+        GPS & Technical Inspection
+      </Title>
+
+      <Form.Item label="Has GPS?" name="hasGPS" valuePropName="checked">
+        <Switch onChange={(checked) => setShowGPS(checked)} />
+      </Form.Item>
+
+      {showGPS && (
+        <>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item label="GPS Device Brand" name="gpsDeviceBrand">
+                <Input placeholder="GPS Device Brand" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item label="GPS IMEI Number" name="gpsImeiNumber">
+                <Input placeholder="GPS IMEI Number" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item label="GPS Platform URL" name="gpsPlatformUrl">
+                <Input placeholder="GPS Platform URL" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="GPS Platform Username"
+                name="gpsPlatformUsername"
+              >
+                <Input placeholder="Username" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="GPS Platform Password"
+                name="gpsPlatformPassword"
+              >
+                <Input placeholder="Password" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="GPS Subscription Expiry"
+                name="gpsSubscriptionExpiryDate"
+              >
+                <DatePicker style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            label="GPS Installation Receipt"
+            name="gpsInstallationReceiptFile"
+          >
+            <Upload
+              customRequest={dummyRequest}
+              listType="picture"
+              maxCount={1}
+              fileList={gpsReceiptList}
+              onChange={({ fileList }) => setGpsReceiptList(fileList)}
+              beforeUpload={(file) => beforeUpload(file, true)}
+            >
+              <Button icon={<PlusOutlined />}>Upload Receipt</Button>
+            </Upload>
+          </Form.Item>
+        </>
+      )}
+
+      <Form.Item
+        label="Technical Inspection Certificate"
+        name="technicalInspectionCertificateFile"
+      >
+        <Upload
+          customRequest={dummyRequest}
+          listType="picture"
+          maxCount={1}
+          fileList={techCertList}
+          onChange={({ fileList }) => setTechCertList(fileList)}
+          beforeUpload={(file) => beforeUpload(file, true)}
+        >
+          <Button icon={<PlusOutlined />}>Upload Certificate</Button>
+        </Upload>
+      </Form.Item>
+
       <div style={{ display: "flex", gap: "10px", marginTop: 20 }}>
         <Button onClick={() => setIsModalOpen?.(false)}>Cancel</Button>
         <Button
@@ -378,15 +542,5 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
     </Form>
   );
 };
-
-const SpinStyle = styled.div`
-  width: 50px;
-  height: 50px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  left: 40%;
-`;
 
 export default CarsEdit;

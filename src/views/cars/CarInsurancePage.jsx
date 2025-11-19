@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, Button, message, Typography, Space, Spin } from "antd";
+import { Table, Button, message, Space, Spin, Typography } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
@@ -12,26 +12,28 @@ import carsService from "./CarsService";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 
-const { Title, Paragraph } = Typography;
+const { Title } = Typography;
 
 const CarInsurancePage = () => {
   const { carId } = useParams();
   const navigate = useNavigate();
 
-  const [insurance, setInsurance] = useState(null);
+  const [insuranceList, setInsuranceList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedInsurance, setSelectedInsurance] = useState(null);
   const [refreshFlag, setRefreshFlag] = useState(false);
 
-  // Fetch insurance for this car
+  // Fetch all insurance records for the car
   const loadInsurance = async () => {
     try {
       setLoading(true);
       const data = await carsService.getCarInsurance(carId);
-      setInsurance(data || null);
+      console.log(data);
+      setInsuranceList(data || []);
     } catch (err) {
-      message.error("Failed to fetch insurance");
+      message.error("Failed to fetch insurance records");
       console.error(err);
     } finally {
       setLoading(false);
@@ -44,19 +46,91 @@ const CarInsurancePage = () => {
 
   // Delete insurance
   const handleDelete = async () => {
-    if (!insurance?.id) return;
+    if (!selectedInsurance?.id) return;
     try {
       setLoading(true);
-      await carsService.deleteCarInsurance(insurance.id);
+      await carsService.deleteCarInsurance(selectedInsurance.id);
       message.success("Insurance deleted successfully");
-      setInsurance(null);
       setIsDeleteModalOpen(false);
+      setRefreshFlag((prev) => !prev);
     } catch (err) {
       message.error("Failed to delete insurance");
     } finally {
       setLoading(false);
     }
   };
+
+  const columns = [
+    {
+      title: "Insurance Company",
+      dataIndex: "insuranceCompany",
+      key: "insuranceCompany",
+    },
+    {
+      title: "Policy Number",
+      dataIndex: "policyNumber",
+      key: "policyNumber",
+    },
+    {
+      title: "Type",
+      dataIndex: "insuranceType",
+      key: "insuranceType",
+      render: (type) => type.replace("_", " "), // e.g., THIRD_PARTY → THIRD PARTY
+    },
+    {
+      title: "Expiry Date",
+      dataIndex: "expiryDate",
+      key: "expiryDate",
+      render: (date) => new Date(date).toLocaleDateString(),
+    },
+    {
+      title: "Document",
+      dataIndex: "documentFile",
+      key: "documentFile",
+      render: (file) =>
+        file ? (
+          <a href={file} target="_blank" rel="noopener noreferrer">
+            View
+          </a>
+        ) : (
+          "-"
+        ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Space size="middle">
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setSelectedInsurance(record);
+              setIsModalOpen(true);
+            }}
+            style={{
+              marginBottom: 16,
+              background: "var(--color-primary)",
+              borderColor: "var(--color-primary)",
+              color: "#fff",
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            type="danger"
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              setSelectedInsurance(record);
+              setIsDeleteModalOpen(true);
+            }}
+          >
+            Delete
+          </Button>
+        </Space>
+      ),
+    },
+  ];
 
   return (
     <div className="p-6">
@@ -74,77 +148,34 @@ const CarInsurancePage = () => {
         Back to Cars
       </Button>
 
+      <div className="flex justify-between items-center mb-4">
+        <Title level={4}>Car Insurance</Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => {
+            setSelectedInsurance(null);
+            setIsModalOpen(true);
+          }}
+          style={{
+            background: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "#fff",
+          }}
+        >
+          Add Insurance
+        </Button>
+      </div>
+
       {loading ? (
         <Spin tip="Loading..." size="large" />
       ) : (
-        <Card
-          title={
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full">
-              <Title level={4} className="mb-2 sm:mb-0">
-                Car Insurance
-              </Title>
-
-              <Space className="flex-wrap gap-2">
-                {insurance ? (
-                  <>
-                    <Button
-                      type="primary"
-                      style={{
-                        background: "var(--color-primary)",
-                        borderColor: "var(--color-primary)",
-                        color: "#fff",
-                      }}
-                      icon={<EditOutlined />}
-                      onClick={() => setIsModalOpen(true)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      type="danger"
-                      icon={<DeleteOutlined />}
-                      onClick={() => setIsDeleteModalOpen(true)}
-                    >
-                      Delete
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => {
-                      setIsModalOpen(true);
-                    }}
-                    style={{
-                      background: "var(--color-primary)",
-                      borderColor: "var(--color-primary)",
-                      color: "#fff",
-                    }}
-                  >
-                    Add Insurance
-                  </Button>
-                )}
-              </Space>
-            </div>
-          }
-        >
-          {insurance ? (
-            <div>
-              <Paragraph>
-                <strong>Provider:</strong> {insurance.provider}
-              </Paragraph>
-              <Paragraph>
-                <strong>Plan:</strong> {insurance.plan}
-              </Paragraph>
-              <Paragraph>
-                <strong>Coverage Details:</strong>
-                <br />
-                {insurance.coverageDetails}
-              </Paragraph>
-            </div>
-          ) : (
-            <Paragraph>No insurance found for this car.</Paragraph>
-          )}
-        </Card>
+        <Table
+          columns={columns}
+          dataSource={insuranceList || []} // <- default to empty array
+          rowKey="id"
+          pagination={{ pageSize: 5 }}
+        />
       )}
 
       {/* Add/Edit Insurance Modal */}
@@ -156,7 +187,7 @@ const CarInsurancePage = () => {
         >
           <CarInsuranceForm
             carId={carId}
-            insuranceData={insurance}
+            insuranceData={selectedInsurance}
             setIsModalOpen={setIsModalOpen}
             refreshData={() => setRefreshFlag((prev) => !prev)}
           />

@@ -582,8 +582,7 @@ const CarsList = () => {
           >
             Reset Filters
           </Button>
-
-          {userData?.user?.role?.name == "HOST" && (
+          {userData?.role?.name == "HOST" && (
             <button
               className="px-4  py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-auto"
               onClick={() => {
