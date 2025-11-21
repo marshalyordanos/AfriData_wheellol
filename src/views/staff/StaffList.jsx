@@ -169,10 +169,18 @@ const StaffList = () => {
     ...["firstName", "lastName", "email", "phone", "role", "active"].map(
       (key) => ({
         title:
-          key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1"),
+          key === "role" ? (
+            <span style={{ fontWeight: "normal", color: "inherit" }}>
+              {key.charAt(0).toUpperCase() +
+                key.slice(1).replace(/([A-Z])/g, " $1")}
+            </span>
+          ) : (
+            key.charAt(0).toUpperCase() +
+            key.slice(1).replace(/([A-Z])/g, " $1")
+          ),
         dataIndex: key === "active" ? "isActive" : key,
         key,
-        sorter: true,
+        sorter: key !== "role",
         onCell: (record) => ({
           onClick: () => {
             const id = record?._id || record?.id;
@@ -182,7 +190,11 @@ const StaffList = () => {
         }),
         render:
           key === "role"
-            ? (role) => role?.name || "-"
+            ? (role) => (
+                <span style={{ fontWeight: "normal", color: "inherit" }}>
+                  {role?.name || "-"}
+                </span>
+              )
             : key === "active"
             ? (_, record) =>
                 record?.isActive ? (
@@ -348,7 +360,7 @@ const StaffList = () => {
 
       <div className="hidden md:block">
         <CommonTable
-          rowSelectionType={"checkbox"}
+          // rowSelectionType={"checkbox"}
           data={staffData}
           columns={columns}
           total={total}

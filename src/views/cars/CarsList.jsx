@@ -415,6 +415,7 @@ const CarsList = () => {
         return (
           <Button
             type="link"
+            style={{ color: "var(--color-primary)" }}
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/dash/cars/details/${id}`, { state: record });
@@ -425,24 +426,24 @@ const CarsList = () => {
         );
       },
     },
-    {
-      title: "Reviews",
-      key: "reviews",
-      render: (_, record) => {
-        const id = record._id || record.id;
-        return (
-          <Button
-            type="link"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/dash/cars/reviews/${id}`, { state: record });
-            }}
-          >
-            View Reviews
-          </Button>
-        );
-      },
-    },
+    // {
+    //   title: "Reviews",
+    //   key: "reviews",
+    //   render: (_, record) => {
+    //     const id = record._id || record.id;
+    //     return (
+    //       <Button
+    //         type="link"
+    //         onClick={(e) => {
+    //           e.stopPropagation();
+    //           navigate(`/dash/cars/reviews/${id}`, { state: record });
+    //         }}
+    //       >
+    //         View Reviews
+    //       </Button>
+    //     );
+    //   },
+    // },
   ];
 
   return (
@@ -602,7 +603,7 @@ const CarsList = () => {
       {/* Cars Table */}
       <div className="hidden md:block">
         <CommonTable
-          rowSelectionType="checkbox"
+          // rowSelectionType="checkbox"
           data={filteredCars}
           columns={columns}
           setSelection={setCarsSelection}

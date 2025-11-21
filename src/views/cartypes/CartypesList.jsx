@@ -174,7 +174,7 @@ const CartypesList = () => {
           <NavLink
             style={{ color: "#2f1dca" }}
             state={recored}
-            to={`${recored.id}`}
+            // to={`${recored.id}`}
           >
             {text}
           </NavLink>
@@ -282,7 +282,7 @@ const CartypesList = () => {
 
       <div className="hidden md:block">
         <CommonTable
-          rowSelectionType={"checkbox"}
+          // rowSelectionType={"checkbox"}
           data={cartypesData}
           columns={columns}
           setSelection={setCartypesSelection}

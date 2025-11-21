@@ -252,7 +252,7 @@ const BrandsList = () => {
           data={brandsData}
           columns={columns}
           rowKey="id" // important for row selection & uniqueness
-          rowSelectionType="checkbox"
+          // rowSelectionType="checkbox"
           setSelection={setBrandsSelection}
           onRow={(record) => ({
             onClick: (e) => {

@@ -129,33 +129,34 @@ const CarModelsList = () => {
   // RENDER
   // ============================
   return (
-    <div className="p-6">
+    <div className="p-1">
       {/* Header controls */}
-      <div className="flex justify-between items-center mb-6">
-        <Input
-          placeholder="Search model or brand"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={{ width: 250 }}
-        />
-        <div className="flex gap-3">
-          <Button
-            icon={<ReloadOutlined />}
+      <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
+        <div className="flex flex-col md:w-[45vw] w-full">
+          <h1 className="text-2xl font-bold pb-4">Car Models</h1>
+          <Input
+            placeholder="Search model or brand"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+            className="drop-shadow-sm py-2"
+          />
+        </div>
+
+        <div className="flex items-center mt-4 md:mt-0">
+          <button
             onClick={fetchData}
-            loading={loading}
-            style={{
-              borderColor: "var(--color-primary)",
-              color: "var(--color-primary)",
-            }}
-          ></Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            style={{ backgroundColor: "var(--color-primary)" }}
+            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
+          >
+            <ReloadOutlined />
+          </button>
+
+          <button
+            className="px-4 py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded"
             onClick={openCreate}
           >
-            Add Model
-          </Button>
+            <PlusOutlined className="mr-2" /> Add Model
+          </button>
         </div>
       </div>
 

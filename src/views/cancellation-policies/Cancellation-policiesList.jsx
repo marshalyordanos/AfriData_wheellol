@@ -366,7 +366,7 @@ const CancellationPoliciesList = () => {
 
       <div className="hidden md:block">
         <CommonTable
-          rowSelectionType={"checkbox"}
+          // rowSelectionType={"checkbox"}
           data={policies}
           columns={columns}
           setSelection={setSelection}
