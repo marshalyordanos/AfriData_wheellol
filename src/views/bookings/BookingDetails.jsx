@@ -23,6 +23,10 @@ import styled from "styled-components";
 import BookingService from "./BookingService";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 
 const BookingDetail = () => {
   const { id } = useParams();
@@ -722,13 +726,11 @@ const BookingDetail = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Start">
                 {booking.startDate
-                  ? new Date(booking.startDate).toLocaleString()
+                  ? formatReadableDate(booking.startDate)
                   : "-"}
               </Descriptions.Item>
               <Descriptions.Item label="End">
-                {booking.endDate
-                  ? new Date(booking.endDate).toLocaleString()
-                  : "-"}
+                {booking.endDate ? formatReadableDate(booking.endDate) : "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Pickup">
                 {formatLocation(booking.pickupLocation)}
@@ -740,7 +742,7 @@ const BookingDetail = () => {
                 {booking.withDriver ? "Yes" : "No"}
               </Descriptions.Item>
               <Descriptions.Item label="Total Price">
-                {booking.totalPrice ? `$${booking.totalPrice}` : "-"}
+                {booking.totalPrice ? formatCurrency(booking.totalPrice) : "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Payment Status">
                 {paymentTag(payment.status)}
@@ -750,7 +752,7 @@ const BookingDetail = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Created At">
                 {booking.createdAt
-                  ? new Date(booking.createdAt).toLocaleString()
+                  ? formatReadableDate(booking.createdAt)
                   : "-"}
               </Descriptions.Item>
             </Descriptions>

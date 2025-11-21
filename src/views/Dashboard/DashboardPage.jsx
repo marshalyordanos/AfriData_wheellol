@@ -24,6 +24,10 @@ import { motion } from "framer-motion";
 import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import CommonCard from "../../components/commons/CommonCard";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
@@ -63,7 +67,7 @@ const DashboardPage = () => {
       },
       {
         title: "Total Revenue",
-        value: String(totalSummary?.totalRevenue || 0) + " ETB",
+        value: formatCurrency(totalSummary?.totalRevenue || 0),
         icon: <FaDollarSign />,
       },
       {
@@ -73,7 +77,7 @@ const DashboardPage = () => {
       },
       {
         title: "Active Owners",
-        value: String(totalSummary?.activeHosts || 0),
+        value: totalSummary?.activeHosts || 0,
         icon: <FaChartLine />,
       },
     ]);
@@ -101,7 +105,18 @@ const DashboardPage = () => {
 
       const res3 = await api.get("users/summary?entity=latestBookings");
 
-      setLetestbooking(res3.data?.data);
+      const list = Array.isArray(res3.data?.data) ? res3.data.data : [];
+      const mapped = list.map((b) => ({
+        ...b,
+        startDateFormatted: b.startDate ? formatReadableDate(b.startDate) : "-",
+        endDateFormatted: b.endDate ? formatReadableDate(b.endDate) : "-",
+        totalPriceFormatted:
+          b.totalPrice || b.totalPrice === 0
+            ? formatCurrency(b.totalPrice)
+            : "-",
+      }));
+
+      setLetestbooking(mapped);
       console.log("fetchSummary: ", res3.data);
       setLaoding(false);
     } catch (error) {
@@ -237,12 +252,16 @@ const DashboardPage = () => {
     {
       title: "Start Date",
       dataIndex: "startDate",
-      render: (text, r) => <p>{isoToDisplay(r?.startDate)}</p>,
+      render: (text, r) => (
+        <p>{r?.startDate ? formatReadableDate(r.startDate) : "-"}</p>
+      ),
     },
     {
       title: "End Date",
       dataIndex: "endDate",
-      render: (text, r) => <p>{isoToDisplay(r?.endDate)}</p>,
+      render: (text, r) => (
+        <p>{r?.endDate ? formatReadableDate(r.endDate) : "-"}</p>
+      ),
     },
   ];
 
@@ -297,6 +316,28 @@ const DashboardPage = () => {
         ],
       },
       dataLabels: { enabled: false },
+      tooltip: {
+        y: {
+          formatter: function (val) {
+            try {
+              return formatCurrency(val);
+            } catch (e) {
+              return val;
+            }
+          },
+        },
+      },
+      yaxis: {
+        labels: {
+          formatter: function (val) {
+            try {
+              return formatCurrency(val);
+            } catch (e) {
+              return val;
+            }
+          },
+        },
+      },
     },
   };
 
@@ -388,9 +429,9 @@ const DashboardPage = () => {
                   "host.firstName": "Host",
                   "car.make.name": "Make",
                   "car.model.name": "Model",
-                  totalPrice: "Total Price",
-                  startDate: "Start Date",
-                  endDate: "End Date",
+                  totalPriceFormatted: "Total Price",
+                  startDateFormatted: "Start Date",
+                  endDateFormatted: "End Date",
                 }}
                 title={["car.make.name", "car.model.name"]}
                 actionItems={[]}

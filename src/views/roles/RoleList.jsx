@@ -21,6 +21,7 @@ import {
 import RolesService from "./RoleService";
 import PermissionService from "../permissions/PermissionService";
 import CommonCard from "../../components/commons/CommonCard";
+import { formatReadableDate } from "../../utils/date_currency_formatter";
 import { Pagination } from "antd";
 import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
@@ -247,7 +248,13 @@ const RoleList = () => {
           limit: opts.limit || limit || PAGE_SIZE,
           search: opts.searchText !== undefined ? opts.searchText : searchText,
         });
-        setData(res.data || []);
+        const mapped = (res.data || []).map((it) => ({
+          ...it,
+          createdAtFormatted: it.createdAt
+            ? formatReadableDate(it.createdAt)
+            : "-",
+        }));
+        setData(mapped);
         setTotal(res.total || 0);
       } catch (e) {
         message.error(e?.response?.data?.message || "Failed to load roles");
@@ -372,8 +379,8 @@ const RoleList = () => {
     },
     {
       title: "Created At",
-      dataIndex: "createdAt",
-      render: (text) => (text ? new Date(text).toLocaleString() : "-"),
+      dataIndex: "createdAtFormatted",
+      render: (text) => <span>{text || "-"}</span>,
     },
     {
       title: "Permissions",
@@ -699,7 +706,10 @@ const RoleList = () => {
               key={role.id}
               item={role}
               title={"name"}
-              fieldMap={{ description: "Description", createdAt: "Created At" }}
+              fieldMap={{
+                description: "Description",
+                createdAtFormatted: "Created At",
+              }}
               actionItems={[
                 {
                   key: "assign",

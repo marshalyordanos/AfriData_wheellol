@@ -38,6 +38,10 @@ import {
   selectCurrentUser,
 } from "../../redux/auth/authSlice";
 import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 
 const BookingList = () => {
   const dispatch = useDispatch();
@@ -101,6 +105,8 @@ const BookingList = () => {
           b.rentalPricePerDay ||
           0,
         status: (b.status || "").toString(),
+        startDateFormatted: b.startDate ? formatReadableDate(b.startDate) : "-",
+        endDateFormatted: b.endDate ? formatReadableDate(b.endDate) : "-",
       }));
 
       setBookingData(mapped);
@@ -331,7 +337,7 @@ const BookingList = () => {
     {
       title: "Total Price",
       dataIndex: "totalPrice",
-      render: (p) => (p ? `${p}` : "-"),
+      render: (p) => (p ? formatCurrency(p) : "-"),
     },
     // 10. Payment Status
     {
@@ -349,13 +355,13 @@ const BookingList = () => {
     {
       title: "Start Date",
       dataIndex: "startDate",
-      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+      render: (d) => (d ? formatReadableDate(d) : "-"),
     },
     // 5. End Date
     {
       title: "End Date",
       dataIndex: "endDate",
-      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+      render: (d) => (d ? formatReadableDate(d) : "-"),
     },
     // 6. Pickup Location (clean formatted)
     {
@@ -388,7 +394,7 @@ const BookingList = () => {
     {
       title: "Created At",
       dataIndex: "createdAt",
-      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+      render: (d) => (d ? formatReadableDate(d) : "-"),
     },
     // 13. Chat link
     {
@@ -690,8 +696,8 @@ const BookingList = () => {
                   "guest.firstName": "Guest",
                   totalPrice: "Total Price",
                   status: "Status",
-                  startDate: "Start Date",
-                  endDate: "End Date",
+                  startDateFormatted: "Start Date",
+                  endDateFormatted: "End Date",
                 }}
                 actionItems={[
                   { key: "edit", label: <Button type="text">Update</Button> },

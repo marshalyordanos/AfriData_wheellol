@@ -21,6 +21,10 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import PaymentService from "./PaymentService";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 
 const { Title, Text } = Typography;
 
@@ -201,7 +205,9 @@ const PaymentDetails = () => {
 
           <Descriptions.Item label="Amount">
             <Text strong style={{ color: "#52c41a", fontSize: 16 }}>
-              {payment.amount} {payment.currency}
+              {payment.amount || payment.amount === 0
+                ? `${formatCurrency(payment.amount)}`
+                : "-"}
             </Text>
           </Descriptions.Item>
 
@@ -233,9 +239,7 @@ const PaymentDetails = () => {
           <Descriptions.Item label="Created At">
             <Space>
               <ClockCircleOutlined />
-              {payment.createdAt
-                ? new Date(payment.createdAt).toLocaleString()
-                : "-"}
+              {payment.createdAt ? formatReadableDate(payment.createdAt) : "-"}
             </Space>
           </Descriptions.Item>
         </Descriptions>
@@ -290,10 +294,12 @@ const PaymentDetails = () => {
                   }
                   description={
                     <Text type="secondary">
-                      Amount: {t.amount} — Created:{" "}
-                      {t.createdAt
-                        ? new Date(t.createdAt).toLocaleString()
-                        : "-"}
+                      Amount:{" "}
+                      {t.amount || t.amount === 0
+                        ? formatCurrency(t.amount)
+                        : "-"}{" "}
+                      — Created:{" "}
+                      {t.createdAt ? formatReadableDate(t.createdAt) : "-"}
                     </Text>
                   }
                 />

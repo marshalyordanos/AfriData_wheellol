@@ -18,6 +18,10 @@ import {
 } from "antd";
 import { WarningOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import DisputeService from "./DisputeService";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
 
@@ -226,17 +230,13 @@ const DisputeDetails = () => {
           <Descriptions.Item label="Created At">
             <Space>
               <ClockCircleOutlined />
-              {dispute.createdAt
-                ? new Date(dispute.createdAt).toLocaleString()
-                : "-"}
+              {dispute.createdAt ? formatReadableDate(dispute.createdAt) : "-"}
             </Space>
           </Descriptions.Item>
           <Descriptions.Item label="Updated At">
             <Space>
               <ClockCircleOutlined />
-              {dispute.updatedAt
-                ? new Date(dispute.updatedAt).toLocaleString()
-                : "-"}
+              {dispute.updatedAt ? formatReadableDate(dispute.updatedAt) : "-"}
             </Space>
           </Descriptions.Item>
         </Descriptions>
@@ -287,16 +287,21 @@ const DisputeDetails = () => {
               <div>
                 Start:{" "}
                 {dispute.booking.startDate
-                  ? new Date(dispute.booking.startDate).toLocaleString()
+                  ? formatReadableDate(dispute.booking.startDate)
                   : "-"}
               </div>
               <div>
                 End:{" "}
                 {dispute.booking.endDate
-                  ? new Date(dispute.booking.endDate).toLocaleString()
+                  ? formatReadableDate(dispute.booking.endDate)
                   : "-"}
               </div>
-              <div>Total: {dispute.booking.totalPrice}</div>
+              <div>
+                Total:{" "}
+                {dispute.booking.totalPrice || dispute.booking.totalPrice === 0
+                  ? formatCurrency(dispute.booking.totalPrice)
+                  : "-"}
+              </div>
               <div>
                 Status: <Tag>{dispute.booking.status}</Tag>
               </div>
@@ -311,7 +316,10 @@ const DisputeDetails = () => {
           {dispute.payment ? (
             <div style={{ color: "#333" }}>
               <div>
-                Amount: {dispute.payment.amount} {dispute.payment.currency}
+                Amount:{" "}
+                {dispute.payment.amount || dispute.payment.amount === 0
+                  ? `${formatCurrency(dispute.payment.amount)} `
+                  : "-"}
               </div>
               <div>Method: {dispute.payment.method || "-"}</div>
               <div>

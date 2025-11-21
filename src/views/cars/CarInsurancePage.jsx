@@ -11,6 +11,7 @@ import CarInsuranceForm from "./CarInsuranceForm";
 import carsService from "./CarsService";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
+import { formatReadableDate } from "../../utils/date_currency_formatter";
 
 const { Title } = Typography;
 
@@ -81,7 +82,7 @@ const CarInsurancePage = () => {
       title: "Expiry Date",
       dataIndex: "expiryDate",
       key: "expiryDate",
-      render: (date) => new Date(date).toLocaleDateString(),
+      render: (date) => (date ? formatReadableDate(date) : "-"),
     },
     {
       title: "Document",

@@ -27,6 +27,10 @@ import CommonTable from "../../components/commons/CommonTable";
 import CommonCard from "../../components/commons/CommonCard";
 import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 import PayoutService from "./PayoutService";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 
 const { confirm } = Modal;
 
@@ -193,7 +197,7 @@ const PayoutList = () => {
     {
       title: "Amount",
       dataIndex: "amount",
-      render: (a) => `${a} ETB`,
+      render: (a) => (a || a === 0 ? formatCurrency(a) : "-"),
     },
     {
       title: "Bank",
@@ -215,7 +219,7 @@ const PayoutList = () => {
     {
       title: "Created At",
       dataIndex: "createdAt",
-      render: (d) => new Date(d).toLocaleString(),
+      render: (d) => (d ? formatReadableDate(d) : "-"),
     }
   );
 

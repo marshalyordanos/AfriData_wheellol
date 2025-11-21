@@ -12,6 +12,10 @@ import {
 } from "antd";
 import { useParams } from "react-router-dom";
 import carsService from "./CarsService";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 
 const findNameById = (items, id) => {
   if (!items || !id) return "-";
@@ -138,7 +142,14 @@ const CarDetails = () => {
             {car.mileage || "-"}
           </Descriptions.Item>
           <Descriptions.Item label="Rental Price / Day">
-            {car.rentalPricePerDay || car.dailyRate || "-"}
+            {car.rentalPricePerDay ||
+            car.dailyRate ||
+            car.rentalPrice ||
+            car.dailyRate === 0
+              ? formatCurrency(
+                  car.rentalPricePerDay || car.dailyRate || car.rentalPrice
+                )
+              : "-"}
           </Descriptions.Item>
           <Descriptions.Item label="Long Term Discount (%)">
             {car.longTermDiscount || "-"}
@@ -191,7 +202,7 @@ const CarDetails = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Subscription Expiry">
                 {car.gpsSubscriptionExpiryDate
-                  ? new Date(car.gpsSubscriptionExpiryDate).toLocaleDateString()
+                  ? formatReadableDate(car.gpsSubscriptionExpiryDate)
                   : "-"}
               </Descriptions.Item>
             </Descriptions>

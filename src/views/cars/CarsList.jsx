@@ -44,6 +44,10 @@ import {
   selectCurrentUser,
 } from "../../redux/auth/authSlice";
 import CommonCard from "../../components/commons/CommonCard";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 // ✅ Helper: find brand/model name from ID
@@ -141,6 +145,18 @@ const CarsList = () => {
         model: car.model || {}, // ✅ fixed
         carType: car.carType || "-",
         rentalPricePerDay: car.rentalPricePerDay || car.dailyRate || 0,
+        rentalPricePerDayFormatted:
+          car.rentalPricePerDay ||
+          car.dailyRate ||
+          car.rentalPrice ||
+          car.dailyRate === 0
+            ? formatCurrency(
+                car.rentalPricePerDay || car.dailyRate || car.rentalPrice
+              )
+            : "-",
+        createdAtFormatted: car.createdAt
+          ? formatReadableDate(car.createdAt)
+          : "-",
         seatingCapacity: car.seatingCapacity || "-",
       }));
 
@@ -399,7 +415,10 @@ const CarsList = () => {
     {
       title: "Rental Price / Day",
       dataIndex: "rentalPricePerDay",
-      render: (price) => (price ? `$${price}` : "-"),
+      render: (price, record) =>
+        price || price === 0
+          ? record.rentalPricePerDayFormatted || formatCurrency(price)
+          : "-",
     },
     {
       title: "Active",
@@ -639,6 +658,8 @@ const CarsList = () => {
                   licensePlate: "License Plate",
                   vin: "Vin",
                   "model.name": "Model",
+                  rentalPricePerDayFormatted: "Price",
+                  createdAtFormatted: "Created At",
                 }}
                 title={["make.name", "model.name"]}
                 actionItems={items}

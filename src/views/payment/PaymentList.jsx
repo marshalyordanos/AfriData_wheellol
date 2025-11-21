@@ -17,6 +17,10 @@ import CommonTable from "../../components/commons/CommonTable";
 import CommonCard from "../../components/commons/CommonCard";
 import { Pagination } from "antd";
 import PaymentService from "./PaymentService";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 import { Form, InputNumber } from "antd";
 import SummaryCard from "../../components/commons/SummaryCard";
 import {
@@ -282,7 +286,8 @@ const PaymentList = () => {
       title: "Amount",
       dataIndex: "amount",
       key: "amount",
-      render: (a, r) => `${a} ${r.currency || ""}`,
+      render: (a, r) =>
+        a || a === 0 ? `${formatCurrency(a)} ` : "-",
     },
     {
       title: "Method",
@@ -308,33 +313,36 @@ const PaymentList = () => {
       title: "Host Earnings",
       dataIndex: "hostEarnings",
       key: "hostEarnings",
-      render: (v, r) => (v || v === 0 ? `${v} ${r.currency || ""}` : "-"),
+      render: (v, r) =>
+        v || v === 0 ? `${formatCurrency(v)} ` : "-",
     },
     {
       title: "Platform Fee",
       dataIndex: "platformFee",
       key: "platformFee",
-      render: (v, r) => (v || v === 0 ? `${v} ${r.currency || ""}` : "-"),
+      render: (v, r) =>
+        v || v === 0 ? `${formatCurrency(v)} ` : "-",
     },
     {
       title: "Insurance Fee",
       dataIndex: "insuranceFee",
       key: "insuranceFee",
-      render: (v, r) => (v || v === 0 ? `${v} ${r.currency || ""}` : "-"),
+      render: (v, r) =>
+        v || v === 0 ? `${formatCurrency(v)} ` : "-",
     },
 
     { title: "Type", dataIndex: "type", key: "type" },
-    {
-      title: "Transactions",
-      dataIndex: "transactions",
-      key: "transactions",
-      render: (t) => (Array.isArray(t) ? t.length : 0),
-    },
+    // {
+    //   title: "Transactions",
+    //   dataIndex: "transactions",
+    //   key: "transactions",
+    //   render: (t) => (Array.isArray(t) ? t.length : 0),
+    // },
     {
       title: "Created At",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+      render: (d) => (d ? formatReadableDate(d) : "-"),
     },
   ];
 
