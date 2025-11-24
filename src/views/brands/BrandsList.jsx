@@ -7,6 +7,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 
 import CommonTable from "../../components/commons/CommonTable";
 import CommonCard from "../../components/commons/CommonCard";
+import { formatReadableDate } from "../../utils/date_currency_formatter";
 import { Pagination } from "antd";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
@@ -55,7 +56,13 @@ const BrandsList = () => {
         limit,
         searchText,
       });
-      setBrandsData(res.data || []);
+      const mapped = (res.data || []).map((it) => ({
+        ...it,
+        createdAtFormatted: it.createdAt
+          ? formatReadableDate(it.createdAt)
+          : "-",
+      }));
+      setBrandsData(mapped);
       setTotal(res.total ?? (res.data ? res.data.length : 0));
     } catch (err) {
       console.error("Failed to fetch brands", err);
@@ -167,7 +174,7 @@ const BrandsList = () => {
       title: "Created At",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (date) => (date ? new Date(date).toLocaleDateString() : "N/A"),
+      render: (date) => (date ? formatReadableDate(date) : "N/A"),
     },
     {
       title: "Models",
@@ -218,32 +225,40 @@ const BrandsList = () => {
         </CommonDeleteModal>
       )}
 
-      <div className="flex justify-between items-center mb-6">
-        <Input
-          placeholder="Search Brands"
-          value={reduxSearchText}
-          onChange={searchHandler}
-          className="max-w-sm rounded"
-          allowClear
-        />
+      <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
+        <div className="flex flex-col md:w-[45vw] w-full">
+          <h1 className="text-2xl font-bold pb-4">Brands</h1>
+          <div className="flex gap-3 flex-wrap items-center">
+            <Input
+              placeholder="Search Brands"
+              value={reduxSearchText}
+              onChange={searchHandler}
+              className=" drop-shadow-sm rounded-r py-2"
+              allowClear
+              style={{ width: "100%" }}
+            />
+          </div>
+        </div>
 
-        <div className="flex gap-4">
-          <Button
+        <div className="flex items-center mt-4 md:mt-0">
+          <button
             onClick={handleReload}
-            style={{ color: "var(--color-primary)" }}
-            icon={<ReloadOutlined />}
-          />
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
+            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4"
+          >
+            <ReloadOutlined />
+          </button>
+
+          <button
+            className="px-4 py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded"
             onClick={() => {
               setModeID("");
               setIsModalOpen(true);
             }}
-            style={{ backgroundColor: "var(--color-primary)" }}
           >
-            Add Brand
-          </Button>
+            <span className="flex flex-row items-center gap-2">
+              <PlusOutlined /> <span>Add Brand</span>
+            </span>
+          </button>
         </div>
       </div>
 
@@ -251,8 +266,7 @@ const BrandsList = () => {
         <CommonTable
           data={brandsData}
           columns={columns}
-          rowKey="id" // important for row selection & uniqueness
-          rowSelectionType="checkbox"
+          rowKey="id"
           setSelection={setBrandsSelection}
           onRow={(record) => ({
             onClick: (e) => {
@@ -282,8 +296,8 @@ const BrandsList = () => {
               item={b}
               title={["name", "name"]}
               fieldMap={{
-                createdAt: "Created At",
-                // isActive: "Active",
+                createdAtFormatted: "Created At",
+                isActive: "Active",
               }}
               actionItems={dropdownItems}
               onActionClick={(info, item) => handleMenuClick(info, item)}

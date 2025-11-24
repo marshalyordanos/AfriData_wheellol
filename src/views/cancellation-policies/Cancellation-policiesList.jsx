@@ -13,6 +13,7 @@ import {
   message,
 } from "antd";
 import CommonCard from "../../components/commons/CommonCard";
+import { formatReadableDate } from "../../utils/date_currency_formatter";
 import { Pagination } from "antd";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -66,6 +67,12 @@ const CancellationPoliciesList = () => {
       })
     );
   }, []);
+
+  // ensure mobile cards have formatted dates
+  const mappedPolicies = (policies || []).map((p) => ({
+    ...p,
+    createdAtFormatted: p.createdAt ? formatReadableDate(p.createdAt) : "-",
+  }));
 
   const searchHandler = (e) => {
     const v = e.target.value;
@@ -216,7 +223,7 @@ const CancellationPoliciesList = () => {
       title: "Created At",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+      render: (d) => (d ? formatReadableDate(d) : "-"),
     },
   ];
 
@@ -366,7 +373,7 @@ const CancellationPoliciesList = () => {
 
       <div className="hidden md:block">
         <CommonTable
-          rowSelectionType={"checkbox"}
+          // rowSelectionType={"checkbox"}
           data={policies}
           columns={columns}
           setSelection={setSelection}
@@ -388,8 +395,8 @@ const CancellationPoliciesList = () => {
           Array(5)
             .fill(1)
             .map((_) => <CommonCardSkeleton />)}
-        {policies && policies.length > 0 ? (
-          policies.map((p) => (
+        {mappedPolicies && mappedPolicies.length > 0 ? (
+          mappedPolicies.map((p) => (
             <CommonCard
               key={p?.id || p?._id}
               item={p}
@@ -397,7 +404,7 @@ const CancellationPoliciesList = () => {
               fieldMap={{
                 daysBeforeTrip: "Days Before Trip",
                 refundPercent: "Refund Percent",
-                createdAt: "Created At",
+                createdAtFormatted: "Created At",
               }}
               actionItems={[
                 {

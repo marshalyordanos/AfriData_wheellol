@@ -18,6 +18,7 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import PermissionService from "./PermissionService";
+import { formatReadableDate } from "../../utils/date_currency_formatter";
 import CommonCard from "../../components/commons/CommonCard";
 import { Pagination } from "antd";
 import { useDispatch, useSelector } from "react-redux";
@@ -60,7 +61,14 @@ const PermissionList = () => {
           limit: limitVal,
           search: searchVal,
         });
-        setData(res.data);
+        // add formatted fields for display
+        const mapped = (res.data || []).map((it) => ({
+          ...it,
+          createdAtFormatted: it.createdAt
+            ? formatReadableDate(it.createdAt)
+            : "-",
+        }));
+        setData(mapped);
         setTotal(res.total);
         setLoading(false);
       } catch (err) {
@@ -161,8 +169,8 @@ const PermissionList = () => {
     },
     {
       title: "Created At",
-      dataIndex: "createdAt",
-      render: (text) => (text ? new Date(text).toLocaleString() : "-"),
+      dataIndex: "createdAtFormatted",
+      render: (text) => <span>{text || "-"}</span>,
     },
     {
       title: "Actions",
@@ -269,7 +277,10 @@ const PermissionList = () => {
               key={rec.id}
               item={rec}
               title={"resource"}
-              fieldMap={{ description: "Description", createdAt: "Created At" }}
+              fieldMap={{
+                description: "Description",
+                createdAtFormatted: "Created At",
+              }}
               actionItems={[
                 { key: "edit", label: <Button type="text">Edit</Button> },
                 { key: "delete", label: <Button type="text">Delete</Button> },

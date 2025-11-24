@@ -5,6 +5,7 @@ import { Button, Dropdown, Input, Select, Pagination } from "antd";
 import styled from "styled-components";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonCard from "../../components/commons/CommonCard";
+import { formatReadableDate } from "../../utils/date_currency_formatter";
 
 import cartypesService from "./CartypesService";
 import CartypesEdit from "./CartypesEdit";
@@ -50,7 +51,15 @@ const CartypesList = () => {
     try {
       setLoading(true);
       const { payload } = await dispatch(searchCartypes());
-      setCartypesData(payload.data);
+      const list = Array.isArray(payload.data) ? payload.data : [];
+      const mapped = list.map((it) => ({
+        ...it,
+        createdAtFormatted: it.createdAt
+          ? formatReadableDate(it.createdAt)
+          : "-",
+        isActiveLabel: it.isActive ? "Active" : "Inactive",
+      }));
+      setCartypesData(mapped);
       setTotal(payload.total);
       setLoading(false);
     } catch (err) {
@@ -167,20 +176,20 @@ const CartypesList = () => {
     },
 
     {
-      title: "name",
+      title: "Name",
       dataIndex: "name",
       render: (text, recored) => {
         return (
           <NavLink
             style={{ color: "#2f1dca" }}
             state={recored}
-            to={`${recored.id}`}
+            // to={`${recored.id}`}
           >
             {text}
           </NavLink>
         );
       },
-      sorter: true,
+      // sorter: true,
     },
 
     // {
@@ -190,6 +199,23 @@ const CartypesList = () => {
     //     return recored.active ? <p>true</p> : <p>false</p>;
     //   },
     // },
+    {
+      title: "Active",
+      dataIndex: "isActive",
+      render: (v, r) =>
+        v ? (
+          <span className="text-green-600 font-medium">Active</span>
+        ) : (
+          <span className="text-gray-500">Inactive</span>
+        ),
+      // sorter: true,
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAtFormatted",
+      render: (t) => t || "-",
+      // sorter: true,
+    },
   ];
 
   return (
@@ -282,7 +308,7 @@ const CartypesList = () => {
 
       <div className="hidden md:block">
         <CommonTable
-          rowSelectionType={"checkbox"}
+          // rowSelectionType={"checkbox"}
           data={cartypesData}
           columns={columns}
           setSelection={setCartypesSelection}
@@ -304,7 +330,10 @@ const CartypesList = () => {
               key={ct?.id || ct?._id}
               item={ct}
               title={"name"}
-              fieldMap={{}}
+              fieldMap={{
+                createdAtFormatted: "Created At",
+                isActiveLabel: "Active",
+              }}
               actionItems={items.map((it) => ({ ...it }))}
               onActionClick={(info, item) => onClick(info, item)}
             />

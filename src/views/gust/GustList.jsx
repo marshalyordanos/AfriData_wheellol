@@ -130,10 +130,18 @@ const GustList = () => {
     ...["firstName", "lastName", "email", "phone", "role", "active"].map(
       (key) => ({
         title:
-          key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1"),
+          key === "role" || key === "active" ? (
+            <span style={{ fontWeight: "normal", color: "inherit" }}>
+              {key.charAt(0).toUpperCase() +
+                key.slice(1).replace(/([A-Z])/g, " $1")}
+            </span>
+          ) : (
+            key.charAt(0).toUpperCase() +
+            key.slice(1).replace(/([A-Z])/g, " $1")
+          ),
         dataIndex: key,
         key,
-        sorter: true,
+        sorter: !(key === "role" || key === "active"),
         onCell: (record) => ({
           onClick: () => {
             const id = record?._id || record?.id;
@@ -154,23 +162,23 @@ const GustList = () => {
             : undefined,
       })
     ),
-    {
-      title: "Reviews",
-      dataIndex: "reviews",
-      key: "reviews",
-      render: (_, record) => (
-        <Button
-          type="link"
-          onClick={(e) => {
-            e.stopPropagation();
-            const id = record._id || record.id;
-            if (id) navigate(`/dash/gust/reviews/${id}`);
-          }}
-        >
-          View Reviews
-        </Button>
-      ),
-    },
+    // {
+    //   title: "Reviews",
+    //   dataIndex: "reviews",
+    //   key: "reviews",
+    //   render: (_, record) => (
+    //     <Button
+    //       type="link"
+    //       onClick={(e) => {
+    //         e.stopPropagation();
+    //         const id = record._id || record.id;
+    //         if (id) navigate(`/dash/gust/reviews/${id}`);
+    //       }}
+    //     >
+    //       View Reviews
+    //     </Button>
+    //   ),
+    // },
   ];
 
   // handle table sort and pagination
@@ -213,7 +221,7 @@ const GustList = () => {
 
       <div className="hidden md:block">
         <CommonTable
-          rowSelectionType={"checkbox"}
+          // rowSelectionType={"checkbox"}
           data={gustData}
           columns={columns}
           total={total}

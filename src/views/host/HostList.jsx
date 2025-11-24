@@ -200,10 +200,18 @@ const UserList = () => {
     ...["firstName", "lastName", "email", "phone", "role", "verified"].map(
       (key) => ({
         title:
-          key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1"),
+          key === "role" || key === "verified" ? (
+            <span style={{ fontWeight: "normal", color: "inherit" }}>
+              {key.charAt(0).toUpperCase() +
+                key.slice(1).replace(/([A-Z])/g, " $1")}
+            </span>
+          ) : (
+            key.charAt(0).toUpperCase() +
+            key.slice(1).replace(/([A-Z])/g, " $1")
+          ),
         dataIndex: key,
         key,
-        sorter: true,
+        sorter: key !== "role" && key !== "verified",
         onCell: (record) => ({
           onClick: () => {
             const id = record?.id || record?._id;
@@ -225,22 +233,43 @@ const UserList = () => {
       })
     ),
     {
-      title: "Reviews",
-      dataIndex: "reviews",
-      key: "reviews",
-      render: (_, record) => (
-        <Button
-          type="link"
-          onClick={(e) => {
-            e.stopPropagation();
-            const id = record?._id || record?.id;
-            if (id) navigate(`/dash/host/reviews/${id}`);
-          }}
-        >
-          View Reviews
-        </Button>
+      title: (
+        <span style={{ fontWeight: "normal", color: "inherit" }}>Active</span>
       ),
+      dataIndex: "isActive",
+      key: "active",
+      sorter: false,
+      onCell: (record) => ({
+        onClick: () => {
+          const id = record?.id || record?._id;
+          if (id) navigate(`/dash/host/details/${id}`, { state: record });
+        },
+        style: { cursor: "pointer" },
+      }),
+      render: (_, record) =>
+        record?.isActive ? (
+          <Tag color="green">Active</Tag>
+        ) : (
+          <Tag color="red">Inactive</Tag>
+        ),
     },
+    // {
+    //   title: "Reviews",
+    //   dataIndex: "reviews",
+    //   key: "reviews",
+    //   render: (_, record) => (
+    //     <Button
+    //       type="link"
+    //       onClick={(e) => {
+    //         e.stopPropagation();
+    //         const id = record?._id || record?.id;
+    //         if (id) navigate(`/dash/host/reviews/${id}`);
+    //       }}
+    //     >
+    //       View Reviews
+    //     </Button>
+    //   ),
+    // },
   ];
 
   const handleReload = () => {
@@ -360,7 +389,7 @@ const UserList = () => {
 
       <div className="hidden md:block">
         <CommonTable
-          rowSelectionType={"checkbox"}
+          // rowSelectionType={"checkbox"}
           data={userData}
           columns={columns}
           setSelection={setUserSelection}

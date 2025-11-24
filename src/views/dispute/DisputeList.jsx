@@ -18,6 +18,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import CommonTable from "../../components/commons/CommonTable";
 import CommonCard from "../../components/commons/CommonCard";
 import DisputeService from "./DisputeService";
+import {
+  formatCurrency,
+  formatReadableDate,
+} from "../../utils/date_currency_formatter";
 import { useDispatch, useSelector } from "react-redux";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
 import {
@@ -220,7 +224,10 @@ const DisputeList = () => {
       title: "Amount",
       dataIndex: ["payment", "amount"],
       key: "amount",
-      render: (a, r) => (a ? `${a} ${r.payment?.currency || ""}` : "-"),
+      render: (a, r) =>
+        a || a === 0
+          ? `${formatCurrency(a)}`
+          : "-",
     },
     {
       title: "Payment Status",
@@ -232,7 +239,7 @@ const DisputeList = () => {
       title: "Created At",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (d) => (d ? new Date(d).toLocaleString() : "-"),
+      render: (d) => (d ? formatReadableDate(d) : "-"),
     },
   ];
 
