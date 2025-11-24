@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "http://134.209.59.98:4004";
+const SOCKET_URL = "https://socket.wheellol.com";
 
 class SocketService {
   socket = null;
