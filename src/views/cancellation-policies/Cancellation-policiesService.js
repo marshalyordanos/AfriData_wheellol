@@ -31,6 +31,7 @@ class CancellationPoliciesService {
   searchCancellationPolicies({
     page = 1,
     limit = 10,
+    pageSize = null,
     searchText = null,
     filter = null,
     sort = null,
@@ -38,9 +39,10 @@ class CancellationPoliciesService {
   } = {}) {
     let params = [];
 
-    // Pagination
+    // Pagination - prefer explicit pageSize if provided (Redux sends pageSize)
+    const ps = pageSize ?? limit;
     params.push(`page=${page}`);
-    params.push(`pageSize=${limit}`);
+    params.push(`pageSize=${ps}`);
 
     //search
     if (searchText) {

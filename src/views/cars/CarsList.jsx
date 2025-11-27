@@ -82,7 +82,8 @@ const CarsList = () => {
   const carpage = useSelector(carsPage);
   const carlimit = useSelector(carsLimit);
   const userData = useSelector(selectCurrentUser);
-
+  // console.log("userData===========: ", userData);
+  const role = userData?.user?.role?.name || userData?.role?.name;
   const [loading, setLoading] = useState(false);
 
   const [carsSelection, setCarsSelection] = useState([]);
@@ -97,7 +98,7 @@ const CarsList = () => {
   const dispatch = useDispatch();
 
   const getPaginationInfo = () => {
-    return [searchParams.get("page") || 1, searchParams.get("limit") || 5];
+    return [searchParams.get("page") || 1, searchParams.get("limit") || 10];
   };
 
   console.log("userData: ", userData);
@@ -162,7 +163,18 @@ const CarsList = () => {
 
       setCarsData(mappedCars);
       setFilteredCars(mappedCars);
-      setTotal(payload.pagination?.total || mappedCars.length);
+      // If server returns pagination, use it to set total and update redux page/limit
+      if (payload.pagination) {
+        setTotal(payload.pagination.total || mappedCars.length);
+        dispatch(
+          updateCarsState({
+            page: payload.pagination.page,
+            limit: payload.pagination.pageSize,
+          })
+        );
+      } else {
+        setTotal(payload.total || mappedCars.length);
+      }
     } catch (err) {
       message.error("Failed to fetch cars");
       console.error(err);
@@ -295,11 +307,11 @@ const CarsList = () => {
   };
 
   const handleReload = () => {
-    setSearchParams({ page: 1, limit: 5 });
+    setSearchParams({ page: 1, limit: 10 });
     dispatch(
       updateCarsState({
         page: 1,
-        limit: 5,
+        limit: 10,
         sort: "",
         order: "",
         searchText: "",
@@ -602,7 +614,7 @@ const CarsList = () => {
           >
             Reset Filters
           </Button>
-          {userData?.role?.name == "HOST" && (
+          {role == "HOST" && (
             <button
               className="px-4  py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-auto"
               onClick={() => {
@@ -630,6 +642,8 @@ const CarsList = () => {
           total={total}
           loadding={loading}
           tableChange={tableChange}
+          currentPage={Number(carpage)}
+          pageSize={Number(carlimit)}
           rowKey={(r) => r?.id || r?._id}
           onRow={(record) => ({
             onClick: () => {
@@ -682,6 +696,7 @@ const CarsList = () => {
               handlePagination(current, pageSize);
             }}
             current={Number(carpage)}
+            pageSize={Number(carlimit)}
             // defaultCurrent={}
             total={total}
           />

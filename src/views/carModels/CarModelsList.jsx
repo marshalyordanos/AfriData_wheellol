@@ -255,13 +255,13 @@ const CarModelsList = () => {
           </Collapse>
 
           {/* Pagination */}
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-end mt-6 mb-8">
             <Pagination
               current={page}
               pageSize={limit}
               total={total}
               showSizeChanger
-              pageSizeOptions={["5", "10", "20", "50"]}
+              pageSizeOptions={["10", "20"]}
               onChange={(p, ps) => fetchData(p, ps)}
             />
           </div>

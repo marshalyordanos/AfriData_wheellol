@@ -42,7 +42,7 @@ export const carsSlice = createSlice({
     query: {
       searchText: "",
       page: 1,
-      limit: 5,
+      limit: 10,
       sort: "",
       order: "",
       notActiveOnly: false,

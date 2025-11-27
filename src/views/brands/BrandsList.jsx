@@ -287,6 +287,8 @@ const BrandsList = () => {
           }}
           total={total}
           loadding={loading}
+          currentPage={Number(reduxPage) || Number(getPaginationInfo()[0])}
+          pageSize={Number(reduxLimit) || Number(getPaginationInfo()[1])}
         />
       </div>
 

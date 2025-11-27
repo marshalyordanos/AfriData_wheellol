@@ -14,7 +14,7 @@ class CartypesService {
   }
 
   searchCartype({ page, limit, searchText = null, sort = null, order }) {
-    let url = `/cartypes?page=${page}&limit=${limit}`;
+    let url = `/cartypes?page=${page}&pageSize=${limit}`;
     if (sort) {
       const sortValue =
         order == "ascend" ? sort : order == "descend" ? "-" + sort : "";
@@ -26,7 +26,11 @@ class CartypesService {
     }
 
     return api.get(url).then((response) => {
-      return { data: response.data.data, total: response.data.total };
+      return {
+        data: response.data.data,
+        total: response.data.total,
+        pagination: response.data.pagination || null,
+      };
     });
   }
 

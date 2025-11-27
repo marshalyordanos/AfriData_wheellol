@@ -141,7 +141,7 @@ const CartypesEdit = ({
       >
         <Form.Item
           className=" flex-1"
-          name={["cartype", "ame"]}
+          name={["cartype", "name"]}
           label="Name"
           rules={[
             {

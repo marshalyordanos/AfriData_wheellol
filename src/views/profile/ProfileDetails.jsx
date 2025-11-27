@@ -17,6 +17,7 @@ import {
 } from "antd";
 import { useSelector } from "react-redux";
 import ProfileService from "./ProfileService";
+import { formatReadableDate } from "../../utils/date_currency_formatter";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
 
 const ProfileDetails = () => {
@@ -44,7 +45,7 @@ const ProfileDetails = () => {
       }
     };
     load();
-  }, [authUser,id]);
+  }, [authUser, id]);
 
   // Prefill edit form
   useEffect(() => {
@@ -106,7 +107,6 @@ const ProfileDetails = () => {
     } finally {
       setLoading(false);
     }
-    
   };
 
   if (loading && !profile) {
@@ -134,7 +134,11 @@ const ProfileDetails = () => {
         }}
       >
         <h2 style={{ margin: 0 }}>Profile Details</h2>
-        <Button type="primary" style={{ background: "var(--color-primary)" }} onClick={onEdit}>
+        <Button
+          type="primary"
+          style={{ background: "var(--color-primary)" }}
+          onClick={onEdit}
+        >
           Update Profile
         </Button>
       </div>
@@ -191,12 +195,12 @@ const ProfileDetails = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Created At">
                 {profile.createdAt
-                  ? new Date(profile.createdAt).toLocaleString()
+                  ? formatReadableDate(profile.createdAt)
                   : "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Updated At">
                 {profile.updatedAt
-                  ? new Date(profile.updatedAt).toLocaleString()
+                  ? formatReadableDate(profile.updatedAt)
                   : "-"}
               </Descriptions.Item>
             </Descriptions>
@@ -211,6 +215,13 @@ const ProfileDetails = () => {
         onOk={() => form.submit()}
         okText="Save"
         confirmLoading={loading}
+        okButtonProps={{
+          style: {
+            backgroundColor: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            color: "white",
+          },
+        }}
       >
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Form.Item
