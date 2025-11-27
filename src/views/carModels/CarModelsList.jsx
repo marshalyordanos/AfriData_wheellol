@@ -10,6 +10,7 @@ import {
   Empty,
   message,
   Spin,
+  Pagination,
 } from "antd";
 import {
   PlusOutlined,
@@ -31,8 +32,12 @@ const CarModelsList = () => {
   const [grouped, setGrouped] = useState({});
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
   const [editing, setEditing] = useState(null);
+  const [openModalFor, setOpenModalFor] = useState(null);
+  const [brands, setBrands] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const navigate = useNavigate();
@@ -40,17 +45,21 @@ const CarModelsList = () => {
   // ============================
   // FETCH MODELS
   // ============================
-  const fetchData = async () => {
+  // fetchData accepts optional page/limit overrides so callers can force a specific page
+  const fetchData = async (pageArg = page, limitArg = limit) => {
     try {
       setLoading(true);
       const res = await CarModelsService.searchModels({
-        page: 1,
-        limit: 500,
-        search: searchText,
+        page: pageArg,
+        limit: limitArg,
+        searchText: searchText,
       });
 
       const list = res?.data || [];
       setModels(list);
+      setTotal(res?.total || 0);
+      setPage(pageArg);
+      setLimit(limitArg);
 
       // Group by brand name
       const groupedData = list.reduce((acc, model) => {
@@ -69,7 +78,18 @@ const CarModelsList = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    // initial load
+    fetchData(1, limit);
+    // prefetch brands so Add modal can render immediately
+    (async () => {
+      try {
+        const b = await CarModelsService.fetchAllBrands("");
+        setBrands(b || []);
+      } catch (err) {
+        console.error("Failed to prefetch brands", err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ============================
@@ -117,12 +137,12 @@ const CarModelsList = () => {
   // ============================
   const openCreate = () => {
     setEditing(null);
-    setEditOpen(true);
+    setOpenModalFor("add");
   };
 
   const openEdit = (model) => {
     setEditing(model);
-    setEditOpen(true);
+    setOpenModalFor("edit");
   };
 
   // ============================
@@ -138,6 +158,7 @@ const CarModelsList = () => {
             placeholder="Search model or brand"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
+            onPressEnter={() => fetchData(1, limit)}
             allowClear
             className="drop-shadow-sm py-2"
           />
@@ -145,7 +166,7 @@ const CarModelsList = () => {
 
         <div className="flex items-center mt-4 md:mt-0">
           <button
-            onClick={fetchData}
+            onClick={() => fetchData(page, limit)}
             className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
           >
             <ReloadOutlined />
@@ -168,85 +189,123 @@ const CarModelsList = () => {
       ) : Object.keys(filteredGroups).length === 0 ? (
         <Empty description="No car models found" />
       ) : (
-        <Collapse
-          bordered={false}
-          expandIconPosition="end"
-          style={{ background: "transparent" }}
-          defaultActiveKey={Object.keys(filteredGroups)} // ✅ all expanded initially
-        >
-          {Object.entries(filteredGroups).map(([brand, models]) => (
-            <Panel
-              header={
-                <div className="flex items-center gap-2">
-                  <CarOutlined />
-                  <span className="font-semibold text-base">{brand}</span>
-                  <Tag color="blue">{models.length}</Tag>
+        <>
+          <Collapse
+            bordered={false}
+            expandIconPosition="end"
+            style={{ background: "transparent" }}
+            defaultActiveKey={Object.keys(filteredGroups)} // ✅ all expanded initially
+          >
+            {Object.entries(filteredGroups).map(([brand, models]) => (
+              <Panel
+                header={
+                  <div className="flex items-center gap-2">
+                    <CarOutlined />
+                    <span className="font-semibold text-base">{brand}</span>
+                    <Tag color="blue">{models.length}</Tag>
+                  </div>
+                }
+                key={brand}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {models.map((model) => (
+                    <Card
+                      key={model.id}
+                      hoverable
+                      title={model.name}
+                      size="small"
+                      onClick={() => navigate(`/dash/models/${model.id}`)}
+                      extra={
+                        <div
+                          className="flex gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Tooltip title="Edit">
+                            <Button
+                              icon={<EditOutlined />}
+                              type="text"
+                              onClick={() => openEdit(model)}
+                            />
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <Button
+                              icon={<DeleteOutlined />}
+                              type="text"
+                              danger
+                              onClick={() => confirmDelete(model)} // ✅ show confirmation
+                            />
+                          </Tooltip>
+                        </div>
+                      }
+                    >
+                      <p>
+                        <strong>Brand:</strong> {model.make?.name || "N/A"}
+                      </p>
+                      <p>
+                        <strong>Status:</strong>{" "}
+                        <Tag color={model.isActive ? "green" : "red"}>
+                          {model.isActive ? "Active" : "Inactive"}
+                        </Tag>
+                      </p>
+                    </Card>
+                  ))}
                 </div>
-              }
-              key={brand}
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {models.map((model) => (
-                  <Card
-                    key={model.id}
-                    hoverable
-                    title={model.name}
-                    size="small"
-                    onClick={() => navigate(`/dash/models/${model.id}`)}
-                    extra={
-                      <div
-                        className="flex gap-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Tooltip title="Edit">
-                          <Button
-                            icon={<EditOutlined />}
-                            type="text"
-                            onClick={() => openEdit(model)}
-                          />
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <Button
-                            icon={<DeleteOutlined />}
-                            type="text"
-                            danger
-                            onClick={() => confirmDelete(model)} // ✅ show confirmation
-                          />
-                        </Tooltip>
-                      </div>
-                    }
-                  >
-                    <p>
-                      <strong>Brand:</strong> {model.make?.name || "N/A"}
-                    </p>
-                    <p>
-                      <strong>Status:</strong>{" "}
-                      <Tag color={model.isActive ? "green" : "red"}>
-                        {model.isActive ? "Active" : "Inactive"}
-                      </Tag>
-                    </p>
-                  </Card>
-                ))}
-              </div>
-            </Panel>
-          ))}
-        </Collapse>
+              </Panel>
+            ))}
+          </Collapse>
+
+          {/* Pagination */}
+          <div className="flex justify-end mt-6">
+            <Pagination
+              current={page}
+              pageSize={limit}
+              total={total}
+              showSizeChanger
+              pageSizeOptions={["5", "10", "20", "50"]}
+              onChange={(p, ps) => fetchData(p, ps)}
+            />
+          </div>
+        </>
       )}
 
-      {/* Add / Edit Modal */}
-      {editOpen && (
+      {/* Add / Edit Modal (mounted immediately like HostList) */}
+      {openModalFor === "edit" || openModalFor === "add" ? (
         <CommonModal
           width={700}
-          isModalOpen={editOpen}
-          setIsModalOpen={setEditOpen}
+          isModalOpen={true}
+          setIsModalOpen={(open) => {
+            if (!open) {
+              setOpenModalFor(null);
+              setEditing(null);
+            }
+          }}
         >
-          <CarModelsEdit
-            modelId={editing?.id || ""}
-            setIsModalOpen={setEditOpen}
-            refreshData={fetchData}
-          />
+          {openModalFor === "add" ? (
+            <CarModelsEdit
+              key={"model-add"}
+              modelId={""}
+              initialBrands={brands}
+              setIsModalOpen={(open) => {
+                if (!open) setOpenModalFor(null);
+              }}
+              refreshData={fetchData}
+            />
+          ) : (
+            <CarModelsEdit
+              key={editing?.id || "model-edit"}
+              modelId={editing?.id || ""}
+              initialModel={editing}
+              setIsModalOpen={(open) => {
+                if (!open) {
+                  setOpenModalFor(null);
+                  setEditing(null);
+                }
+              }}
+              refreshData={fetchData}
+            />
+          )}
         </CommonModal>
-      )}
+      ) : null}
 
       {/* ✅ Delete Confirmation Modal */}
       {isDeleteModalOpen && (

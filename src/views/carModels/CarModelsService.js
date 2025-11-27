@@ -30,7 +30,7 @@ class CarModelsService {
 
   // Fetch models with optional search and pagination
   searchModels({ page, limit, searchText = "" }) {
-    let url = `/car-models?page=${page}&limit=${limit}`;
+    let url = `/car-models?page=${page}&pageSize=${limit}`;
     if (searchText) {
       url += `&search=name:${encodeURIComponent(searchText)}`;
     }

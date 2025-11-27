@@ -13,7 +13,13 @@ import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import BrandsEdit from "./BrandsEdit";
 import brandsService from "./BrandsService";
-import { updateBrandsState, brandsSearchText } from "./BrandsRedux";
+import {
+  updateBrandsState,
+  brandsSearchText,
+  brandsPage,
+  brandsLimit,
+  searchBrands,
+} from "./BrandsRedux";
 import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const BrandsList = () => {
@@ -32,30 +38,23 @@ const BrandsList = () => {
 
   const getPaginationInfo = () => [
     parseInt(searchParams.get("page") || 1, 10),
-    parseInt(searchParams.get("limit") || 5, 10),
+    parseInt(searchParams.get("limit") || 10, 10),
   ];
+
+  const reduxPage = useSelector(brandsPage);
+  const reduxLimit = useSelector(brandsLimit);
 
   useEffect(() => {
     const [page, limit] = getPaginationInfo();
     dispatch(updateBrandsState({ page, limit }));
-    fetchData(); // initial load
+    searchData(); // initial load via redux
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const fetchData = async (opts = {}) => {
-    const { page: p, limit: l, searchText: s } = opts;
-    const [page, limit] = [
-      p ?? getPaginationInfo()[0],
-      l ?? getPaginationInfo()[1],
-    ];
-    const searchText = s ?? reduxSearchText ?? "";
-
+  const searchData = async (val = "") => {
     try {
       setLoading(true);
-      const res = await brandsService.searchBrand({
-        page,
-        limit,
-        searchText,
-      });
+      const { payload } = await dispatch(searchBrands(val));
+      const res = payload || { data: [], total: 0, pagination: null };
       const mapped = (res.data || []).map((it) => ({
         ...it,
         createdAtFormatted: it.createdAt
@@ -64,6 +63,14 @@ const BrandsList = () => {
       }));
       setBrandsData(mapped);
       setTotal(res.total ?? (res.data ? res.data.length : 0));
+
+      // if backend supplies pagination info, update search params and redux
+      if (res.pagination) {
+        const p = res.pagination.page || 1;
+        const ps = res.pagination.pageSize || reduxLimit || 10;
+        setSearchParams({ page: p, limit: ps });
+        dispatch(updateBrandsState({ page: p, limit: ps }));
+      }
     } catch (err) {
       console.error("Failed to fetch brands", err);
       message.error("Failed to load brands");
@@ -79,13 +86,13 @@ const BrandsList = () => {
     dispatch(updateBrandsState({ page, limit, searchText: value }));
 
     // live search without delay
-    fetchData({ page, limit, searchText: value });
+    searchData(value);
   };
 
   const handleReload = () => {
-    setSearchParams({ page: 1, limit: 5 });
-    dispatch(updateBrandsState({ page: 1, limit: 5, searchText: "" }));
-    fetchData({ page: 1, limit: 5, searchText: "" });
+    setSearchParams({ page: 1, limit: 10 });
+    dispatch(updateBrandsState({ page: 1, limit: 10, searchText: "" }));
+    searchData("");
   };
 
   const handleDelete = async () => {
@@ -94,7 +101,7 @@ const BrandsList = () => {
       await brandsService.deleteBrand(modeID);
       message.success("Brand deleted successfully");
       setIsDeleteModalOpen(false);
-      fetchData(); // refresh list
+      searchData(); // refresh list
     } catch (err) {
       setLoading(false);
 
@@ -205,7 +212,7 @@ const BrandsList = () => {
           setIsModalOpen={setIsModalOpen}
         >
           <BrandsEdit
-            searchData={() => fetchData()}
+            searchData={() => searchData()}
             mode={modeID}
             setMode={setModeID}
             isModelOpen={isModalOpen}
@@ -276,7 +283,7 @@ const BrandsList = () => {
           handlePagination={(page, pageSize) => {
             setSearchParams({ page, limit: pageSize });
             dispatch(updateBrandsState({ page, limit: pageSize }));
-            fetchData({ page, limit: pageSize });
+            searchData();
           }}
           total={total}
           loadding={loading}
@@ -318,7 +325,7 @@ const BrandsList = () => {
             onChange={(p, ps) => {
               setSearchParams({ page: p, limit: ps });
               dispatch(updateBrandsState({ page: p, limit: ps }));
-              fetchData({ page: p, limit: ps });
+              searchData();
             }}
             showSizeChanger
           />

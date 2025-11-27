@@ -1,38 +1,24 @@
 // src/views/car-models/CarModelsEdit.jsx
 import React, { useEffect, useState } from "react";
-import {
-  Form,
-  Input,
-  Select,
-  Switch,
-  Upload,
-  Image,
-  message,
-  Spin,
-} from "antd";
+import { Form, Input, Select, Switch, message, Spin, Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import brandsService from "./CarModelsService";
 
 const { Option } = Select;
 
-// Convert file to base64 for preview
-const getBase64 = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-
-const CarModelsEdit = ({ modelId = "", setIsModalOpen, refreshData }) => {
+const CarModelsEdit = ({
+  modelId = "",
+  setIsModalOpen,
+  refreshData,
+  initialBrands = [],
+  initialModel = null,
+}) => {
   const [form] = Form.useForm();
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(false);
   const [brandLoading, setBrandLoading] = useState(false);
-  const [fileList, setFileList] = useState([]);
-  const [previewImage, setPreviewImage] = useState("");
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   const isEdit = !!modelId;
 
@@ -40,25 +26,29 @@ const CarModelsEdit = ({ modelId = "", setIsModalOpen, refreshData }) => {
   useEffect(() => {
     const fetchModelOrBrand = async () => {
       try {
-        setLoading(true);
+        // If we have an initialModel and initialBrands, we don't need to show loading
+        const needModelFetch = modelId && !initialModel;
+        const needBrandsFetch = !initialBrands || initialBrands.length === 0;
+
+        if (needModelFetch) setLoading(true);
+
+        // Load brands first so the Select has options before we set form values
+        if (needBrandsFetch) {
+          await loadBrands("");
+        } else {
+          setBrands(initialBrands);
+        }
 
         if (modelId) {
-          // Editing existing model
-          const data = await brandsService.getModel(modelId);
+          // If parent provided initialModel, use it immediately to populate form
+          const data = initialModel || (await brandsService.getModel(modelId));
           form.setFieldsValue({
             name: data.name,
             makeId: data.make?.id || null,
             isActive: data.isActive,
           });
-          if (data.logo) {
-            setFileList([
-              { uid: "-1", name: "logo.jpg", status: "done", url: data.logo },
-            ]);
-          }
+          // logo field removed - no action
         }
-
-        // Always load brands for both create & edit
-        await loadBrands("");
       } catch (err) {
         message.error("Failed to load model data");
       } finally {
@@ -84,37 +74,11 @@ const CarModelsEdit = ({ modelId = "", setIsModalOpen, refreshData }) => {
 
   const handleSearchBrands = (val) => loadBrands(val);
 
-  const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj);
-    }
-    setPreviewImage(file.url || file.preview);
-    setPreviewOpen(true);
-  };
-
-  const handleChange = ({ fileList: newFileList }) => setFileList(newFileList);
-
-  const dummyRequest = ({ onSuccess }) => setTimeout(() => onSuccess("ok"), 0);
-
-  const beforeUpload = (file) => {
-    if (!file.type.startsWith("image/")) {
-      message.error("You can only upload image files!");
-      return Upload.LIST_IGNORE;
-    }
-    return true;
-  };
+  // upload/preview logic removed
 
   const onFinish = async (values) => {
     try {
-      const formData = new FormData();
-      formData.append("name", values.name);
-      formData.append("makeId", values.makeId);
-      formData.append("isActive", values.isActive);
-
-      fileList.forEach((file) => {
-        if (file.originFileObj) formData.append("logo", file.originFileObj);
-      });
-
+      setSubmitLoading(true);
       if (isEdit) {
         await brandsService.updateModelFields({
           id: modelId,
@@ -132,6 +96,8 @@ const CarModelsEdit = ({ modelId = "", setIsModalOpen, refreshData }) => {
       if (setIsModalOpen) setIsModalOpen(false);
     } catch (err) {
       message.error("Failed to save model");
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
@@ -170,43 +136,29 @@ const CarModelsEdit = ({ modelId = "", setIsModalOpen, refreshData }) => {
             <Switch />
           </Form.Item>
 
-          <Form.Item label="Logo">
-            <Upload
-              customRequest={dummyRequest}
-              listType="picture-card"
-              fileList={fileList}
-              onPreview={handlePreview}
-              onChange={handleChange}
-              beforeUpload={beforeUpload}
-            >
-              {fileList.length >= 1 ? null : (
-                <div>
-                  <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>Upload</div>
-                </div>
-              )}
-            </Upload>
-            {previewImage && (
-              <Image
-                wrapperStyle={{ display: "none" }}
-                preview={{
-                  visible: previewOpen,
-                  onVisibleChange: (visible) => setPreviewOpen(visible),
-                  afterOpenChange: (visible) => !visible && setPreviewImage(""),
-                }}
-                src={previewImage}
-              />
-            )}
-          </Form.Item>
+          {/* Logo field removed */}
 
           <div style={{ display: "flex", gap: "10px", marginTop: 20 }}>
             <button
               type="button"
               onClick={() => setIsModalOpen && setIsModalOpen(false)}
+              className="px-4 py-2 border rounded"
             >
               Cancel
             </button>
-            <button type="submit">{isEdit ? "Update" : "Create"}</button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitLoading}
+              className="px-4 py-2 rounded"
+              style={{
+                background: "var(--color-primary)",
+                borderColor: "var(--color-primary)",
+                color: "white",
+              }}
+            >
+              {isEdit ? "Update" : "Create"}
+            </Button>
           </div>
         </Form>
       )}
