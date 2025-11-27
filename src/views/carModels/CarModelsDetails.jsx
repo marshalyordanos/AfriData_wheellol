@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import CarModelsService from "./CarModelsService";
+import { formatReadableDate } from "../../utils/date_currency_formatter";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
 import CarModelsEdit from "./CarModelsEdit";
@@ -62,10 +63,18 @@ const CarModelsDetails = () => {
           {model?.make?.name || "Brand"} - {model?.name || "Model"} Details
         </Title>
         <ActionButtons>
-          <Button type="primary" onClick={() => setIsEditModalOpen(true)}>
+          <Button
+            type="primary"
+            style={{ backgroundColor: "var(--color-primary)" }}
+            onClick={() => setIsEditModalOpen(true)}
+          >
             Edit
           </Button>
-          <Button type="danger" onClick={() => setIsDeleteModalOpen(true)}>
+          <Button
+            type="danger"
+            style={{ backgroundColor: "red", color: "#fff" }}
+            onClick={() => setIsDeleteModalOpen(true)}
+          >
             Delete
           </Button>
         </ActionButtons>
@@ -105,18 +114,14 @@ const CarModelsDetails = () => {
         <DetailItem>
           <p className="detail_key">Created At:</p>
           <p className="detail_value">
-            {model?.createdAt
-              ? new Date(model.createdAt).toLocaleString()
-              : "N/A"}
+            {model?.createdAt ? formatReadableDate(model.createdAt) : "N/A"}
           </p>
         </DetailItem>
 
         <DetailItem>
           <p className="detail_key">Updated At:</p>
           <p className="detail_value">
-            {model?.updatedAt
-              ? new Date(model.updatedAt).toLocaleString()
-              : "N/A"}
+            {model?.updatedAt ? formatReadableDate(model.updatedAt) : "N/A"}
           </p>
         </DetailItem>
       </DetailsGrid>

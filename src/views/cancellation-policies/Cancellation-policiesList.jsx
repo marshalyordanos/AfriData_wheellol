@@ -108,6 +108,18 @@ const CancellationPoliciesList = () => {
       Modal.confirm({
         title: "Delete policy",
         content: "Are you sure you want to delete this cancellation policy?",
+        okButtonProps: {
+          style: {
+            backgroundColor: "red",
+            borderColor: "red",
+            color: "white",
+          },
+        },
+        cancelButtonProps: {
+          style: {
+            // keep default look or make subtle
+          },
+        },
         onOk: async () => {
           try {
             const res = await dispatch(deleteCancellationPolicy(id)).unwrap();
