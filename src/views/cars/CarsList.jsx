@@ -82,6 +82,7 @@ const CarsList = () => {
   const carpage = useSelector(carsPage);
   const carlimit = useSelector(carsLimit);
   const userData = useSelector(selectCurrentUser);
+  console.log("userData:: ", userData);
 
   const [loading, setLoading] = useState(false);
 
@@ -602,20 +603,21 @@ const CarsList = () => {
           >
             Reset Filters
           </Button>
-          {userData?.role?.name == "HOST" && (
-            <button
-              className="px-4  py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-auto"
-              onClick={() => {
-                setCarId("");
-                setIsModalOpen(true);
-              }}
-            >
-              <span className="flex flex-row items-center">
-                <PlusOutlined />
-                <p className="pl-2 m-0">Add New Car</p>
-              </span>
-            </button>
-          )}
+          {userData?.role?.name == "HOST" ||
+            (userData?.user?.role?.name == "HOST" && (
+              <button
+                className="px-4  py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-auto"
+                onClick={() => {
+                  setCarId("");
+                  setIsModalOpen(true);
+                }}
+              >
+                <span className="flex flex-row items-center">
+                  <PlusOutlined />
+                  <p className="pl-2 m-0">Add New Car</p>
+                </span>
+              </button>
+            ))}
         </div>
       </div>
 
