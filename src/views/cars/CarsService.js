@@ -37,7 +37,7 @@ class CarsService {
     typeId,
     modelId,
   }) {
-    let url = `/cars/admin?page=${page}&limit=${limit}`;
+    let url = `/cars/admin?page=${page}&pageSize=${limit}`;
     if (sort) {
       const sortValue =
         order == "ascend" ? sort : order == "descend" ? "-" + sort : "";
@@ -75,7 +75,11 @@ class CarsService {
     // }
 
     return api.get(url).then((response) => {
-      return { data: response.data.data, total: response.data.total };
+      return {
+        data: response.data.data,
+        total: response.data.total,
+        pagination: response.data.pagination || null,
+      };
     });
   }
 

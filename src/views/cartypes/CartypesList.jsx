@@ -18,6 +18,7 @@ import {
   updateCartypesState,
   cartypesSearchText,
 } from "./CartypesRedux";
+import { cartypesPage, cartypesLimit } from "./CartypesRedux";
 import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
 
 const CartypesList = () => {
@@ -32,12 +33,15 @@ const CartypesList = () => {
 
   const [modeID, setModeID] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
+  const page = useSelector(cartypesPage);
+  const limit = useSelector(cartypesLimit);
 
   const delayTimerRef = useRef(null);
   const dispatch = useDispatch();
+  const [pages, setPages] = useState([]);
 
   const getPaginationInfo = () => {
-    return [searchParams.get("page") || 1, searchParams.get("limit") || 5];
+    return [searchParams.get("page") || 1, searchParams.get("limit") || 10];
   };
 
   useEffect(() => {
@@ -60,7 +64,27 @@ const CartypesList = () => {
         isActiveLabel: it.isActive ? "Active" : "Inactive",
       }));
       setCartypesData(mapped);
-      setTotal(payload.total);
+      // prefer server pagination total if available
+      if (payload.pagination) {
+        setTotal(payload.pagination.total);
+        dispatch(
+          updateCartypesState({
+            page: payload.pagination.page,
+            limit: payload.pagination.pageSize,
+          })
+        );
+        const pagesCount =
+          payload.pagination.totalPages ||
+          Math.ceil(
+            (payload.pagination.total || 0) /
+              (payload.pagination.pageSize || limit || 10)
+          );
+        setPages(Array.from({ length: pagesCount }, (_, i) => i + 1));
+      } else {
+        setTotal(payload.total);
+        const pagesCount = Math.ceil((payload.total || 0) / (limit || 10));
+        setPages(Array.from({ length: pagesCount }, (_, i) => i + 1));
+      }
       setLoading(false);
     } catch (err) {
       setLoading(false);
@@ -104,11 +128,11 @@ const CartypesList = () => {
   const handleReload = () => {
     const [page, limit] = getPaginationInfo();
 
-    setSearchParams({ page: 1, limit: 5 });
+    setSearchParams({ page: 1, limit: 10 });
     dispatch(
       updateCartypesState({
         page: 1,
-        limit: 5,
+        limit: 10,
         sort: "",
         order: "",
         searchText: "",
@@ -316,6 +340,8 @@ const CartypesList = () => {
           total={total}
           loadding={loading}
           tableChange={tableChange}
+          currentPage={Number(page)}
+          pageSize={Number(limit)}
         />
       </div>
 
@@ -344,13 +370,15 @@ const CartypesList = () => {
 
         <div className="my-4 flex justify-center">
           <Pagination
-            current={parseInt(searchParams.get("page") || 1)}
-            pageSize={parseInt(searchParams.get("limit") || 5)}
+            current={Number(page)}
+            pageSize={Number(limit)}
             total={total}
             onChange={handlePagination}
             showSizeChanger
           />
         </div>
+
+     
       </div>
     </div>
   );

@@ -108,6 +108,18 @@ const CancellationPoliciesList = () => {
       Modal.confirm({
         title: "Delete policy",
         content: "Are you sure you want to delete this cancellation policy?",
+        okButtonProps: {
+          style: {
+            backgroundColor: "red",
+            borderColor: "red",
+            color: "white",
+          },
+        },
+        cancelButtonProps: {
+          style: {
+            // keep default look or make subtle
+          },
+        },
         onOk: async () => {
           try {
             const res = await dispatch(deleteCancellationPolicy(id)).unwrap();
@@ -382,8 +394,12 @@ const CancellationPoliciesList = () => {
           loadding={loading}
           tableChange={tableChange}
           rowKey={(r) => r?.id || r?._id}
-          currentPage={Number(pagination.page) || 1}
-          pageSize={Number(pagination.pageSize) || 10}
+          currentPage={
+            Number(pagination.page) || Number(getPaginationInfo()[0])
+          }
+          pageSize={
+            Number(pagination.pageSize) || Number(getPaginationInfo()[1])
+          }
           onRow={(record) => ({
             style: { cursor: "default" },
           })}

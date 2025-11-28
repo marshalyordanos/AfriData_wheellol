@@ -22,7 +22,11 @@ const ChatDetails = () => {
   const dispatch = useDispatch();
   const messages = useSelector((state) => selectMessagesForBooking(state, id));
   const loading = useSelector(selectMessagesLoading);
-  const currentUser = useSelector((state) => state.auth?.user);
+  let currentUser = useSelector((state) => state.auth?.user);
+  // console.log("Current User in /////////////////////// : ", currentUser?.user);
+  
+  currentUser = currentUser?.user || JSON.parse(localStorage.getItem("user")) || {};
+  // console.log("Current User in /////////////////////// : ", currentUser?.user);
   const currentUserId =
     currentUser?.id ||
     (JSON.parse(localStorage.getItem("user")) || {})?.id ||

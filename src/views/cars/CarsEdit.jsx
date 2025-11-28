@@ -203,7 +203,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
       setLoading(true);
       const formData = new FormData();
 
-      formData.append("hostId", userData?.id);
+      formData.append("hostId", userData?.user?.id || userData?.id);
 
       Object.entries(values).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
