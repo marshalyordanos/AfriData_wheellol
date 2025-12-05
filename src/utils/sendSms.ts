@@ -18,7 +18,7 @@ export async function sendSms(message: string, phone: string): Promise<void> {
   const baseUrl = 'https://api.afromessage.com/api/send';
   //   const token = process.env.AFRO_MESSAGE_API_KEY;
   const token =
-    'REDACTED	';
+    'REDACTED';
 
   if (!token) {
     console.error(
