@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button, Form, Input, message } from "antd";
 import { normalizeEthiopianPhone } from "../../utils/phoneNumber_Formatter";
 import authService from "../../api/auth.service";
+import { Modal } from "antd";
 import { motion } from "framer-motion";
 import { IoShieldCheckmark } from "react-icons/io5";
 import { FaCarSide, FaHeadset } from "react-icons/fa6";
@@ -11,6 +12,9 @@ const RegistrationPage = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [registeredPhone, setRegisteredPhone] = useState("");
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -28,8 +32,13 @@ const RegistrationPage = () => {
 
       const res = await authService.register(payload);
       if (res?.status === 200 || res?.status === 201 || res?.data?.success) {
-        message.success("Registration successful! Please login.");
-        navigate("/login");
+        message.success("Registration successful! Please verify your phone.");
+        // store phone and open verification modal
+        const normalizedPhone = normalizeEthiopianPhone(values.phone);
+        setRegisteredPhone(
+          normalizedPhone ? String(normalizedPhone) : String(values.phone)
+        );
+        setVerifyModalVisible(true);
       } else {
         message.info(
           "Registration completed. Please check your email and login."
@@ -213,7 +222,7 @@ const RegistrationPage = () => {
                     // Accept normalized +251XXXXXXXXX or local 9-digit starting with 7 or 9
                     if (/^\+251\d{9}$/.test(normalized))
                       return Promise.resolve();
-                    
+
                     const digits = String(value).replace(/[^\d]/g, "");
                     if (digits.length < 9)
                       return Promise.reject("Phone number is too short");
@@ -276,6 +285,69 @@ const RegistrationPage = () => {
               </Link>
             </div>
           </Form>
+          <Modal
+            title="Verify your phone"
+            open={verifyModalVisible}
+            footer={null}
+            onCancel={() => setVerifyModalVisible(false)}
+            destroyOnClose
+          >
+            <p className="mb-2">
+              A verification code (OTP) was sent to your phone.
+            </p>
+            <Form
+              layout="vertical"
+              onFinish={async (vals) => {
+                setVerifyLoading(true);
+                try {
+                  const otp = vals.otp;
+                  await authService.verifyPhoneNumber({
+                    phone: registeredPhone,
+                    otp,
+                  });
+                  message.success("Phone verified. You can now login.");
+                  setVerifyModalVisible(false);
+                  navigate("/login");
+                } catch (err) {
+                  console.error("Phone verification failed", err);
+                  const msg =
+                    err?.response?.data?.message ||
+                    err?.message ||
+                    "Verification failed.";
+                  message.error(msg);
+                } finally {
+                  setVerifyLoading(false);
+                }
+              }}
+            >
+              <Form.Item
+                name="otp"
+                label="Verification Code"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please enter the verification code",
+                  },
+                ]}
+              >
+                <Input size="large" />
+              </Form.Item>
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={verifyLoading}
+                  className="w-full"
+                  style={{
+                    background: "var(--color-primary)",
+                    borderColor: "var(--color-primary)",
+                  }}
+                >
+                  Verify
+                </Button>
+              </Form.Item>
+            </Form>
+          </Modal>
         </div>
       </div>
     </div>

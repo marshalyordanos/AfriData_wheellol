@@ -37,7 +37,14 @@ class AuthService {
     //   newPassword: "12345678",
     //   otp: "516974",
     // };
-    return api.post(`/auth/reset-password`,data);
+    return api.post(`/auth/reset-password`, data);
+  }
+  verifyPhoneNumber(data) {
+    // data = {
+    //   phone: "1231231234",
+    //   otp: "516974",
+    // };
+    return api.post(`/auth/verify-phone`, data);
   }
   requestPasswordReset(data) {
     // data = {
