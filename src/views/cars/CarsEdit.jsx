@@ -43,6 +43,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [brandLoading, setBrandLoading] = useState(false);
   const [carTypesLoading, setCartypeLoading] = useState(false);
 
@@ -200,7 +201,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
 
   const onFinish = async (values) => {
     try {
-      setLoading(true);
+      setSubmitLoading(true);
       const formData = new FormData();
 
       formData.append("hostId", userData?.user?.id || userData?.id);
@@ -243,7 +244,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
       console.error(err);
       message.error("Failed to save car");
     } finally {
-      setLoading(false);
+      setSubmitLoading(false);
     }
   };
 
@@ -402,9 +403,11 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         </Col>
       </Row>
 
-      <Form.Item label="Active" name="isActive" valuePropName="checked">
-        <Switch />
-      </Form.Item>
+      {isEdit && (
+        <Form.Item label="Active" name="isActive" valuePropName="checked">
+          <Switch />
+        </Form.Item>
+      )}
 
       <Form.Item label="Description" name="description">
         <Input.TextArea rows={3} placeholder="Description" />
@@ -527,7 +530,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
       <div style={{ display: "flex", gap: "10px", marginTop: 20 }}>
         <Button onClick={() => setIsModalOpen?.(false)}>Cancel</Button>
         <Button
-          loading={loading}
+          loading={submitLoading}
           type="primary"
           htmlType="submit"
           style={{

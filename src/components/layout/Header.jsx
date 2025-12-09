@@ -28,8 +28,6 @@ import { useEffect } from "react";
 const { Header } = Layout;
 
 const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
-
-
   const location = useLocation();
 
   useEffect(() => {
@@ -42,8 +40,6 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
       localStorage.setItem("keyPath", JSON.stringify(history));
     }
   }, [location.pathname]);
-
-
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -59,37 +55,36 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
     (JSON.parse(localStorage.getItem("user") || "{}") || {}).id ||
     null;
 
- const handleBack = () => {
-   let history = JSON.parse(localStorage.getItem("keyPath") || "[]");
+  const handleBack = () => {
+    let history = JSON.parse(localStorage.getItem("keyPath") || "[]");
 
-   if (history.length <= 1) {
-     navigate("/dash");
-     return;
-   }
+    if (history.length <= 1) {
+      navigate("/dash");
+      return;
+    }
 
-   // Remove current page
-   history.pop();
+    // Remove current page
+    history.pop();
 
-   // Get previous page
-   let prev = history[history.length - 1];
+    // Get previous page
+    let prev = history[history.length - 1];
 
-   // Skip /login if it's the previous page
-   while (prev === "/login") {
-     history.pop();
-     prev = history[history.length - 1];
-   }
+    // Skip /login if it's the previous page
+    while (prev === "/login") {
+      history.pop();
+      prev = history[history.length - 1];
+    }
 
-   // Update history
-   localStorage.setItem("keyPath", JSON.stringify(history));
+    // Update history
+    localStorage.setItem("keyPath", JSON.stringify(history));
 
-   // Navigate to previous valid page
-   if (prev) {
-     navigate(prev);
-   } else {
-     navigate("/dash");
-   }
- };
-
+    // Navigate to previous valid page
+    if (prev) {
+      navigate(prev);
+    } else {
+      navigate("/dash");
+    }
+  };
 
   //  Language change
   const handleLocaleChange = ({ key }) => {
@@ -213,7 +208,7 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
                 type="text"
                 icon={
                   <BellOutlined
-                    style={{ fontSize: 18, color: "var(--color-primary)" }}
+                    style={{ fontSize: 23, color: "var(--color-primary)" }}
                   />
                 }
                 onClick={async () => {
@@ -298,6 +293,17 @@ const HeaderContainer = styled.div`
     gap: 12px;
   }
 
+  /* Make notif button easier to tap on small devices and keep it above the mobile logo */
+  .notif-profile button {
+    padding: 8px !important;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+  }
+
   .header__right {
     display: flex;
     align-items: center;
@@ -314,6 +320,7 @@ const HeaderContainer = styled.div`
     cursor: pointer;
     height: 48px;
     width: auto;
+    z-index: 20; /* keep below notif/profile buttons */
   }
 
   .mobile-logo img {
