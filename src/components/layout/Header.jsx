@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Layout, Button, Dropdown, Avatar, Space, message, Badge } from "antd";
 import {
@@ -23,10 +23,28 @@ import {
   selectUnreadCount,
 } from "../../views/notification/NotificationRedux";
 import Logo from "../../assets/icon orange.svg";
+import { useEffect } from "react";
 
 const { Header } = Layout;
 
 const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
+
+
+  const location = useLocation();
+
+  useEffect(() => {
+    let history = JSON.parse(localStorage.getItem("keyPath") || "[]");
+
+    history = history.filter((item) => typeof item === "string");
+    // Prevent duplicates
+    if (history[history.length - 1] !== location.pathname) {
+      history.push(location.pathname);
+      localStorage.setItem("keyPath", JSON.stringify(history));
+    }
+  }, [location.pathname]);
+
+
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
@@ -41,14 +59,37 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
     (JSON.parse(localStorage.getItem("user") || "{}") || {}).id ||
     null;
 
-  const handleBack = () => {
-    navigate(-1);
-    const pathHistory = JSON.parse(localStorage.getItem("keyPath"));
-    if (Array.isArray(pathHistory)) {
-      pathHistory.pop();
-      localStorage.setItem("keyPath", JSON.stringify(pathHistory));
-    }
-  };
+ const handleBack = () => {
+   let history = JSON.parse(localStorage.getItem("keyPath") || "[]");
+
+   if (history.length <= 1) {
+     navigate("/dash");
+     return;
+   }
+
+   // Remove current page
+   history.pop();
+
+   // Get previous page
+   let prev = history[history.length - 1];
+
+   // Skip /login if it's the previous page
+   while (prev === "/login") {
+     history.pop();
+     prev = history[history.length - 1];
+   }
+
+   // Update history
+   localStorage.setItem("keyPath", JSON.stringify(history));
+
+   // Navigate to previous valid page
+   if (prev) {
+     navigate(prev);
+   } else {
+     navigate("/dash");
+   }
+ };
+
 
   //  Language change
   const handleLocaleChange = ({ key }) => {
