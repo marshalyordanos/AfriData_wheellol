@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button, Form, Input, message } from "antd";
+import { normalizeEthiopianPhone } from "../../utils/phoneNumber_Formatter";
 import authService from "../../api/auth.service";
 import { motion } from "framer-motion";
 import { IoShieldCheckmark } from "react-icons/io5";
@@ -14,11 +15,13 @@ const RegistrationPage = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
+      const normalizedPhone = normalizeEthiopianPhone(values.phone);
+
       const payload = {
         firstName: values.firstName.trim(),
         lastName: values.lastName.trim(),
         email: values.email.trim(),
-        phone: String(values.phone),
+        phone: normalizedPhone ? String(normalizedPhone) : String(values.phone),
         password: values.password,
         role: "HOST",
       };
@@ -202,7 +205,23 @@ const RegistrationPage = () => {
               label="Phone"
               name="phone"
               rules={[
-                { required: true, message: "Please input your phone number!" },
+                {
+                  validator: (_, value) => {
+                    if (!value)
+                      return Promise.reject("Please input your phone number!");
+                    const normalized = normalizeEthiopianPhone(value);
+                    // Accept normalized +251XXXXXXXXX or local 9-digit starting with 7 or 9
+                    if (/^\+251\d{9}$/.test(normalized))
+                      return Promise.resolve();
+                    
+                    const digits = String(value).replace(/[^\d]/g, "");
+                    if (digits.length < 9)
+                      return Promise.reject("Phone number is too short");
+                    return Promise.reject(
+                      "Please enter a valid Ethiopian phone number"
+                    );
+                  },
+                },
               ]}
             >
               <Input

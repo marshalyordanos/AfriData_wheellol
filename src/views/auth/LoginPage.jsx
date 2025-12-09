@@ -4,6 +4,7 @@ import { login, selectCurrentUser } from "../../redux/auth/authSlice";
 import { useNavigate, Link } from "react-router-dom";
 import { Button, Form, Input, message, Modal } from "antd";
 import { motion } from "framer-motion";
+import { normalizeEthiopianPhone } from "../../utils/phoneNumber_Formatter";
 import { IoShieldCheckmark } from "react-icons/io5";
 import { FaCarSide, FaHeadset } from "react-icons/fa6"; // from react-icons/fa6 for modern Font Awesome 6 icons
 
@@ -31,6 +32,11 @@ const LoginPage = () => {
       phone: values.phone_number ? String(values.phone_number) : "",
     };
     delete payload.phone_number;
+    // normalize phone silently before sending
+    if (payload.phone) {
+      const normalized = normalizeEthiopianPhone(payload.phone);
+      if (normalized) payload.phone = String(normalized);
+    }
     try {
       const actionResult = await dispatch(login(payload));
       if (login.fulfilled.match(actionResult)) {
@@ -68,8 +74,10 @@ const LoginPage = () => {
         }
 
         // Call backend to request password reset (sends otp to phone)
+        // normalize phone silently
+        const normalized = normalizeEthiopianPhone(phone) || phone;
         const AuthService = (await import("../../api/auth.service.js")).default;
-        await AuthService.requestPasswordReset({ phoneNumber: phone });
+        await AuthService.requestPasswordReset({ phoneNumber: normalized });
 
         setForgotPhone(phone);
         setForgotStep(2);
@@ -86,9 +94,11 @@ const LoginPage = () => {
           return;
         }
 
+        // normalize phone silently
+        const normalizedPhone = normalizeEthiopianPhone(phone) || phone;
         const AuthService = (await import("../../api/auth.service.js")).default;
         await AuthService.resetPassword({
-          phoneNumber: phone,
+          phoneNumber: normalizedPhone,
           newPassword,
           otp,
         });
