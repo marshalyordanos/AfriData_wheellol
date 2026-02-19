@@ -357,8 +357,8 @@ export class AuthUseCaseImpl {
   private async generateTokens(user: User): Promise<AuthTokens> {
     const payload = { sub: user.id, email: user.email };
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '1y' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '3y' });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '30m' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '1h' });
 
     return { accessToken, refreshToken };
   }
