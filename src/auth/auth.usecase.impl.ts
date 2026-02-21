@@ -102,7 +102,10 @@ export class AuthUseCaseImpl {
 
     await sendSms(`${nums} is your verification code`, data.phone);
 
-    return user;
+    const tokens = await this.generateTokens(user,'1y','1y');
+
+    await this.authRepository.saveRefreshToken(user.id, tokens.refreshToken);
+    return { user, tokens };
   }
 
   async login(data: AuthLoginDto): Promise<{ user: User; tokens: AuthTokens }> {
@@ -147,7 +150,7 @@ export class AuthUseCaseImpl {
           'Your account is not active. Please contact wheellol support for assistance.',
       });
     }
-    const tokens = await this.generateTokens(user);
+    const tokens = await this.generateTokens(user,'1y','1y');
 
     await this.authRepository.saveRefreshToken(user.id, tokens.refreshToken);
     // delete user.password;
@@ -204,7 +207,7 @@ export class AuthUseCaseImpl {
       });
     }
 
-    const tokens = await this.generateTokens(user);
+    const tokens = await this.generateTokens(user,'30m','1h');
 
     await this.authRepository.saveRefreshToken(user.id, tokens.refreshToken);
     // delete user.password;
@@ -259,7 +262,7 @@ export class AuthUseCaseImpl {
     const user = await this.authRepository.findById(session.userId);
     if (!user) throw new RpcException('User not found');
 
-    const tokens = await this.generateTokens(user);
+    const tokens = await this.generateTokens(user,'30m','1h');
     await this.authRepository.updateRefreshToken(
       user.id,
       tokens.refreshToken,
@@ -354,12 +357,12 @@ export class AuthUseCaseImpl {
     // console.log(`Send verification email to ${emaphoneil} for user ${userId}`);
   }
   // ----------------- Helper -----------------
-  private async generateTokens(user: User): Promise<AuthTokens> {
+  private async generateTokens(user: User,time: string,time2): Promise<AuthTokens> {
     const payload = { sub: user.id, email: user.email };
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '30m' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '1h' });
-
+    const accessToken = this.jwtService.sign(payload, { expiresIn:  time });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: time2 });
+ //as
     return { accessToken, refreshToken };
   }
 
