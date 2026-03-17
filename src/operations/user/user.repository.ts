@@ -9,6 +9,7 @@ import {
 import {
   BankType,
   BookingStatus,
+  PlatformContactInfo,
   HostProfile,
   PaymentStatus,
   Prisma,
@@ -643,6 +644,49 @@ export class UserRepository {
 
   async getFee() {
     return this.prisma.platformFee.findFirst();
+  }
+
+  // Add a repo func that will create a row but if there is one row exist update that row do not add other row
+  async createOrUpdatePlatformContactInfo(data: PlatformContactInfo) {
+    // Make sure latitude and longitude are Float or null, not string
+    const newData: any = { ...data };
+
+    if ('latitude' in newData) {
+      // Accept null, number, or parseable string, else set to null
+      if (newData.latitude === null || typeof newData.latitude === 'number') {
+        // valid, do nothing
+      } else if (typeof newData.latitude === 'string' && newData.latitude.trim() !== '') {
+        const lat = parseFloat(newData.latitude);
+        newData.latitude = isNaN(lat) ? null : lat;
+      } else {
+        newData.latitude = null;
+      }
+    }
+
+    if ('longitude' in newData) {
+      if (newData.longitude === null || typeof newData.longitude === 'number') {
+        // valid, do nothing
+      } else if (typeof newData.longitude === 'string' && newData.longitude.trim() !== '') {
+        const lng = parseFloat(newData.longitude);
+        newData.longitude = isNaN(lng) ? null : lng;
+      } else {
+        newData.longitude = null;
+      }
+    }
+
+    const existing = await this.prisma.platformContactInfo.findFirst();
+    if (!existing) {
+      return this.prisma.platformContactInfo.create({
+        data: newData,
+      });
+    }
+    return this.prisma.platformContactInfo.update({
+      where: { id: existing.id },
+      data: newData,
+    });
+  }
+  async getPlatformContactInfo(): Promise<PlatformContactInfo | null> {
+    return await this.prisma.platformContactInfo.findFirst();
   }
 }
 

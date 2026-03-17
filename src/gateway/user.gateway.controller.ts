@@ -46,6 +46,23 @@ export class UserGatewayController {
     @Inject('USER_SERVICE') private readonly usersClient: ClientProxy,
   ) {}
 
+
+  @Post('platform-contact-info')
+  async addPlatformContactInfo(@Req() req, @Body() body: any) {
+    const authHeader = req.headers['authorization'] || null;
+    return this.usersClient.send(PATTERNS.PLATFORM_CONTACT_INFO_CREATE, {
+      headers: { authorization: authHeader },
+      data: body,
+    });
+  }
+  @Get('platform-contact-info')
+  async getPlatformContactInfo(@Req() req) {
+    const authHeader = req.headers['authorization'] || null;
+    return this.usersClient.send(PATTERNS.PLATFORM_CONTACT_INFO_GET, {
+      headers: { authorization: authHeader },
+    });
+  }
+
   @Post('wish-list')
   async addToWishlist(@Req() req, @Body() dto: AddToWishlistDto) {
     const authHeader = req.headers['authorization'] || null;
@@ -341,6 +358,7 @@ export class UserGatewayController {
     });
   }
 
+ 
   @Patch(':id')
   @UseInterceptors(
     FileFieldsInterceptor(

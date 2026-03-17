@@ -9,7 +9,7 @@ import {
   UserDto,
   UserUpdateDto,
 } from './user.entity';
-import { BankType, User } from '@prisma/client';
+import { BankType, PlatformContactInfo, User } from '@prisma/client';
 import { IPagination } from 'src/common/types';
 import { UserUsecase } from './user.usecase';
 import { RpcException } from '@nestjs/microservices';
@@ -358,5 +358,12 @@ export class UserUseCasesImp {
 
   async getFee() {
     return this.userRepo.getFee();
+  }
+
+  async createPlatformContactInfo(data: any): Promise<PlatformContactInfo> {
+    return this.userRepo.createOrUpdatePlatformContactInfo(data);
+  }
+  async getPlatformContactInfo(): Promise<PlatformContactInfo | null> {
+    return await this.userRepo.getPlatformContactInfo();
   }
 }

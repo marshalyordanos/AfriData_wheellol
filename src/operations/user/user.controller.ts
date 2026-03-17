@@ -25,6 +25,38 @@ import { BankType } from '@prisma/client';
 export class UserMessageController {
   constructor(private readonly usecases: UserUseCasesImp) {}
 
+  // ...EXISTING CONTROLLERS UNCHANGED...
+
+  // --- PlatformContactInfo Controller ---
+
+  @UseGuards(permissionGuard.PermissionGuard)
+  @CheckPermission('SETTINGS', PermissionActions.CREATE)
+  @MessagePattern(PATTERNS.PLATFORM_CONTACT_INFO_CREATE)
+  async addPlatformContactInfo(@Payload() payload: { headers: any; data: any }) {
+    try {
+      // Forward to usecase, assume usecase.createPlatformContactInfo exists
+      const result = await this.usecases.createPlatformContactInfo(payload.data);
+      return IResponse.success('Platform contact info saved successfully', result);
+    } catch (error) {
+      handleCatch(error);
+    }
+  }
+
+
+  // @UseGuards(permissionGuard.PermissionGuard)
+  // @CheckPermission('SETTINGS', PermissionActions.READ)
+  @Public()
+  @MessagePattern(PATTERNS.PLATFORM_CONTACT_INFO_GET)
+  async getPlatformContactInfo(@Payload() payload: { headers: any }) {
+    try {
+      const result = await this.usecases.getPlatformContactInfo();
+      return IResponse.success('Platform contact info fetched successfully', result);
+    } catch (error) {
+      handleCatch(error);
+    }
+  }
+  // ...rest of existing controllers remain unchanged...
+
   @MessagePattern(PATTERNS.DASHBOARD_SUMMARY)
   async getSummary(@Payload() dto: { data: DashboardSummaryDto; user: any }) {
     try {

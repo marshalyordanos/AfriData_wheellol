@@ -1,6 +1,6 @@
 import { IPagination } from 'src/common/types';
 import { UserDto, UserUpdateDto } from './user.entity';
-import { User } from '@prisma/client';
+import { PlatformContactInfo, User } from '@prisma/client';
 
 export interface UserUsecase {
   getUser(id: string): Promise<User | null>;
@@ -15,4 +15,6 @@ export interface UserUsecase {
   // }>;
   updateUser(id: string, data: Partial<UserUpdateDto>): Promise<any>;
   deleteUser(id: string): Promise<User>;
+  createPlatformContactInfo(data: any): Promise<PlatformContactInfo>;
+  getPlatformContactInfo(): Promise<PlatformContactInfo>;
 }
