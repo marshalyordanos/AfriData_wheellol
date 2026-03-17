@@ -170,12 +170,32 @@ export class UserRepository {
     });
   }
 
+  // async verifyHostProfile(
+  //   userId: string,
+  //   isVerified: boolean,
+  // ): Promise<HostProfile> {
+      
+  //   return this.prisma.hostProfile.upsert({
+  //     where: { userId }, // because userId is @unique
+  //     create: {
+  //       userId,
+  //       isVerified: isVerified ?? false,
+
+  //     },
+  //     update: {
+  //       isVerified: isVerified ?? undefined,
+  //     },
+  //   });
+  // }
+
   async verifyHostProfile(
-    userId: string,
-    isVerified: boolean,
-  ): Promise<HostProfile> {
-    return this.prisma.hostProfile.upsert({
-      where: { userId }, // because userId is @unique
+  userId: string,
+  isVerified: boolean,
+): Promise<HostProfile> {
+  return this.prisma.$transaction(async (tx) => {
+    
+    const hostProfile = await tx.hostProfile.upsert({
+      where: { userId },
       create: {
         userId,
         isVerified: isVerified ?? false,
@@ -184,8 +204,17 @@ export class UserRepository {
         isVerified: isVerified ?? undefined,
       },
     });
-  }
 
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        isVerified: true, // force true as you requested
+      },
+    });
+
+    return hostProfile;
+  });
+}
   async activeOrDiactiveUser(userId: string, isActive: boolean): Promise<User> {
     return this.prisma.user.update({
       where: { id: userId },
