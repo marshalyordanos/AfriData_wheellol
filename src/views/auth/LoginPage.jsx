@@ -35,7 +35,7 @@ const LoginPage = () => {
     // normalize phone silently before sending
     if (payload.phone) {
       const normalized = normalizeEthiopianPhone(payload.phone);
-      if (normalized) payload.phone = String(normalized);
+      if (normalized) payload.phone = String(normalized) ;
     }
     try {
       const actionResult = await dispatch(login(payload));

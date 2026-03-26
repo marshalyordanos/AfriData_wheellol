@@ -143,10 +143,10 @@ const GustList = () => {
         key,
         sorter: !(key === "role" || key === "active"),
         onCell: (record) => ({
-          onClick: () => {
-            const id = record?._id || record?.id;
-            if (id) navigate(`/dash/gust/details/${id}`, { state: record });
-          },
+          // onClick: () => {
+          //   const id = record?._id || record?.id;
+          //   if (id) navigate(`/dash/gust/details/${id}`, { state: record });
+          // },
           style: { cursor: "pointer" },
         }),
         render:
@@ -253,10 +253,10 @@ const GustList = () => {
               }}
               actionItems={items(g)}
               onActionClick={(info, item) => onClick(info, item)}
-              onCardClick={(record) => {
-                const id = record?._id || record?.id;
-                if (id) navigate(`/dash/gust/details/${id}`, { state: record });
-              }}
+              // onCardClick={(record) => {
+              //   const id = record?._id || record?.id;
+              //   if (id) navigate(`/dash/gust/details/${id}`, { state: record });
+              // }}
             />
           ))
         ) : (

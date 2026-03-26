@@ -64,6 +64,7 @@ import ChangePassword from "./views/auth/ChangePassword";
 
 import CartypesList from "./views/cartypes/CartypesList";
 import { connectSocket } from "./redux/socketSlice";
+import ProfileContactInfo from "./views/ProfileContactInfo";
 
 const LayoutRouting = () => {
   const dispatch = useDispatch();
@@ -177,9 +178,10 @@ const LayoutRouting = () => {
     { path: "vehicle-types", element: <VehicleTypesList /> },
     { path: "permissions", element: <PermissionList /> },
     { path: "roles", element: <RoleList /> },
-    { path: "gust", element: <GustList /> },
-    { path: "gust/details/:id", element: <GustDetail /> },
-    { path: "gust/reviews/:id", element: <GuestReview /> },
+    { path: "platform-contact-info", element: <ProfileContactInfo /> },
+    { path: "guest", element: <GustList /> },
+    { path: "guest/details/:id", element: <GustDetail /> },
+    { path: "guest/reviews/:id", element: <GuestReview /> },
     { path: "host/reviews/:id", element: <HostReview /> },
     { path: "cars/reviews/:id", element: <CartReview /> },
     { path: "profile/:id", element: <ProfileDetails /> },

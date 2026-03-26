@@ -11,6 +11,7 @@ import {
   WarningOutlined,
   LockOutlined,
   SafetyOutlined,
+  PhoneOutlined,
 } from "@ant-design/icons";
 import { FaUserTie, FaCar } from "react-icons/fa";
 import { SiBrandfolder, SiBookstack } from "react-icons/si";
@@ -69,7 +70,7 @@ const Sidebar = ({ collapsed }) => {
     else if (p.startsWith("/dash/staff")) sel = "staff";
     else if (p.startsWith("/dash/cars")) sel = "cars";
     else if (p.startsWith("/dash/cartypes")) sel = "cartypes";
-    else if (p.startsWith("/dash/gust")) sel = "gust";
+    else if (p.startsWith("/dash/guest")) sel = "guest";
     else if (p.startsWith("/dash/brands")) sel = "brands";
     else if (p.startsWith("/dash/models")) sel = "models";
     else if (p.startsWith("/dash/cancellation-policies"))
@@ -118,7 +119,7 @@ const Sidebar = ({ collapsed }) => {
       getItem("Cars", "cars", <FaCar />),
       getItem("Staffs", "staff", <IdcardOutlined />),
       getItem("Hosts", "host", <FaUserTie />),
-      getItem("Guests", "gust", <UserOutlined />),
+      getItem("Guests", "guest", <UserOutlined />),
       getItem("Bookings", "bookings", <SiBookstack />),
       getItem("Payouts", "payouts", <CreditCardOutlined />),
       getItem("Payments", "payments", <CreditCardOutlined />),
@@ -130,6 +131,8 @@ const Sidebar = ({ collapsed }) => {
       getItem("Models", "models", <PiCubeFill />),
       getItem("Permissions", "permissions", <LockOutlined />),
       getItem("Roles", "roles", <SafetyOutlined />),
+      getItem("Platform Contact Info", "platform-contact-info", <PhoneOutlined />),
+
     ];
 
     let visibleItems = allItems;

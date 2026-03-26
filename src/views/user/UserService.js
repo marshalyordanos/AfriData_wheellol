@@ -7,6 +7,19 @@ class UserService {
     });
   }
 
+  createOrUpdatePlatformContactInfo(data) {
+    return api.post("/users/platform-contact-info", data).then((response) => {
+      return response.data.data;
+    });
+  }
+  getPlatformContactInfo() {
+    return api.get("/users/platform-contact-info").then((response) => {
+      return response.data.data;
+    });
+  }
+
+ 
+
   updateUse(data, id) {
     return api.patch("/users/" + id, data).then((response) => {
       return response.data.data;

@@ -1,5 +1,6 @@
 export function normalizeEthiopianPhone(input) {
   if (!input) return null;
+  if (input=="0000000000") return input
 
   // Remove all spaces and non-digit characters except +
   let phone = input
