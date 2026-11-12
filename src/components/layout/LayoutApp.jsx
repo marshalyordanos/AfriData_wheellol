@@ -1,91 +1,71 @@
 import React, { useEffect, useState } from "react";
-import styled from "styled-components";
-import { Layout, theme } from "antd";
+import { Drawer } from "antd";
 import { debounce } from "lodash";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import LayoutHeader from "./Header";
-import SideDrawer from "../../utils/SideDrawer";
 import BottomNav from "./BottomNav";
+import "../modern/modern.css";
 
-const { Content } = Layout;
+const SIDEBAR_W = 260;
 
 const LayoutApp = () => {
+  // collapsed  = drawer closed (mobile) ; collapsed2 = mobile mode
   const [collapsed, setCollapsed] = useState(false);
   const [collapsed2, setCollapsed2] = useState(false);
-  const [openDrawer, setOpenDrawer] = useState(false);
-
-  const {
-    token: { colorBgContainer },
-  } = theme.useToken();
-
-  useEffect(() => {
-    const handleWindowResize = debounce(() => {
-      const isMobile = window.innerWidth < 900;
-      setCollapsed(isMobile);
-      setCollapsed2(isMobile);
-    }, 200);
-
-    window.addEventListener("resize", handleWindowResize);
-    handleWindowResize();
-
-    return () => {
-      window.removeEventListener("resize", handleWindowResize);
-    };
-  }, []);
-
   const location = useLocation();
 
   useEffect(() => {
-    try {
-      if (window.innerWidth < 900) {
-        setCollapsed(true);
-        setCollapsed2(true);
-      }
-    } catch (err) {}
+    const onResize = debounce(() => {
+      const isMobile = window.innerWidth < 900;
+      setCollapsed(isMobile);
+      setCollapsed2(isMobile);
+    }, 150);
+    window.addEventListener("resize", onResize);
+    onResize();
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (window.innerWidth < 900) setCollapsed(true);
   }, [location.pathname]);
 
   return (
-    <LayoutContainer>
+    <div style={{ minHeight: "100vh", background: "var(--c-bg)" }}>
       {collapsed2 ? (
         <>
-          {/* Mobile: Drawer + Bottom Nav */}
-          <SideDrawer open={!collapsed} setOpen={setCollapsed}>
-            <Sidebar collapsed={collapsed} />
-          </SideDrawer>
+          <Drawer
+            open={!collapsed}
+            onClose={() => setCollapsed(true)}
+            placement="left"
+            width={SIDEBAR_W}
+            closable={false}
+            styles={{ body: { padding: 0 } }}
+          >
+            <Sidebar inDrawer onNavigate={() => setCollapsed(true)} />
+          </Drawer>
           <BottomNav />
         </>
       ) : (
-        <Sidebar collapsed={collapsed} />
+        <Sidebar />
       )}
 
-      <Layout style={{ marginLeft: collapsed2 ? 0 : collapsed ? 0 : 250 }}>
-        <LayoutHeader
-          open={openDrawer}
-          setOpen={setOpenDrawer}
-          setCollapsed={setCollapsed}
-          collapsed={collapsed}
-          collapsed2={collapsed2}
-        />
-
-        <Content
-          style={{
-            padding: "10px 0 2px 0",
-            background: "#F9F9F9",
-            overflowY: "auto",
-            height: "max-content",
-            paddingBottom: collapsed2 ? "70px" : "0",
-          }}
-        >
+      <div
+        style={{
+          marginLeft: collapsed2 ? 0 : SIDEBAR_W,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          background: "var(--c-bg)",
+        }}
+      >
+        <LayoutHeader collapsed={collapsed} collapsed2={collapsed2} setCollapsed={setCollapsed} />
+        <main style={{ flex: 1, paddingBottom: collapsed2 ? 72 : 0, minWidth: 0 }}>
           <Outlet />
-        </Content>
-      </Layout>
-    </LayoutContainer>
+        </main>
+      </div>
+    </div>
   );
 };
-
-const LayoutContainer = styled(Layout)`
-  height: 100vh;
-`;
 
 export default LayoutApp;

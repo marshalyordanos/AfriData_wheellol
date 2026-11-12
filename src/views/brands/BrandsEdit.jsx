@@ -53,7 +53,7 @@ const BrandsEdit = ({ mode, setMode, setIsModalOpen, searchData }) => {
         <Switch />
       </Form.Item>
 
-      <div className="flex justify-end gap-4">
+      <div className="mp-form-actions">
         <Button
           onClick={() => setIsModalOpen(false)}
           
@@ -63,11 +63,6 @@ const BrandsEdit = ({ mode, setMode, setIsModalOpen, searchData }) => {
         <Button
           type="primary"
           htmlType="submit"
-          style={{
-            backgroundColor: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            color: "white",
-          }}
         >
           {mode ? "Update" : "Create"}
         </Button>

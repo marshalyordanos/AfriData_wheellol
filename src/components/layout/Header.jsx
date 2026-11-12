@@ -1,100 +1,74 @@
-import React from "react";
-import styled from "styled-components";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Layout, Button, Dropdown, Avatar, Space, message, Badge } from "antd";
-import {
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  ArrowLeftOutlined,
-  DownOutlined,
-  GlobalOutlined,
-  BellOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
-import { WrenchScrewdriverIcon } from "@heroicons/react/24/solid";
+import { AutoComplete, Dropdown, Tooltip, message } from "antd";
+import { Menu as MenuIcon, ArrowLeft, Bell, Search, Moon, Sun, Palette } from "lucide-react";
+import { useAppearance } from "../../theme/AppearanceProvider";
 import { logout, selectCurrentUser } from "../../redux/auth/authSlice";
 import authService from "../../api/auth.service";
-import { useTranslation } from "react-i18next";
 import NotificationsList from "../../views/notification/NotificationList";
 import {
   fetchNotifications,
   markAllNotificationsRead,
   selectUnreadCount,
 } from "../../views/notification/NotificationRedux";
-import Logo from "../../assets/icon orange.svg";
-import { useEffect } from "react";
-
-const { Header } = Layout;
+import { Avatar } from "../modern/ModernUI";
+import { getNavGroups, normalizeRole, titleForPath } from "./navConfig";
+import "../modern/modern.css";
 
 const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const currentUser = useSelector(selectCurrentUser);
+  const unreadCount = useSelector((state) => selectUnreadCount(state));
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const searchRef = useRef(null);
+  const { isDark, update: updateAppearance, openSettings } = useAppearance();
 
+  // keep the back-navigation history the app already relies on
   useEffect(() => {
     let history = JSON.parse(localStorage.getItem("keyPath") || "[]");
-
     history = history.filter((item) => typeof item === "string");
-    // Prevent duplicates
     if (history[history.length - 1] !== location.pathname) {
       history.push(location.pathname);
       localStorage.setItem("keyPath", JSON.stringify(history));
     }
   }, [location.pathname]);
 
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const currentUser = useSelector(selectCurrentUser);
-  const unreadCount = useSelector((state) => selectUnreadCount(state));
-  const { t, i18n } = useTranslation();
+  // ⌘K / Ctrl+K focuses the quick search
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-  const [notifOpen, setNotifOpen] = React.useState(false);
-
-  const currentUserId =
-    currentUser?.id ||
-    currentUser?.user?.id ||
-    (JSON.parse(localStorage.getItem("user") || "{}") || {}).id ||
-    null;
+  const u = currentUser?.user || currentUser || {};
+  const currentUserId = u.id || (JSON.parse(localStorage.getItem("user") || "{}") || {}).id || null;
+  const name = `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email || "Admin";
+  const role = (normalizeRole(currentUser) || "admin").replace(/_/g, " ");
+  const pageTitle = titleForPath(location.pathname, currentUser);
+  const isRoot = location.pathname.replace(/\/$/, "") === "/dash";
 
   const handleBack = () => {
     let history = JSON.parse(localStorage.getItem("keyPath") || "[]");
-
-    if (history.length <= 1) {
-      navigate("/dash");
-      return;
-    }
-
-    // Remove current page
+    if (history.length <= 1) return navigate("/dash");
     history.pop();
-
-    // Get previous page
     let prev = history[history.length - 1];
-
-    // Skip /login if it's the previous page
     while (prev === "/login") {
       history.pop();
       prev = history[history.length - 1];
     }
-
-    // Update history
     localStorage.setItem("keyPath", JSON.stringify(history));
-
-    // Navigate to previous valid page
-    if (prev) {
-      navigate(prev);
-    } else {
-      navigate("/dash");
-    }
+    navigate(prev || "/dash");
   };
 
-  //  Language change
-  const handleLocaleChange = ({ key }) => {
-    const langCode = key === "oromic" ? "OR" : key === "amharic" ? "AM" : "EN";
-    i18n.changeLanguage(langCode);
-    localStorage.setItem("locale", langCode);
-    message.success(`Language changed to ${langCode.toUpperCase()}`);
-  };
-
-  //  Profile menu actions
   const handleProfileAction = ({ key }) => {
     if (key === "logout") {
       authService.logout();
@@ -103,238 +77,142 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
       setTimeout(() => navigate("/login"), 300);
     } else if (key === "change_password") {
       navigate("/dash/change-password");
+    } else if (key === "appearance") {
+      openSettings();
     } else if (key === "profile") {
-      const uid =
-        currentUser?.user?.id || currentUser?.id || currentUser?._id || "me";
-      navigate(`/dash/profile/${uid}`);
+      navigate(`/dash/profile/${u.id || u._id || "me"}`);
     }
   };
 
-  // Admin dropdown items
-  const adminMenuItems = [
-    { key: "users", label: t("User") },
-    { key: "roles", label: t("Role") },
-    { key: "permissions", label: t("Permission") },
-    { key: "settings", label: t("Setting") },
-  ];
-
-  //  Language menu items
-  const languageItems = [
-    { key: "oromic", label: "Afaan Oromo" },
-    { key: "english", label: "English" },
-    { key: "amharic", label: "Amharic" },
-  ];
-
-  //  Profile dropdown items
-  const profileMenuItems = [
-    { key: "profile", label: "Profile" },
-    { key: "change_password", label: "Change Password" },
-    { key: "logout", label: "Logout" },
-  ];
+  /* Quick navigation: search the pages you have access to */
+  const options = useMemo(() => {
+    const all = getNavGroups(currentUser).flatMap((g) =>
+      g.items.map((i) => ({ ...i, group: g.group }))
+    );
+    const s = q.trim().toLowerCase();
+    return all
+      .filter((i) => !s || i.label.toLowerCase().includes(s) || i.group.toLowerCase().includes(s))
+      .map((i) => ({
+        value: i.to,
+        label: (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "2px 0" }}>
+            <span style={{ color: "var(--c-text-3)", display: "inline-grid" }}>{i.icon}</span>
+            <span style={{ flex: 1, fontWeight: 500 }}>{i.label}</span>
+            <span style={{ fontSize: 12, color: "var(--c-text-3)" }}>{i.group}</span>
+          </div>
+        ),
+      }));
+  }, [q, currentUser]);
 
   return (
-    <Header
-      style={{
-        padding: 0,
-        background: "#F9F9F9",
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-      }}
-    >
-      <HeaderContainer>
-        {/* Mobile-centered logo */}
-        <div className="mobile-logo" onClick={() => navigate("/dash")}>
-          <img
-            src={Logo}
-            alt="logo"
-            style={{
-              width: "40px",
-              left: "50%",
-              transform: "translateX(27%)",
-              height: "auto",
-            }}
-          />
-        </div>
-
-        {/* Left Controls */}
-        <div className="left-controls">
-          <Button
-            type="text"
-            icon={
-              collapsed2 ? (
-                collapsed ? (
-                  <MenuUnfoldOutlined
-                    style={{ color: "var(--color-primary)" }}
-                  />
-                ) : (
-                  <MenuFoldOutlined style={{ color: "var(--color-primary)" }} />
-                )
-              ) : null
-            }
+    <>
+      <header className="app-top">
+        {collapsed2 && (
+          <button
+            className="app-ib"
+            aria-label="Open menu"
             onClick={() => setCollapsed && setCollapsed(!collapsed)}
-            style={{
-              fontSize: 16,
-              width: 64,
-              height: 30,
-              display: collapsed2 ? undefined : "none",
-            }}
-          />
-
-          <Button
-            type="text"
-            icon={
-              <ArrowLeftOutlined style={{ color: "var(--color-primary)" }} />
-            }
-            onClick={handleBack}
-            style={{ fontSize: 16, width: 64, height: 34 }}
-          />
-        </div>
-
-        {/* Right Controls */}
-        <div className="right-controls">
-          {/*  Language Selector */}
-          {/* <Dropdown
-            menu={{ items: languageItems, onClick: handleLocaleChange }}
-            trigger={["click"]}
           >
-            <GlobalOutlined style={{ cursor: "pointer", fontSize: 18 }} />
-          </Dropdown> */}
-
-          {/*  Notifications &  Profile */}
-          <div className="notif-profile">
-            <Badge count={unreadCount} size="small">
-              <Button
-                type="text"
-                icon={
-                  <BellOutlined
-                    style={{ fontSize: 23, color: "var(--color-primary)" }}
-                  />
-                }
-                onClick={async () => {
-                  setNotifOpen(true);
-                  dispatch(fetchNotifications({ userid: currentUserId }));
-
-                  if (currentUserId) {
-                    try {
-                      await dispatch(markAllNotificationsRead(currentUserId));
-                    } catch (err) {
-                      console.error(
-                        "Failed to mark all notifications read",
-                        err
-                      );
-                    }
-                  }
-                }}
-              />
-            </Badge>
-
-            <Dropdown
-              menu={{ items: profileMenuItems, onClick: handleProfileAction }}
-              trigger={["click"]}
-            >
-              <span className="header__right">
-                <Avatar
-                  size={40}
-                  src={
-                    currentUser?.user?.profilePhoto ||
-                    currentUser?.profilePhoto ||
-                    null
-                  }
-                  icon={
-                    <UserOutlined style={{ color: "var(--color-primary)" }} />
-                  }
-                />
-                {/* <span style={{ color: "black", marginLeft: 8 }}>
-                  {currentUser?.firstName} {currentUser?.lastName}
-                </span> */}
-              </span>
-            </Dropdown>
+            <MenuIcon size={18} />
+          </button>
+        )}
+        {!isRoot && (
+          <button className="app-ib" aria-label="Go back" onClick={handleBack}>
+            <ArrowLeft size={18} />
+          </button>
+        )}
+        <div style={{ minWidth: 0 }} className="hidden md:block">
+          <div style={{ fontSize: 12.5, color: "var(--c-text-3)" }}>Wheellol</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text)", whiteSpace: "nowrap" }}>
+            {pageTitle}
           </div>
         </div>
-      </HeaderContainer>
 
-      {/*  Notifications Drawer */}
+        <div style={{ flex: 1 }} />
+
+        <div className="app-search" style={{ position: "relative" }}>
+          <Search size={16} className="app-search-ico" />
+          <AutoComplete
+            ref={searchRef}
+            value={q}
+            options={options}
+            style={{ width: "100%" }}
+            onSearch={setQ}
+            onSelect={(to) => {
+              setQ("");
+              navigate(to);
+              searchRef.current?.blur();
+            }}
+            placeholder="Jump to a page…"
+            popupMatchSelectWidth
+          />
+          <span className="app-kbd">⌘ K</span>
+        </div>
+
+        <Tooltip title={isDark ? "Switch to light mode" : "Switch to dark mode"}>
+          <button
+            className="app-ib"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            onClick={() => updateAppearance({ mode: isDark ? "light" : "dark" })}
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </Tooltip>
+
+        <Tooltip title="Appearance">
+          <button className="app-ib" aria-label="Appearance settings" onClick={openSettings}>
+            <Palette size={18} />
+          </button>
+        </Tooltip>
+
+        <button
+          className="app-ib"
+          aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
+          onClick={async () => {
+            setNotifOpen(true);
+            dispatch(fetchNotifications({ userid: currentUserId }));
+            if (currentUserId) {
+              try {
+                await dispatch(markAllNotificationsRead(currentUserId));
+              } catch (err) {
+                console.error("Failed to mark all notifications read", err);
+              }
+            }
+          }}
+        >
+          <Bell size={18} />
+          {unreadCount > 0 && <span className="dot" />}
+        </button>
+
+        <span className="app-divider" />
+
+        <Dropdown
+          menu={{
+            items: [
+              { key: "profile", label: "Profile" },
+              { key: "change_password", label: "Change password" },
+              { key: "appearance", label: "Appearance" },
+              { type: "divider" },
+              { key: "logout", label: "Sign out", danger: true },
+            ],
+            onClick: handleProfileAction,
+          }}
+          trigger={["click"]}
+          placement="bottomRight"
+        >
+          <button className="app-me">
+            <Avatar name={name} src={u.profilePhoto} size={36} />
+            <span className="app-me-text">
+              <span className="app-me-name">{name}</span>
+              <span className="app-me-role">{role}</span>
+            </span>
+          </button>
+        </Dropdown>
+      </header>
+
       <NotificationsList open={notifOpen} onClose={() => setNotifOpen(false)} />
-    </Header>
+    </>
   );
 };
-
-const HeaderContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 70px;
-  background-color: var(--color-secondary);
-  border-bottom: 1px solid lightgray;
-  padding: 0 16px;
-
-  .left-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .right-controls {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .admin-dropdown {
-    background: white;
-    border-radius: 8px;
-    padding: 4px 8px;
-  }
-
-  .notif-profile {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  /* Make notif button easier to tap on small devices and keep it above the mobile logo */
-  .notif-profile button {
-    padding: 8px !important;
-    min-width: 44px;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 30;
-  }
-
-  .header__right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-  }
-
-  /* Mobile centered logo */
-  .mobile-logo {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    display: block;
-    cursor: pointer;
-    height: 48px;
-    width: auto;
-    z-index: 20; /* keep below notif/profile buttons */
-  }
-
-  .mobile-logo img {
-    height: 40px;
-    width: auto;
-    object-fit: contain;
-  }
-
-  /* hide mobile logo on medium+ screens */
-  @media (min-width: 768px) {
-    .mobile-logo {
-      display: none;
-    }
-  }
-`;
 
 export default LayoutHeader;

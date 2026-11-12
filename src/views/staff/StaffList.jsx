@@ -10,7 +10,30 @@ import {
   Pagination,
 } from "antd";
 import RolesService from "../roles/RoleService";
-import { PlusOutlined, ReloadOutlined, MoreOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  EditOutlined,
+  SafetyOutlined,
+  StopOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
+import {
+  Page,
+  PageHeader,
+  Btn,
+  ReloadBtn,
+  StatsStrip,
+  TableCard,
+  PersonCell,
+  StatusPill,
+  ActivePill,
+  TwoLine,
+  RowMenu,
+  actionColumn,
+  EmptyState,
+  prettyStatus,
+} from "../../components/modern/ModernUI";
+import { shortDate, shortTime } from "../../utils/dateFormat";
 import CommonTable from "../../components/commons/CommonTable";
 import CommonCard from "../../components/commons/CommonCard";
 import CommonModal from "../../components/commons/CommonModel";
@@ -106,105 +129,73 @@ const StaffList = () => {
   };
 
   const items = (record) => [
-    { key: "edit", label: <Button type="text">Edit</Button> },
-    { key: "assignRole", label: <Button type="text">Assign Role</Button> },
+    { key: "edit", icon: <EditOutlined />, label: "Edit details" },
+    { key: "assignRole", icon: <SafetyOutlined />, label: "Assign role" },
+    { type: "divider" },
     {
       key: "toggleActive",
-      label: (
-        <Button type="text">
-          {record.isActive ? "Deactivate" : "Activate"}
-        </Button>
-      ),
+      icon: record.isActive ? <StopOutlined /> : <CheckCircleOutlined />,
+      label: record.isActive ? "Deactivate" : "Activate",
+      danger: !!record.isActive,
     },
   ];
 
   const onClick = ({ key, domEvent }, record) => {
     domEvent?.stopPropagation();
-
     const id = record?._id || record?.id;
     setModeID(id);
     setSelectedRecord(record);
-    if (key === "edit") {
-      setIsModalOpen(true);
-      return;
-    }
-
+    if (key === "edit") return setIsModalOpen(true);
     if (key === "assignRole") {
-      // open assign role modal and preload roles
       setAssignModalOpen(true);
       fetchRoles();
       return;
     }
+    if (key === "toggleActive") handleToggleActive(id, record.isActive);
+  };
 
-    if (key === "toggleActive") {
-      handleToggleActive(id, record.isActive);
-      return;
-    }
+  const openDetails = (record) => {
+    const id = record?._id || record?.id;
+    if (id) navigate(`/dash/staff/details/${id}`, { state: record });
   };
 
   const columns = [
     {
-      title: " ",
-      dataIndex: "action",
-      render: (_, record) => {
-        const menuItems = items(record);
-        return (
-          <Dropdown
-            menu={{
-              items: menuItems,
-              onClick: (value) => onClick(value, record),
-            }}
-            trigger={["click"]}
-            placement="bottomLeft"
-          >
-            <Button
-              type="text"
-              icon={<MoreOutlined style={{ fontSize: 20 }} />}
-              onClick={() => setModeID(record?._id || record?.id)}
-            />
-          </Dropdown>
-        );
-      },
+      title: "Staff member",
+      dataIndex: "firstName",
+      key: "firstName",
+      sorter: true,
+      render: (_, r) => <PersonCell person={r} sub={r.email} />,
     },
-    ...["firstName", "lastName", "email", "phone", "role", "active"].map(
-      (key) => ({
-        title:
-          key === "role" ? (
-            <span style={{ fontWeight: "normal", color: "inherit" }}>
-              {key.charAt(0).toUpperCase() +
-                key.slice(1).replace(/([A-Z])/g, " $1")}
-            </span>
-          ) : (
-            key.charAt(0).toUpperCase() +
-            key.slice(1).replace(/([A-Z])/g, " $1")
-          ),
-        dataIndex: key === "active" ? "isActive" : key,
-        key,
-        sorter: key !== "role",
-        onCell: (record) => ({
-          onClick: () => {
-            const id = record?._id || record?.id;
-            if (id) navigate(`/dash/staff/details/${id}`, { state: record });
-          },
-          style: { cursor: "pointer" },
-        }),
-        render:
-          key === "role"
-            ? (role) => (
-                <span style={{ fontWeight: "normal", color: "inherit" }}>
-                  {role?.name || "-"}
-                </span>
-              )
-            : key === "active"
-            ? (_, record) =>
-                record?.isActive ? (
-                  <Tag color="green">Active</Tag>
-                ) : (
-                  <Tag color="red">Inactive</Tag>
-                )
-            : undefined,
-      })
-    ),
+    {
+      title: "Phone",
+      dataIndex: "phone",
+      key: "phone",
+      sorter: true,
+      render: (v) => v || <span className="mp-muted">—</span>,
+    },
+    {
+      title: "Role",
+      dataIndex: "role",
+      key: "role",
+      render: (role) =>
+        role?.name ? <StatusPill tone="violet">{prettyStatus(role.name)}</StatusPill> : <span className="mp-muted">No role</span>,
+    },
+    {
+      title: "Status",
+      dataIndex: "isActive",
+      key: "isActive",
+      sorter: true,
+      render: (v) => <ActivePill active={v} />,
+    },
+    {
+      title: "Joined",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      sorter: true,
+      render: (d) => <TwoLine main={shortDate(d)} sub={shortTime(d)} />,
+    },
+    actionColumn((_, r) => <RowMenu items={items(r)} record={r} onClick={onClick} />),
   ];
 
   // handle table sort and pagination
@@ -253,8 +244,11 @@ const StaffList = () => {
     }
   };
 
+  const activeCount = (staffData || []).filter((s) => s.isActive).length;
+  const rolesInUse = new Set((staffData || []).map((s) => s.role?.name).filter(Boolean)).size;
+
   return (
-    <div>
+    <Page>
       {isModalOpen && (
         <CommonModal
           width={1000}
@@ -304,13 +298,6 @@ const StaffList = () => {
         onOk={handleAssignRole}
         okText="Assign"
         confirmLoading={assignSubmitting}
-        okButtonProps={{
-          style: {
-            backgroundColor: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            color: "white",
-          },
-        }}
       >
         <div>
           <Select
@@ -328,93 +315,83 @@ const StaffList = () => {
         </div>
       </Modal>
 
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
-        <div className="flex flex-col md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Staffs</h1>
-          <Input
-            onChange={searchHandler}
-            placeholder="Search"
-            value={searchText}
-            allowClear
-            className="drop-shadow-sm py-2"
-          />
-        </div>
-        <div className="flex items-center mt-4 md:mt-0">
-          <button
-            onClick={handleReload}
-            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
-          >
-            <ReloadOutlined />
-          </button>
-          <button
-            className="px-4 py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded"
-            onClick={() => {
-              setIsModalOpen(true);
-              setModeID("");
-            }}
-          >
-            <PlusOutlined className="mr-2" /> Add Staff
-          </button>
-        </div>
-      </div>
-
-      <div className="hidden md:block">
-        <CommonTable
-          // rowSelectionType={"checkbox"}
-          data={staffData}
-          columns={columns}
-          total={total}
-          loadding={loading}
-          rowKey={(r) => r?._id}
-          tableChange={tableChange}
-          handlePagination={handlePagination}
-          currentPage={parseInt(page) || 1}
-          pageSize={parseInt(limit) || 10}
-        />
-      </div>
-
-      {/* Mobile card list */}
-      <div className="block md:hidden px-6">
-        {loading &&
-          Array(5)
-            .fill(1)
-            .map((_) => <CommonCardSkeleton />)}
-        {staffData && staffData.length > 0 ? (
-          staffData.map((s) => (
-            <CommonCard
-              key={s?._id || s?.id}
-              item={s}
-              title={["firstName", "lastName"]}
-              fieldMap={{
-                email: "Email",
-                phone: "Phone",
-                "role.name": "Role",
-                active: "Active",
+      <PageHeader
+        eyebrow="People"
+        title="Staff"
+        subtitle="Admins and operators who manage the platform."
+        actions={
+          <>
+            <ReloadBtn onClick={handleReload} loading={loading} />
+            <Btn
+              variant="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setIsModalOpen(true);
+                setModeID("");
               }}
-              actionItems={items(s)}
-              onActionClick={onClick}
-              onCardClick={(record) => {
-                const id = record?._id || record?.id;
-                if (id)
-                  navigate(`/dash/staff/details/${id}`, { state: record });
-              }}
-            />
-          ))
-        ) : (
-          <div className="p-6">No staff found</div>
-        )}
+            >
+              Add staff
+            </Btn>
+          </>
+        }
+      />
 
-        <div className="my-4 flex justify-center">
-          <Pagination
-            current={parseInt(page) || 1}
-            pageSize={parseInt(limit) || 10}
+      <StatsStrip
+        items={[
+          { label: "Total staff", value: total || 0, note: "All accounts", color: "#09234c" },
+          { label: "Active", value: activeCount, note: "On this page", color: "#059669" },
+          { label: "Inactive", value: staffData.length - activeCount, note: "On this page", color: "#94a3b8" },
+          { label: "Roles in use", value: rolesInUse, note: "On this page", color: "#fc6b38" },
+        ]}
+      />
+
+      <TableCard
+        search={{ value: searchText, onChange: searchHandler, placeholder: "Search by name, email or phone" }}
+        resultLabel={`${total || 0} staff`}
+      >
+        <div className="hidden md:block">
+          <CommonTable
+            data={staffData}
+            columns={columns}
             total={total}
-            onChange={handlePagination}
-            showSizeChanger
+            loadding={loading}
+            rowKey={(r) => r?._id || r?.id}
+            tableChange={tableChange}
+            handlePagination={handlePagination}
+            currentPage={parseInt(page) || 1}
+            pageSize={parseInt(limit) || 10}
+            unit="staff"
+            onRow={(r) => ({ onClick: () => openDetails(r), style: { cursor: "pointer" } })}
           />
         </div>
-      </div>
-    </div>
+
+        <div className="block md:hidden mp-mlist">
+          {loading && Array(4).fill(1).map((_, i) => <CommonCardSkeleton key={i} />)}
+          {!loading && staffData && staffData.length > 0
+            ? staffData.map((s) => (
+                <CommonCard
+                  key={s?._id || s?.id}
+                  item={s}
+                  title={["firstName", "lastName"]}
+                  fieldMap={{ email: "Email", phone: "Phone", "role.name": "Role", isActive: "Status" }}
+                  actionItems={items(s)}
+                  onActionClick={onClick}
+                  onCardClick={openDetails}
+                />
+              ))
+            : !loading && <EmptyState title="No staff found" text="Try a different search." />}
+          <div className="my-4 flex justify-center">
+            <Pagination
+              current={parseInt(page) || 1}
+              pageSize={parseInt(limit) || 10}
+              total={total}
+              onChange={handlePagination}
+              size="small"
+            />
+          </div>
+        </div>
+      </TableCard>
+    </Page>
   );
 };
 

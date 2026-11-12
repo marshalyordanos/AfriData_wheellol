@@ -158,11 +158,6 @@ const CarInsurancePage = () => {
             setSelectedInsurance(null);
             setIsModalOpen(true);
           }}
-          style={{
-            background: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            color: "#fff",
-          }}
         >
           Add Insurance
         </Button>

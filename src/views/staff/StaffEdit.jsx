@@ -109,7 +109,7 @@ const StaffEdit = ({
           label="First Name"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -117,7 +117,7 @@ const StaffEdit = ({
           label="Last Name"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -125,7 +125,7 @@ const StaffEdit = ({
           label="Email"
           rules={[{ required: true, type: "email" }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -133,11 +133,11 @@ const StaffEdit = ({
           label="Phone Number"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item name={["staff", "role"]} label="Role">
-          <Input className="border-gray-400 py-2" disabled />
+          <Input disabled />
         </Form.Item>
 
         <Form.Item

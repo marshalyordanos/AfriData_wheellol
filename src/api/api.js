@@ -1,20 +1,22 @@
 import axios from "axios";
 import TokenService from "./token.service";
 
-import { message } from "antd";
 import { logout } from "../redux/auth/authSlice";
+import { showServerError } from "../lib/feedback";
 
-const handleErrorResponse = (errorMessage) => {
-  message.error(errorMessage);
+// Toast at the bottom-right with a clear title + the server's message(s)
+let lastStatus = 0;
+const handleErrorResponse = (errorMessage, status = lastStatus) => {
+  showServerError(errorMessage, status);
 };
 
 const instance = axios.create({
   // baseURL: "http://134.209.59.98:3000/",
-  baseURL: "https://api.wheellol.com/",
+  // baseURL: "https://api.wheellol.com/",
   // baseURL: "https://vegetarian-pushed-town-pipeline.trycloudflare.com/",
 
   // baseURL: "https://car-back-bemu.onrender.com/",
-  // baseURL: "http://localhost:3000/",
+  baseURL: "http://localhost:3000/",
 
   headers: {
     "Content-Type": "application/json",
@@ -46,7 +48,8 @@ const setup = (store) => {
       return res;
     },
     async (err) => {
-      const originalConfig = err.config;
+      const originalConfig = err.config || {};
+      lastStatus = err.response?.status || 0;
 
       console.log("ppppppppppppppp0000000pppp-----top", isreFrasing);
 

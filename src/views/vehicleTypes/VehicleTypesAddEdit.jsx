@@ -219,7 +219,7 @@ const CategorysEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -232,7 +232,7 @@ const CategorysEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         {categorysData2.length > 0 && (

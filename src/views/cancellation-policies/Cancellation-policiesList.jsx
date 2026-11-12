@@ -370,11 +370,6 @@ const CancellationPoliciesList = () => {
               <Button
                 htmlType="submit"
                 loading={saving}
-                style={{
-                  backgroundColor: "var(--color-primary)",
-                  borderColor: "var(--color-primary)",
-                  color: "white",
-                }}
               >
                 Save
               </Button>

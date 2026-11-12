@@ -834,7 +834,7 @@ const RoleList = () => {
               <div
                 key={perm.id}
                 style={{
-                  background: "#fff",
+                  background: "var(--c-surface)",
                   borderRadius: 10,
                   boxShadow: "0 2px 8px #e2e8f0",
                   padding: "18px 20px",
@@ -875,7 +875,7 @@ const RoleList = () => {
                 {selectedPermissions[perm.id] && (
                   <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                     {Object.keys(selectedPermissions[perm.id]).map((action) => {
-                      let color = "#e5e7eb",
+                      let color = "var(--c-muted)",
                         label = "";
                       if (action === "createAction") {
                         color = "#22c55e";
@@ -903,10 +903,10 @@ const RoleList = () => {
                             fontSize: 15,
                             background: selectedPermissions[perm.id][action]
                               ? color
-                              : "#e5e7eb",
+                              : "var(--c-muted)",
                             color: selectedPermissions[perm.id][action]
                               ? "#fff"
-                              : "#334155",
+                              : "var(--c-text-2)",
                             borderRadius: 6,
                             padding: "6px 14px",
                             cursor: "pointer",
@@ -964,7 +964,7 @@ const RoleList = () => {
               }}
             >
               {Object.keys(updateActions).map((action) => {
-                let color = "#e5e7eb",
+                let color = "var(--c-muted)",
                   label = "";
                 if (action === "createAction") {
                   color = "#22c55e";
@@ -990,8 +990,8 @@ const RoleList = () => {
                       alignItems: "center",
                       fontWeight: 500,
                       fontSize: 15,
-                      background: updateActions[action] ? color : "#e5e7eb",
-                      color: updateActions[action] ? "#fff" : "#334155",
+                      background: updateActions[action] ? color : "var(--c-muted)",
+                      color: updateActions[action] ? "#fff" : "var(--c-text-2)",
                       borderRadius: 6,
                       padding: "6px 14px",
                       cursor: "pointer",

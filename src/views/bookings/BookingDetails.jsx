@@ -20,6 +20,20 @@ import {
   Upload,
 } from "antd";
 import styled from "styled-components";
+import { CheckOutlined, CarOutlined } from "@ant-design/icons";
+import {
+  Page,
+  PageHeader,
+  Btn,
+  Card as UICard,
+  StatusPill,
+  KeyValueList,
+  EmptyState,
+  Avatar as UIAvatar,
+  fullName,
+  prettyStatus,
+} from "../../components/modern/ModernUI";
+import { dayRange } from "../../utils/dateFormat";
 import BookingService from "./BookingService";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
@@ -116,14 +130,20 @@ const BookingDetail = () => {
 
   if (loading && !booking) {
     return (
-      <div style={{ textAlign: "center", marginTop: 100 }}>
-        <Spin size="large" />
-      </div>
+      <Page>
+        <div className="flex justify-center p-16">
+          <Spin size="large" />
+        </div>
+      </Page>
     );
   }
 
   if (!loading && !booking) {
-    return <div style={{ margin: 40, color: "red" }}>Booking not found.</div>;
+    return (
+      <Page>
+        <EmptyState title="Booking not found" text="It may have been removed." />
+      </Page>
+    );
   }
 
   const car = booking?.car || {};
@@ -168,18 +188,8 @@ const BookingDetail = () => {
   const canActOnDropoff =
     !!dropoffInspection && String(dropoffSubmitterId) !== String(currentUserId);
 
-  return (
-    <div style={{ padding: 20 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      >
-        <h2 style={{ margin: 0 }}>Booking Details</h2>
-        <div style={{ display: "flex", gap: 8 }}>
+  const headerActions = (
+    <>
           {isDropoffApproved ? (
             <Tag color="green" style={{ fontSize: 16, padding: "4px 12px" }}>
               Completed
@@ -703,145 +713,187 @@ const BookingDetail = () => {
               Completed
             </Tag>
           )}
+    </>
+  );
+
+  const carTitle = `${car?.make?.name || ""} ${car?.model?.name || ""}`.trim() || "Car";
+  const days = dayRange(booking.startDate, booking.endDate);
+  const flow = ["PENDING", "CONFIRMED", "PICKED_UP", "COMPLETED"];
+  const stage = isDropoffApproved || booking.status === "COMPLETED"
+    ? 3
+    : pickupInspection?.approved
+    ? 2
+    : booking.status === "CONFIRMED"
+    ? 1
+    : 0;
+  const stopped = /cancel|reject/i.test(booking.status || "");
+  const stepLabels = ["Requested", "Confirmed", "Picked up", "Returned"];
+  const photo = car?.photos?.[0];
+
+  const InspectionCard = ({ label, insp }) => (
+    <div className="mp-subcard" style={{ flex: "1 1 220px" }}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
+        <span style={{ fontWeight: 700 }}>{label}</span>
+        {insp ? (
+          <StatusPill tone={insp.approved ? "green" : "amber"}>{insp.approved ? "Approved" : "Awaiting approval"}</StatusPill>
+        ) : (
+          <StatusPill tone="gray">Not done</StatusPill>
+        )}
+      </div>
+      <KeyValueList
+        rows={[
+          { label: "Fuel level", value: insp ? insp.fuelLevel ?? "—" : "—" },
+          { label: "Mileage", value: insp ? (insp.mileage ?? "—").toLocaleString?.() ?? insp.mileage : "—" },
+        ]}
+      />
+    </div>
+  );
+
+  const PersonBlock = ({ title, person, tone }) => (
+    <div>
+      <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+        <span className="mp-info-item"><dt style={{ margin: 0 }}>{title}</dt></span>
+        <StatusPill tone={tone}>{title}</StatusPill>
+      </div>
+      <div className="mp-cell" style={{ marginBottom: 12 }}>
+        <UIAvatar name={fullName(person)} src={person?.avatar || person?.profilePhoto} size={44} />
+        <div className="min-w-0">
+          <div className="mp-cell-main" style={{ fontSize: 15 }}>{fullName(person) || "—"}</div>
+          <div className="mp-cell-sub">{person?.email || "—"}</div>
         </div>
       </div>
-
-      <Row gutter={16}>
-        <Col xs={24} md={14}>
-          <Card bordered>
-            <Descriptions
-              column={1}
-              size="small"
-              labelStyle={{ fontWeight: 600 }}
-            >
-              <Descriptions.Item label="Booking ID">
-                {booking.id || booking._id}
-              </Descriptions.Item>
-              <Descriptions.Item label="Car">
-                {`${car?.make?.name || ""} ${car?.model?.name || ""}`.trim() ||
-                  "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Car Year">
-                {car?.year || car?.manufacture_year || "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Start">
-                {booking.startDate
-                  ? formatReadableDate(booking.startDate)
-                  : "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="End">
-                {booking.endDate ? formatReadableDate(booking.endDate) : "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Pickup">
-                {formatLocation(booking.pickupLocation)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Dropoff">
-                {formatLocation(booking.dropoffLocation)}
-              </Descriptions.Item>
-              <Descriptions.Item label="With Driver">
-                {booking.withDriver ? "Yes" : "No"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Total Price">
-                {booking.totalPrice ? formatCurrency(booking.totalPrice) : "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Payment Status">
-                {paymentTag(payment.status)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Booking Status">
-                {bookingTag(booking.status)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Created At">
-                {booking.createdAt
-                  ? formatReadableDate(booking.createdAt)
-                  : "-"}
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
-        </Col>
-
-        <Col xs={24} md={10}>
-          <Card bordered>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <h4 style={{ margin: 0 }}>Guest</h4>
-              <Tag color="purple">Guest</Tag>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <Avatar
-                size={64}
-                src={guest?.avatar || guest?.profilePhoto || undefined}
-              />
-              <div>
-                <div style={{ fontWeight: 700 }}>
-                  {guest?.firstName} {guest?.lastName}
-                </div>
-                <div style={{ color: "#666" }}>{guest?.email || "-"}</div>
-                <div style={{ color: "#666", marginTop: 4 }}>
-                  {guest?.phone || "-"}
-                </div>
-              </div>
-            </div>
-
-            <Divider />
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              <h4 style={{ margin: 0 }}>Host</h4>
-              <Tag color="orange">Host</Tag>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <Avatar
-                size={48}
-                src={host?.avatar || host?.profilePhoto || undefined}
-              />
-              <div>
-                <div style={{ fontWeight: 600 }}>
-                  {host?.firstName} {host?.lastName}
-                </div>
-                <div style={{ color: "#666" }}>{host?.email || "-"}</div>
-                <div style={{ color: "#666", marginTop: 4 }}>
-                  {host?.phone || "-"}
-                </div>
-              </div>
-            </div>
-
-            <Divider />
-
-            <h4 style={{ marginTop: 0 }}>Notes</h4>
-            <div style={{ color: "#444" }}>
-              {booking.notes || booking.note || "No additional notes."}
-            </div>
-          </Card>
-        </Col>
-      </Row>
+      <KeyValueList
+        rows={[
+          { label: "Phone", value: person?.phone ? <a href={`tel:${person.phone}`}>{person.phone}</a> : "—" },
+        ]}
+      />
     </div>
+  );
+
+  return (
+    <Page>
+      <PageHeader
+        back="/dash/bookings"
+        eyebrow="Booking"
+        title={
+          <span className="flex items-center gap-3 flex-wrap">
+            {carTitle}
+            <StatusPill status={isDropoffApproved ? "COMPLETED" : booking.status} />
+            {booking.dispute && <StatusPill tone="red">Dispute</StatusPill>}
+          </span>
+        }
+        subtitle={`#${String(booking.id || booking._id).slice(0, 8)} · created ${booking.createdAt ? formatReadableDate(booking.createdAt) : "—"}`}
+        actions={<div className="flex items-center gap-2 flex-wrap">{headerActions}</div>}
+      />
+
+      {/* Lifecycle */}
+      <div className="mp-card" style={{ marginBottom: 20, overflowX: "auto" }}>
+        <ol className="mp-steps">
+          {flow.map((k, i) => {
+            const st = stopped ? "todo" : i < stage ? "done" : i === stage ? (stage === 3 ? "done" : "current") : "todo";
+            return (
+              <li key={k} className={`mp-step is-${st}`}>
+                <span className="mp-step-dot">{st === "done" ? <CheckOutlined /> : i + 1}</span>
+                <span className="mp-step-label">{stepLabels[i]}</span>
+                {i < flow.length - 1 && <span className="mp-step-line" />}
+              </li>
+            );
+          })}
+          {stopped && (
+            <li className="mp-step">
+              <StatusPill status={booking.status} />
+            </li>
+          )}
+        </ol>
+      </div>
+
+      <div className="mp-detail">
+        <div className="mp-detail-main">
+          {/* Car hero */}
+          <div className="mp-hero-card">
+            {photo ? (
+              <Image src={photo} width={132} height={92} style={{ objectFit: "cover", borderRadius: 14 }} />
+            ) : (
+              <span className="mp-hero-img"><CarOutlined /></span>
+            )}
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div className="mp-eyebrow" style={{ marginBottom: 4 }}>Vehicle</div>
+              <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em" }}>{carTitle}</div>
+              <div className="mp-cell-sub">
+                {[car?.year || car?.manufacture_year, car?.licensePlate, car?.color].filter(Boolean).join(" · ") || "—"}
+              </div>
+              <div className="flex gap-2 flex-wrap" style={{ marginTop: 10 }}>
+                <StatusPill tone="gray">{booking.withDriver ? "With driver" : "Self-drive"}</StatusPill>
+                {days && <StatusPill tone="blue">{days} day{days > 1 ? "s" : ""}</StatusPill>}
+              </div>
+            </div>
+            {car?.id && (
+              <Btn onClick={() => navigate(`/dash/cars/details/${car.id}`)}>View car</Btn>
+            )}
+          </div>
+
+          <UICard title="Trip">
+            <div className="mp-timeline" style={{ marginBottom: 6 }}>
+              <div className="mp-timeline-rail">
+                <span className="a" />
+                <span className="l" />
+                <span className="b" />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 18, fontSize: 14 }}>
+                <div>
+                  <div style={{ fontWeight: 600 }}>{booking.startDate ? formatReadableDate(booking.startDate) : "—"}</div>
+                  <div className="mp-cell-sub">Pickup · {formatLocation(booking.pickupLocation)}</div>
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600 }}>{booking.endDate ? formatReadableDate(booking.endDate) : "—"}</div>
+                  <div className="mp-cell-sub">Return · {formatLocation(booking.dropoffLocation)}</div>
+                </div>
+              </div>
+            </div>
+          </UICard>
+
+          <UICard title="Inspections" subtitle="Fuel and mileage recorded at pickup and return">
+            <div className="flex gap-3 flex-wrap">
+              <InspectionCard label="Pickup" insp={pickupInspection} />
+              <InspectionCard label="Drop-off" insp={dropoffInspection} />
+            </div>
+          </UICard>
+
+          <UICard title="Notes">
+            <div style={{ color: "var(--c-text-2)", fontSize: 14, lineHeight: 1.6 }}>
+              {booking.notes || booking.note || <span className="mp-muted">No additional notes.</span>}
+            </div>
+          </UICard>
+        </div>
+
+        <aside className="mp-detail-side">
+          <UICard title="Payment" extra={<StatusPill status={payment.status} />}>
+            <KeyValueList
+              rows={[
+                booking.rentalPricePerDay || car?.rentalPricePerDay
+                  ? { label: "Daily rate", value: formatCurrency(booking.rentalPricePerDay || car.rentalPricePerDay) }
+                  : null,
+                days ? { label: "Duration", value: `${days} day${days > 1 ? "s" : ""}` } : null,
+                payment.method ? { label: "Method", value: prettyStatus(payment.method) } : null,
+                payment.platformFee !== undefined && payment.platformFee !== null
+                  ? { label: "Platform fee", value: formatCurrency(payment.platformFee) }
+                  : null,
+                payment.hostEarnings !== undefined && payment.hostEarnings !== null
+                  ? { label: "Host earnings", value: formatCurrency(payment.hostEarnings) }
+                  : null,
+                { label: "Total", value: booking.totalPrice ? formatCurrency(booking.totalPrice) : "—", strong: true },
+              ]}
+            />
+          </UICard>
+
+          <UICard>
+            <PersonBlock title="Guest" person={guest} tone="violet" />
+            <div style={{ height: 1, background: "#f1f3f6", margin: "18px 0" }} />
+            <PersonBlock title="Host" person={host} tone="orange" />
+          </UICard>
+        </aside>
+      </div>
+    </Page>
   );
 };
 

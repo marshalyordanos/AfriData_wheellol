@@ -95,7 +95,7 @@ const GustEdit = ({
           label="First Name"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -103,7 +103,7 @@ const GustEdit = ({
           label="Last Name"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -111,7 +111,7 @@ const GustEdit = ({
           label="Email"
           rules={[{ required: true, type: "email" }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -119,11 +119,11 @@ const GustEdit = ({
           label="Phone Number"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item name={["staff", "role"]} label="Role">
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item

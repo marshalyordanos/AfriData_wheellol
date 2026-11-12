@@ -148,7 +148,7 @@ const CategorysEdit = ({
             },
           ]}
         >
-          <Input className="bg-gray-100 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -161,7 +161,7 @@ const CategorysEdit = ({
             },
           ]}
         >
-          <Input.TextArea className="bg-gray-100 py-2" />
+          <Input.TextArea />
         </Form.Item>
 
         <ButtonStyle>

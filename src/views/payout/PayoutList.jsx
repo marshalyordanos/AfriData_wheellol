@@ -365,14 +365,7 @@ const PayoutList = () => {
         onOk={() => payoutForm.submit()}
         confirmLoading={payoutSubmitting}
         okText="Withdraw"
-        okButtonProps={{
-          style: {
-            backgroundColor: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            color: "white",
-          },
-        }}
-      >
+        >
         <Form
           form={payoutForm}
           layout="vertical"
@@ -535,14 +528,7 @@ const PayoutList = () => {
         }}
         onOk={() => actionForm.submit()}
         confirmLoading={actionSubmitting}
-        okButtonProps={{
-          style: {
-            backgroundColor: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            color: "white",
-          },
-        }}
-      >
+        >
         <Form
           form={actionForm}
           layout="vertical"

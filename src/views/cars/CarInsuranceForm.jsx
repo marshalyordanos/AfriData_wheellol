@@ -183,11 +183,6 @@ const CarInsuranceForm = ({
           loading={loading}
           type="primary"
           htmlType="submit"
-          style={{
-            background: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            color: "#fff",
-          }}
         >
           {insuranceData?.id ? "Update Insurance" : "Add Insurance"}
         </Button>

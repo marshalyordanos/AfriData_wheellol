@@ -112,7 +112,7 @@ const HostEdit = ({
           label="First Name"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
         <Form.Item
           className=" flex-1"
@@ -120,7 +120,7 @@ const HostEdit = ({
           label="Last Name"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
         <Form.Item
           className=" flex-1"
@@ -128,7 +128,7 @@ const HostEdit = ({
           label="Email"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
         <Form.Item
           className=" flex-1"
@@ -136,7 +136,7 @@ const HostEdit = ({
           label="Phone Number"
           rules={[{ required: true }]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
         <Form.Item
           className=" flex-1"

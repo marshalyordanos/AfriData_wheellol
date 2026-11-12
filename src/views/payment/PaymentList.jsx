@@ -9,7 +9,24 @@ import {
   Select,
   DatePicker,
 } from "antd";
-import { ReloadOutlined, MoreOutlined } from "@ant-design/icons";
+import { SendOutlined, RollbackOutlined } from "@ant-design/icons";
+import {
+  Page,
+  PageHeader,
+  ReloadBtn,
+  StatsStrip,
+  TableCard,
+  PersonCell,
+  StatusPill,
+  TwoLine,
+  RowMenu,
+  actionColumn,
+  EmptyState,
+  KeyValueList,
+  prettyStatus,
+  fullName,
+} from "../../components/modern/ModernUI";
+import { shortDate, shortTime } from "../../utils/dateFormat";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../api/api";
 
@@ -162,13 +179,6 @@ const PaymentList = () => {
       title,
       onOk: fn,
       onCancel() {},
-      okButtonProps: {
-        style: {
-          backgroundColor: "var(--color-primary)",
-          borderColor: "var(--color-primary)",
-          color: "white",
-        },
-      },
     });
   };
 
@@ -247,406 +257,239 @@ const PaymentList = () => {
     }
   };
 
+  const money = (v) => (v || v === 0 ? formatCurrency(v) : "—");
+  const actionItems = [
+    { key: "release", icon: <SendOutlined />, label: "Release to host" },
+    { key: "refund", icon: <RollbackOutlined />, label: "Refund", danger: true },
+  ];
+  const openPayment = (record) => {
+    const id = record.id || record._id;
+    if (id) navigate(`/dash/payments/${id}`, { state: record });
+  };
+
   const columns = [
-    {
-      title: " ",
-      dataIndex: "action",
-      render: (_, record) => (
-        <Dropdown
-          menu={{
-            items: [
-              { key: "refund", label: <Button type="text">Refund</Button> },
-              { key: "release", label: <Button type="text">Release</Button> },
-            ],
-            onClick: (info) => {
-              try {
-                info.domEvent.stopPropagation();
-              } catch (e) {}
-              handleAction(info.key, record);
-            },
-          }}
-          trigger={["click"]}
-        >
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </Dropdown>
-      ),
-    },
     {
       title: "Payer",
       dataIndex: ["payer", "firstName"],
       key: "payer",
-      render: (_, r) =>
-        r.payer ? `${r.payer.firstName || ""} ${r.payer.lastName || ""}` : "-",
+      render: (_, r) => <PersonCell person={r.payer} sub={r.type ? prettyStatus(r.type) : r.payer?.email} />,
     },
     {
       title: "Amount",
       dataIndex: "amount",
       key: "amount",
-      render: (a, r) =>
-        a || a === 0 ? `${formatCurrency(a)} ` : "-",
+      align: "right",
+      render: (a) => <span className="mp-price">{money(a)}</span>,
     },
     {
       title: "Method",
       dataIndex: "method",
       key: "method",
-      render: (m) => m || "-",
+      render: (m) => (m ? prettyStatus(m) : <span className="mp-muted">—</span>),
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (s) => {
-        if (!s) return "-";
-        const st = String(s).toLowerCase();
-        let color = "default";
-        if (st.includes("completed") || st === "completed") color = "green";
-        else if (st.includes("refunded") || st === "refunded") color = "blue";
-        else if (st.includes("pending") || st === "pending") color = "orange";
-        return <Tag color={color}>{s}</Tag>;
-      },
+      render: (s) => <StatusPill status={s} />,
     },
     {
-      title: "Host Earnings",
-      dataIndex: "hostEarnings",
-      key: "hostEarnings",
-      render: (v, r) =>
-        v || v === 0 ? `${formatCurrency(v)} ` : "-",
+      title: "Split",
+      key: "split",
+      render: (_, r) => (
+        <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--c-text-2)" }}>
+          <div>Host <b style={{ fontWeight: 600 }}>{money(r.hostEarnings)}</b></div>
+          <div className="mp-cell-sub" style={{ marginTop: 0 }}>
+            Fee {money(r.platformFee)} · Insurance {money(r.insuranceFee)}
+          </div>
+        </div>
+      ),
     },
     {
-      title: "Platform Fee",
-      dataIndex: "platformFee",
-      key: "platformFee",
-      render: (v, r) =>
-        v || v === 0 ? `${formatCurrency(v)} ` : "-",
-    },
-    {
-      title: "Insurance Fee",
-      dataIndex: "insuranceFee",
-      key: "insuranceFee",
-      render: (v, r) =>
-        v || v === 0 ? `${formatCurrency(v)} ` : "-",
-    },
-
-    { title: "Type", dataIndex: "type", key: "type" },
-    // {
-    //   title: "Transactions",
-    //   dataIndex: "transactions",
-    //   key: "transactions",
-    //   render: (t) => (Array.isArray(t) ? t.length : 0),
-    // },
-    {
-      title: "Created At",
+      title: "Date",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (d) => (d ? formatReadableDate(d) : "-"),
+      render: (d) => <TwoLine main={shortDate(d)} sub={shortTime(d)} />,
+    },
+    {
+      ...actionColumn((_, r) => (
+        <RowMenu items={actionItems} record={r} onClick={(info, rec) => handleAction(info.key, rec)} />
+      )),
+      dataIndex: "action",
     },
   ];
 
-  const tableColumns =
-    currentRole === "host"
-      ? columns.filter((c) => c.dataIndex !== "action")
-      : columns;
+  const tableColumns = currentRole === "host" ? columns.filter((c) => c.dataIndex !== "action") : columns;
+
+  const S = paymentSummary || {};
+  const statusTabs = [
+    { key: null, label: "All", count: S.totalPayments },
+    { key: "PENDING", label: "Pending", count: S.pending },
+    { key: "COMPLETED", label: "Completed", count: S.completed },
+    { key: "REFUNDED", label: "Refunded", count: S.refunded },
+  ];
+  const updateAmount = (idx, val) => {
+    const n = val === "" || val === null || val === undefined ? null : Number(val);
+    const newRange = [...(filters.amountRange || [null, null])];
+    newRange[idx] = n;
+    setFilters((prev) => ({ ...prev, amountRange: newRange }));
+    clearTimeout(amountDebounceRef.current);
+    amountDebounceRef.current = setTimeout(() => handleFilterChange({ amountRange: newRange }), 600);
+  };
+  const [minA, maxA] = filters.amountRange || [];
 
   return (
-    <div>
-      <div className="flex gap-2 mb-6 flex-wrap px-6 my-3">
-        {/* Booking Cards */}
-
-        <SummaryCard
-          title="Total Payments"
-          value={paymentSummary?.totalPayments ?? 0}
-          Icon={FaWallet}
-          iconBgColor="bg-indigo-100"
-          iconColor="text-indigo-500"
-          description="All payments"
-        />
-
-        {/* Pending Payments */}
-        <SummaryCard
-          title="Pending Payments"
-          value={paymentSummary?.pending ?? 0}
-          Icon={FaHourglassHalf}
-          iconBgColor="bg-yellow-100"
-          iconColor="text-yellow-500"
-          description="Awaiting processing"
-        />
-
-        {/* Completed Payments */}
-        <SummaryCard
-          title="Completed Payments"
-          value={paymentSummary?.completed ?? 0}
-          Icon={FaCheckCircle}
-          iconBgColor="bg-green-100"
-          iconColor="text-green-500"
-          description="Successfully completed"
-        />
-
-        {/* Failed Payments */}
-        <SummaryCard
-          title="Failed Payments"
-          value={paymentSummary?.failed ?? 0}
-          Icon={FaTimesCircle}
-          iconBgColor="bg-red-100"
-          iconColor="text-red-500"
-          description="Payments failed"
-        />
-
-        {/* Refunded Payments */}
-        <SummaryCard
-          title="Refunded Payments"
-          value={paymentSummary?.refunded ?? 0}
-          Icon={FaUndoAlt}
-          iconBgColor="bg-purple-100"
-          iconColor="text-purple-500"
-          description="Refunded transactions"
-        />
-
-        {/* Total Amount */}
-        <SummaryCard
-          title="Total Amount"
-          value={`${(
-            paymentSummary?.totals?.amount ?? 0
-          ).toLocaleString()} ETB`}
-          Icon={FaDollarSign}
-          iconBgColor="bg-green-100"
-          iconColor="text-green-600"
-          description="Total collected"
-        />
-      </div>
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-end px-6">
-        <div className="flex flex-col md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Payments</h1>
-
-          <div className="flex gap-3 flex-wrap items-center">
-            <Input
-              placeholder="Search"
-              value={localSearch}
-              onChange={handleSearch}
-              allowClear
-              style={{ borderRadius: "0px 0px 0px 0px" }}
-              className=" drop-shadow-sm rounded-r  py-2"
-            />
-
-            <Select
-              placeholder="Status"
-              allowClear
-              style={{ width: 160 }}
-              onChange={(v) => handleFilterChange({ status: v })}
-              value={filters.status}
-            >
-              <Select.Option value="COMPLETED">COMPLETED</Select.Option>
-              <Select.Option value="PENDING">PENDING</Select.Option>
-              <Select.Option value="REFUNDED">REFUNDED</Select.Option>
-            </Select>
-
-            <Select
-              placeholder="Method"
-              allowClear
-              style={{ width: 160 }}
-              onChange={(v) => handleFilterChange({ method: v })}
-              value={filters.method}
-            >
-              <Select.Option value="ABYSSINIA">ABYSSINIA</Select.Option>
-              <Select.Option value="AWASH">AWASH</Select.Option>
-              <Select.Option value="COMMERCIAL_BANK_OF_ETHIOPIA">
-                COMMERCIAL_BANK_OF_ETHIOPIA
-              </Select.Option>
-              <Select.Option value="DASHEN">DASHEN</Select.Option>
-              <Select.Option value="NIB">NIB</Select.Option>
-              <Select.Option value="ZEMEN">ZEMEN</Select.Option>
-              <Select.Option value="ABAY">ABAY</Select.Option>
-              <Select.Option value="WEGAGEN">WEGAGEN</Select.Option>
-              <Select.Option value="UNITED">UNITED</Select.Option>
-              <Select.Option value="ADDIS_INTERNATIONAL">
-                ADDIS_INTERNATIONAL
-              </Select.Option>
-              <Select.Option value="BERHAN">BERHAN</Select.Option>
-              <Select.Option value="COOPERATIVE_BANK_OF_OROMIA">
-                COOPERATIVE_BANK_OF_OROMIA
-              </Select.Option>
-              <Select.Option value="ENAT">ENAT</Select.Option>
-              <Select.Option value="HIWOT">HIWOT</Select.Option>
-              <Select.Option value="LION">LION</Select.Option>
-              <Select.Option value="BUNA">BUNA</Select.Option>
-              <Select.Option value="DEBUB_GLOBAL">DEBUB_GLOBAL</Select.Option>
-              <Select.Option value="OROMIA_INTERNATIONAL">
-                OROMIA_INTERNATIONAL
-              </Select.Option>
-              <Select.Option value="AMHARA">AMHARA</Select.Option>
-              <Select.Option value="HIJRA">HIJRA</Select.Option>
-              <Select.Option value="SIINQEE">SIINQEE</Select.Option>
-              <Select.Option value="SHABELLE">SHABELLE</Select.Option>
-              <Select.Option value="GADA">GADA</Select.Option>
-              <Select.Option value="GEBEYA">GEBEYA</Select.Option>
-              <Select.Option value="TSEDEY">TSEDEY</Select.Option>
-              <Select.Option value="RAYAN">RAYAN</Select.Option>
-              <Select.Option value="TSEDAY">TSEDAY</Select.Option>
-              <Select.Option value="LILA_ABBISINIA">
-                LILA_ABBISINIA
-              </Select.Option>
-              <Select.Option value="OTHER">OTHER</Select.Option>
-            </Select>
-
-            <Input
-              placeholder="Min Amount"
-              value={filters.amountRange?.[0] ?? ""}
-              onChange={(e) => {
-                // update filters state immediately
-                const newMin = e.target.value ? Number(e.target.value) : null;
-                const newRange = [newMin, filters.amountRange?.[1] ?? null];
-                setFilters((prev) => ({ ...prev, amountRange: newRange }));
-
-                // debounce sending the request until typing stops
-                clearTimeout(amountDebounceRef.current);
-                amountDebounceRef.current = setTimeout(() => {
-                  handleFilterChange({ amountRange: newRange });
-                }, 600);
-              }}
-              style={{ width: 120 }}
-            />
-            <Input
-              placeholder="Max Amount"
-              value={filters.amountRange?.[1] ?? ""}
-              onChange={(e) => {
-                const newMax = e.target.value ? Number(e.target.value) : null;
-                const newRange = [filters.amountRange?.[0] ?? null, newMax];
-                setFilters((prev) => ({ ...prev, amountRange: newRange }));
-
-                clearTimeout(amountDebounceRef.current);
-                amountDebounceRef.current = setTimeout(() => {
-                  handleFilterChange({ amountRange: newRange });
-                }, 600);
-              }}
-              style={{ width: 120 }}
-            />
-          </div>
-        </div>
-        <div className="flex items-center mt-4 md:mt-0">
-          <button
+    <Page>
+      <PageHeader
+        eyebrow="Finance"
+        title="Payments"
+        subtitle="Money collected from guests, and how it is split."
+        actions={
+          <ReloadBtn
+            loading={loading}
             onClick={() => {
               const [pg, lm] = getPaginationInfo();
               loadPayments({ page: pg, pageSize: lm, search: localSearch });
               setSearchParams({ page: pg, limit: lm });
+              fetchSummary();
             }}
-            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4"
-          >
-            <ReloadOutlined />
-          </button>
-        </div>
-      </div>
+          />
+        }
+      />
 
-      <div className="hidden md:block">
-        <CommonTable
-          data={payments}
-          columns={tableColumns}
-          total={total}
-          loading={loading}
-          currentPage={page}
-          pageSize={pageSize}
-          rowKey={(r) => r?.id}
-          handlePagination={(p, ps) => handlePagination(p, ps)}
-          onRow={(record) => ({
-            onClick: () => {
-              const id = record.id || record._id;
-              if (id) navigate(`/dash/payments/${id}`, { state: record });
-            },
-            style: { cursor: "pointer" },
-          })}
-        />
-      </div>
+      <StatsStrip
+        items={[
+          { label: "Total collected", value: `${(S.totals?.amount ?? 0).toLocaleString()}`, note: "ETB, all time", color: "#059669" },
+          { label: "Payments", value: S.totalPayments ?? 0, note: "All transactions", color: "#09234c" },
+          { label: "Pending", value: S.pending ?? 0, note: "Awaiting processing", color: "#f59e0b", onClick: () => handleFilterChange({ status: "PENDING" }), active: filters.status === "PENDING" },
+          { label: "Completed", value: S.completed ?? 0, note: "Successfully paid", color: "#1d4f91", onClick: () => handleFilterChange({ status: "COMPLETED" }), active: filters.status === "COMPLETED" },
+          { label: "Failed", value: S.failed ?? 0, note: "Payment failed", color: "#dc2626" },
+          { label: "Refunded", value: S.refunded ?? 0, note: "Returned to guests", color: "#94a3b8", onClick: () => handleFilterChange({ status: "REFUNDED" }), active: filters.status === "REFUNDED" },
+        ]}
+      />
 
-      <div className="block md:hidden px-6">
-        {loading &&
-          Array(5)
-            .fill(1)
-            .map((_) => <CommonCardSkeleton />)}
-        {payments && payments.length > 0 ? (
-          payments.map((p) => (
-            <CommonCard
-              key={p?.id || p?._id}
-              item={p}
-              title={["payer.firstName", "payer.lastName"]}
-              fieldMap={{
-                amount: "Amount",
-                method: "Method",
-                status: "Status",
-                hostEarnings: "Host Earnings",
-              }}
-              {...(currentRole === "host"
-                ? {}
-                : {
-                    actionItems: [
-                      {
-                        key: "refund",
-                        label: <Button type="text">Refund</Button>,
-                      },
-                      {
-                        key: "release",
-                        label: <Button type="text">Release</Button>,
-                      },
-                    ],
-                  })}
-              onActionClick={(info, item) => handleAction(info.key, item)}
-              onCardClick={(record) => {
-                const id = record.id || record._id;
-                if (id) navigate(`/dash/payments/${id}`, { state: record });
-              }}
+      <TableCard
+        tabs={statusTabs}
+        activeTab={filters.status ?? null}
+        onTabChange={(k) => handleFilterChange({ status: k })}
+        search={{ value: localSearch, onChange: handleSearch, placeholder: "Search payer, reference or booking" }}
+        filters={
+          <>
+            <Select
+              placeholder="Method"
+              allowClear
+              showSearch
+              className={`mp-filter ${filters.method ? "is-on" : ""}`}
+              style={{ width: 190 }}
+              onChange={(v) => handleFilterChange({ method: v ?? null })}
+              value={filters.method}
+              options={PAYMENT_METHODS.map((m) => ({ value: m, label: prettyStatus(m) }))}
             />
-          ))
-        ) : (
-          <div className="p-6">No payments found</div>
-        )}
-
-        <div className="my-4 flex justify-center">
-          <Pagination
-            current={page}
-            pageSize={pageSize}
+            <InputNumber
+              placeholder="Min ETB"
+              value={minA ?? null}
+              min={0}
+              onChange={(v) => updateAmount(0, v)}
+              style={{ width: 120 }}
+            />
+            <InputNumber
+              placeholder="Max ETB"
+              value={maxA ?? null}
+              min={0}
+              onChange={(v) => updateAmount(1, v)}
+              style={{ width: 120 }}
+            />
+          </>
+        }
+        chips={[
+          filters.status && { k: "Status", v: prettyStatus(filters.status), onRemove: () => handleFilterChange({ status: null }) },
+          filters.method && { k: "Method", v: prettyStatus(filters.method), onRemove: () => handleFilterChange({ method: null }) },
+          (minA != null || maxA != null) && {
+            k: "Amount",
+            v: `${minA ?? 0} – ${maxA ?? "∞"} ETB`,
+            onRemove: () => handleFilterChange({ amountRange: [null, null] }),
+          },
+        ]}
+        onClearChips={() => handleFilterChange({ status: null, method: null, amountRange: [null, null] })}
+        resultLabel={`${total || 0} payments`}
+      >
+        <div className="hidden md:block">
+          <CommonTable
+            data={payments}
+            columns={tableColumns}
             total={total}
-            onChange={handlePagination}
-            showSizeChanger
+            loading={loading}
+            currentPage={page}
+            pageSize={pageSize}
+            rowKey={(r) => r?.id}
+            unit="payments"
+            handlePagination={(p, ps) => handlePagination(p, ps)}
+            onRow={(record) => ({ onClick: () => openPayment(record), style: { cursor: "pointer" } })}
           />
         </div>
-      </div>
+
+        <div className="block md:hidden mp-mlist">
+          {loading && Array(4).fill(1).map((_, i) => <CommonCardSkeleton key={i} />)}
+          {!loading && payments && payments.length > 0
+            ? payments.map((p) => (
+                <CommonCard
+                  key={p?.id || p?._id}
+                  item={p}
+                  title={["payer.firstName", "payer.lastName"]}
+                  fieldMap={{ amount: "Amount__ETB", method: "Method", status: "Status", hostEarnings: "Host earnings__ETB" }}
+                  {...(currentRole === "host" ? {} : { actionItems })}
+                  onActionClick={(info, item) => handleAction(info.key, item)}
+                  onCardClick={openPayment}
+                />
+              ))
+            : !loading && <EmptyState title="No payments found" />}
+          <div className="my-4 flex justify-center">
+            <Pagination current={page} pageSize={pageSize} total={total} onChange={handlePagination} size="small" />
+          </div>
+        </div>
+      </TableCard>
 
       <Modal
-        title={`Refund Payment`}
+        title="Refund payment"
         open={refundModalOpen}
+        className="mp-modal"
+        okText="Send refund"
+        okButtonProps={{ danger: true }}
         onCancel={() => {
           setRefundModalOpen(false);
           refundForm.resetFields();
         }}
         onOk={() => refundForm.submit()}
         confirmLoading={refundSubmitting}
-        okButtonProps={{
-          style: {
-            backgroundColor: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            color: "white",
-          },
-        }}
       >
+        {refundRecord && (
+          <div className="mp-subcard" style={{ margin: "8px 0 16px" }}>
+            <KeyValueList
+              rows={[
+                { label: "Payer", value: fullName(refundRecord.payer) || "—" },
+                { label: "Original amount", value: money(refundRecord.amount) },
+              ]}
+            />
+          </div>
+        )}
         <Form form={refundForm} layout="vertical" onFinish={submitRefund}>
-          {/* <Form.Item label="Booking ID">
-            <Input disabled value={refundRecord?.bookingId || ""} />
-          </Form.Item> */}
-          <Form.Item
-            label="Refund Amount"
-            name="refundAmount"
-            rules={[{ required: true, message: "Enter refund amount" }]}
-          >
-            <InputNumber min={0} style={{ width: "100%" }} />
+          <Form.Item label="Refund amount (ETB)" name="refundAmount" rules={[{ required: true, message: "Enter refund amount" }]}>
+            <InputNumber min={0} max={refundRecord?.amount || undefined} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item label="Reason" name="reason">
-            <Input.TextArea rows={3} />
+            <Input.TextArea rows={3} placeholder="Shown to the guest" />
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </Page>
   );
 };
+
+const PAYMENT_METHODS = [
+  "ABYSSINIA", "AWASH", "COMMERCIAL_BANK_OF_ETHIOPIA", "DASHEN", "NIB", "ZEMEN", "ABAY", "WEGAGEN",
+  "UNITED", "ADDIS_INTERNATIONAL", "BERHAN", "COOPERATIVE_BANK_OF_OROMIA", "ENAT", "HIWOT", "LION",
+  "BUNA", "DEBUB_GLOBAL", "OROMIA_INTERNATIONAL", "AMHARA", "HIJRA", "SIINQEE", "SHABELLE", "GADA",
+  "GEBEYA", "TSEDEY", "RAYAN", "TSEDAY", "LILA_ABBISINIA", "OTHER",
+];
 
 export default PaymentList;

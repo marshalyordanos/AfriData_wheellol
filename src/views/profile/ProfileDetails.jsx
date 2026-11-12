@@ -215,14 +215,7 @@ const ProfileDetails = () => {
         onOk={() => form.submit()}
         okText="Save"
         confirmLoading={loading}
-        okButtonProps={{
-          style: {
-            backgroundColor: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            color: "white",
-          },
-        }}
-      >
+        >
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Form.Item
             name="firstName"

@@ -1,6 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
-import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  CarOutlined,
+} from "@ant-design/icons";
+import {
+  Page,
+  PageHeader,
+  Btn,
+  ReloadBtn,
+  StatsStrip,
+  TableCard,
+  ThumbCell,
+  ActivePill,
+  TwoLine,
+  RowMenu,
+  actionColumn,
+  EmptyState,
+} from "../../components/modern/ModernUI";
+import { shortDate, shortTime } from "../../utils/dateFormat";
 import { Button, Dropdown, Input, Select, Pagination } from "antd";
 import styled from "styled-components";
 import CommonModal from "../../components/commons/CommonModel";
@@ -155,100 +175,53 @@ const CartypesList = () => {
   };
 
   const onClick = ({ key }, record) => {
-    if (key == "edit") {
-      setIsModalOpen(true);
-    } else if (key === "delete") {
-      setIsDeleteModalOpen(true);
-    }
+    setModeID(record?.id);
+    if (key === "edit") setIsModalOpen(true);
+    else if (key === "delete") setIsDeleteModalOpen(true);
   };
 
   const items = [
-    {
-      key: "edit",
-      label: <Button type="text">Edit</Button>,
-    },
-    {
-      key: "delete",
-      label: <Button type="text"> Delete</Button>,
-    },
+    { key: "edit", icon: <EditOutlined />, label: "Edit car type" },
+    { type: "divider" },
+    { key: "delete", icon: <DeleteOutlined />, label: "Delete", danger: true },
   ];
 
   const columns = [
     {
-      title: " ",
-      dataIndex: "action",
-      render: (_, recored) => {
-        return (
-          <Dropdown
-            menu={{
-              items,
-              onClick: (value) => onClick(value, recored),
-            }}
-            trigger={["click"]}
-            placement="bottomLeft"
-          >
-            <Button
-              type="text"
-              icon={<MoreOutlined style={{ fontSize: 20 }} />}
-              onClick={() => {
-                setModeID(recored.id);
-              }}
-            ></Button>
-          </Dropdown>
-        );
-      },
-    },
-
-    {
-      title: "Name",
+      title: "Car type",
       dataIndex: "name",
-      render: (text, recored) => {
-        return (
-          <NavLink
-            style={{ color: "#2f1dca" }}
-            state={recored}
-            // to={`${recored.id}`}
-          >
-            {text}
-          </NavLink>
-        );
-      },
-      // sorter: true,
+      render: (text, r) => (
+        <ThumbCell
+          img={r.image || r.icon || r.imageUrl}
+          icon={<CarOutlined />}
+          title={text}
+          sub={r.description}
+        />
+      ),
     },
-
-    // {
-    //   title: "active",
-    //   dataIndex: "active",
-    //   render: (text, recored) => {
-    //     return recored.active ? <p>true</p> : <p>false</p>;
-    //   },
-    // },
     {
-      title: "Active",
+      title: "Status",
       dataIndex: "isActive",
-      render: (v, r) =>
-        v ? (
-          <span className="text-green-600 font-medium">Active</span>
-        ) : (
-          <span className="text-gray-500">Inactive</span>
-        ),
-      // sorter: true,
+      render: (v) => <ActivePill active={v} />,
     },
     {
-      title: "Created At",
-      dataIndex: "createdAtFormatted",
-      render: (t) => t || "-",
-      // sorter: true,
+      title: "Created",
+      dataIndex: "createdAt",
+      render: (d) => <TwoLine main={shortDate(d)} sub={shortTime(d)} />,
     },
+    actionColumn((_, r) => <RowMenu items={items} record={r} onClick={onClick} />),
   ];
 
+  const activeCount = (cartypesData || []).filter((c) => c.isActive).length;
+
   return (
-    <div>
-      {isModalOpen ? (
+    <Page>
+      {isModalOpen && (
         <CommonModal
-          width={1000}
+          width={720}
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
+          title={modeID ? "Edit car type" : "New car type"}
         >
           <CartypesEdit
             cartypesData={cartypesData}
@@ -259,128 +232,88 @@ const CartypesList = () => {
             setIsModalOpen={setIsModalOpen}
           />
         </CommonModal>
-      ) : (
-        ""
       )}
 
-      {isDeleteModalOpen ? (
+      {isDeleteModalOpen && (
         <CommonDeleteModal
           setIsModalOpen={setIsDeleteModalOpen}
           handleDelete={handleDelete}
           loading={loading}
           isModalOpen={isDeleteModalOpen}
         >
-          <h1 className=" text-2xl">Are you sure?</h1>
+          This car type will be removed permanently.
         </CommonDeleteModal>
-      ) : (
-        ""
       )}
 
-      <span className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700">
-        <div className="flex flex-col p-6 md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Car Types</h1>
-          <div className="flex">
-            <Input
-              onChange={searchHandler}
-              placeholder="Search"
-              value={searchText}
-              allowClear
-              className="drop-shadow-sm py-2"
-            />
-            {/* <div className="hover:border-[#4096FF] transition-all delay-75 ease-in hover:border border-y-[0.5px] py-[0.15rem] border-r-[0.5px] rounded-r-[8px] border-[#CCCCCC] searchSelect">
-              <Select
-                onChange={(val) => {
-                  searchData();
-                }}
-                bordered={false}
-                //   style={ borderRadius: "0px 8px 8px 0px" }
-                className=""
-                placeholder="Select item category"
-              >
-                <Option value={""}>All</Option>
-                <Option value={"spare_part"}>Spare part</Option>
-                <Option value={"lubricant"}>Lubricants</Option>
-              </Select>
-            </div> */}
-          </div>
-        </div>
-        <span className="flex ml-6 mb-6 md:mr-6">
-          <button
-            onClick={handleReload}
-            className="
-             border border-[var(--color-primary)] py-2 px-3
-             text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
-          >
-            <ReloadOutlined className=" boder boder-red-900" />
-          </button>
-
-          <button
-            className="px-4  py-2 border border-[var(--color-primary)] 
-            text-white bg-[var(--color-primary)] rounded"
-            onClick={() => {
-              setIsModalOpen(true);
-              setModeID("");
-            }}
-          >
-            <span className="flex flex-row">
-              <PlusOutlined />
-              <p className="pl-2">Add CarType</p>
-            </span>
-          </button>
-        </span>
-      </span>
-
-      <div className="hidden md:block">
-        <CommonTable
-          // rowSelectionType={"checkbox"}
-          data={cartypesData}
-          columns={columns}
-          setSelection={setCartypesSelection}
-          handlePagination={handlePagination}
-          total={total}
-          loadding={loading}
-          tableChange={tableChange}
-          currentPage={Number(page)}
-          pageSize={Number(limit)}
-        />
-      </div>
-
-      <div className="block md:hidden px-4">
-        {loading &&
-          Array(5)
-            .fill(1)
-            .map((_) => <CommonCardSkeleton />)}
-        {cartypesData && cartypesData.length > 0 ? (
-          cartypesData.map((ct) => (
-            <CommonCard
-              key={ct?.id || ct?._id}
-              item={ct}
-              title={"name"}
-              fieldMap={{
-                createdAtFormatted: "Created At",
-                isActiveLabel: "Active",
+      <PageHeader
+        eyebrow="Catalog"
+        title="Car types"
+        subtitle="Body styles such as Sedan, SUV or Pickup that hosts pick from."
+        actions={
+          <>
+            <ReloadBtn onClick={handleReload} loading={loading} />
+            <Btn
+              variant="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setModeID("");
+                setIsModalOpen(true);
               }}
-              actionItems={items.map((it) => ({ ...it }))}
-              onActionClick={(info, item) => onClick(info, item)}
-            />
-          ))
-        ) : (
-          <div className="p-6">No car types found</div>
-        )}
+            >
+              Add car type
+            </Btn>
+          </>
+        }
+      />
 
-        <div className="my-4 flex justify-center">
-          <Pagination
-            current={Number(page)}
-            pageSize={Number(limit)}
+      <StatsStrip
+        items={[
+          { label: "Total car types", value: total || 0, note: "In the catalog", color: "#09234c" },
+          { label: "Active", value: activeCount, note: "On this page", color: "#059669" },
+          { label: "Inactive", value: (cartypesData || []).length - activeCount, note: "On this page", color: "#94a3b8" },
+        ]}
+      />
+
+      <TableCard
+        search={{ value: searchText, onChange: searchHandler, placeholder: "Search car types" }}
+        resultLabel={`${total || 0} car types`}
+      >
+        <div className="hidden md:block">
+          <CommonTable
+            data={cartypesData}
+            columns={columns}
+            rowKey="id"
+            setSelection={setCartypesSelection}
+            handlePagination={handlePagination}
             total={total}
-            onChange={handlePagination}
-            showSizeChanger
+            loadding={loading}
+            tableChange={tableChange}
+            currentPage={Number(page) || 1}
+            pageSize={Number(limit) || 10}
+            unit="car types"
           />
         </div>
 
-     
-      </div>
-    </div>
+        <div className="block md:hidden mp-mlist">
+          {loading && Array(4).fill(1).map((_, i) => <CommonCardSkeleton key={i} />)}
+          {!loading && cartypesData && cartypesData.length > 0
+            ? cartypesData.map((ct) => (
+                <CommonCard
+                  key={ct?.id || ct?._id}
+                  item={ct}
+                  title="name"
+                  fieldMap={{ createdAtFormatted: "Created", isActive: "Status" }}
+                  actionItems={items}
+                  onActionClick={(info, item) => onClick(info, item)}
+                />
+              ))
+            : !loading && <EmptyState title="No car types found" />}
+          <div className="my-4 flex justify-center">
+            <Pagination current={Number(page) || 1} pageSize={Number(limit) || 10} total={total} onChange={handlePagination} size="small" />
+          </div>
+        </div>
+      </TableCard>
+    </Page>
   );
 };
 

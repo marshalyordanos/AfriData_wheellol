@@ -85,6 +85,18 @@ class GustService {
         return response.data;
       });
   }
+  // Admin: mark the guest's phone as verified / unverified (skips the SMS OTP)
+  setPhoneVerified(id, isVerified) {
+    return api
+      .patch("/users/update-verified-status/" + id, { isVerified })
+      .then((response) => response.data);
+  }
+  // Admin reset: backend generates a temp password and returns it
+  resetPassword(id) {
+    return api.patch("/users/reset-password/" + id).then((response) => {
+      return response.data;
+    });
+  }
   //REVIEWS SERVICES
   getReviewByUserId(id) {
     return api.get("/reviews/user/" + id).then((response) => {

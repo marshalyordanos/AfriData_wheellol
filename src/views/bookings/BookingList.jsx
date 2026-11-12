@@ -1,47 +1,109 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Input, Button, Tag, Dropdown, Select, DatePicker } from "antd";
-import { ReloadOutlined, PlusOutlined, MoreOutlined } from "@ant-design/icons";
+import {
+  Input,
+  Button,
+  Dropdown,
+  Select,
+  DatePicker,
+  Table,
+  Pagination,
+  Tooltip,
+  Skeleton,
+} from "antd";
+import {
+  ReloadOutlined,
+  PlusOutlined,
+  MoreOutlined,
+  SearchOutlined,
+  EditOutlined,
+  EyeOutlined,
+  MessageOutlined,
+} from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../api/api";
-import CommonTable from "../../components/commons/CommonTable";
-import CommonCard from "../../components/commons/CommonCard";
-import { Pagination } from "antd";
 import CommonModal from "../../components/commons/CommonModel";
-import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
+import CommonTable from "../../components/commons/CommonTable";
 import BookingCreateForm from "../../components/Forms/BookingCreateForm";
 
 import {
   fetchBookingsThunk,
-  // createBookingThunk,
-  updateBookingThunk,
-  cancelBookingThunk,
-  completeBookingThunk,
-  deleteBookingThunk,
   updateBookingState,
   bookingQuery,
   bookingSearchText,
 } from "./BookingRedux";
 import BookingService from "./BookingService";
 import BookingUpdateForm from "../../components/Forms/BookingUpdateForm";
-import SummaryCard from "../../components/commons/SummaryCard";
 import {
+  FaCar,
   FaCheckCircle,
   FaClipboardList,
   FaGavel,
   FaHourglassHalf,
   FaTimesCircle,
   FaUserSlash,
+  FaUserTie,
+  FaMapMarkerAlt,
+  FaExclamationTriangle,
 } from "react-icons/fa";
-import {
-  selectbookingSummary,
-  selectCurrentUser,
-} from "../../redux/auth/authSlice";
-import CommonCardSkeleton from "../../components/commons/CommonSkeleton";
+import { selectCurrentUser } from "../../redux/auth/authSlice";
 import {
   formatCurrency,
   formatReadableDate,
 } from "../../utils/date_currency_formatter";
+import {
+  Page,
+  PageHeader,
+  Btn,
+  ReloadBtn,
+  StatsStrip,
+  TableCard,
+  StatusPill,
+  PersonCell,
+  RowMenu,
+  EmptyState,
+} from "../../components/modern/ModernUI";
+
+/* ---------- small helpers ---------- */
+const parseDate = (d) => {
+  if (!d) return null;
+  const dt = new Date(d);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+};
+const shortDate = (d) => {
+  const dt = parseDate(d);
+  if (!dt) return d ? formatReadableDate(d) : "—";
+  return dt.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+const shortTime = (d) => {
+  const dt = parseDate(d);
+  if (!dt) return "";
+  return dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+};
+const placeName = (loc) => {
+  if (!loc) return "";
+  return String(loc).split("+*+").slice(-1)[0] || String(loc);
+};
+const tripDays = (s, e) => {
+  const a = parseDate(s);
+  const b = parseDate(e);
+  if (!a || !b) return null;
+  return Math.max(1, Math.ceil((b - a) / 86400000));
+};
+
+const STATUS_TABS = [
+  { key: null, label: "All", summaryKey: "totalBookings" },
+  { key: "PENDING", label: "Pending", summaryKey: "pending" },
+  { key: "CONFIRMED", label: "Confirmed", summaryKey: "confirmed" },
+  { key: "COMPLETED", label: "Completed", summaryKey: "completed" },
+  { key: "CANCELLED_BY_GUEST", label: "Cancelled · Guest", summaryKey: "cancelledByGuest" },
+  { key: "CANCELLED_BY_HOST", label: "Cancelled · Host", summaryKey: "cancelledByHost" },
+  { key: "CANCELLED_BY_ADMIN", label: "Cancelled · Admin", summaryKey: "cancelledByAdmin" },
+];
 
 const BookingList = () => {
   const dispatch = useDispatch();
@@ -79,36 +141,51 @@ const BookingList = () => {
   };
 
   const currentRole = normalizeRole(currentUser) || "superadmin";
-  // const currentRole = currentUser.role.name || "superadmin";
-  // console.log(currentRole);
 
   const getPaginationInfo = () => [
     Number(searchParams.get("page") || 1),
     Number(searchParams.get("limit") || limit),
   ];
 
+  const mapBookings = (payload) => {
+    const rawList = payload?.data?.bookings || payload?.data || payload || [];
+    const raw = Array.isArray(rawList) ? rawList : rawList.bookings || [];
+    return (Array.isArray(raw) ? raw : [raw]).map((b) => ({
+      id: b.id || b._id,
+      ...b,
+      car: b.car || {},
+      guest: b.guest || b.renter || {},
+      rental_price_per_day:
+        b.car?.rentalPricePerDay ||
+        b.car?.rental_price_per_day ||
+        b.rentalPricePerDay ||
+        0,
+      status: (b.status || "").toString(),
+      startDateFormatted: b.startDate ? formatReadableDate(b.startDate) : "-",
+      endDateFormatted: b.endDate ? formatReadableDate(b.endDate) : "-",
+    }));
+  };
+
+  const buildFilterParams = (f = filters) => {
+    const filter = {};
+    if (f.status) filter.status = f.status;
+    if (f.withDriver !== null && f.withDriver !== undefined)
+      filter.withDriver = f.withDriver;
+    let startDate = null;
+    let endDate = null;
+    if (f.dateRange && f.dateRange.length === 2) {
+      startDate = f.dateRange[0].toISOString();
+      endDate = f.dateRange[1].toISOString();
+    }
+    return { filter, startDate, endDate };
+  };
+
   const loadBookings = async (overrides = {}) => {
     setLoading(true);
     try {
       const params = { ...bookingQ, ...overrides };
       const { payload } = await dispatch(fetchBookingsThunk(params));
-      const rawList = payload?.data?.bookings || payload?.data || payload || [];
-      const raw = Array.isArray(rawList) ? rawList : rawList.bookings || [];
-      const mapped = (Array.isArray(raw) ? raw : [raw]).map((b) => ({
-        id: b.id || b._id,
-        ...b,
-        car: b.car || {},
-        guest: b.guest || b.renter || {},
-        rental_price_per_day:
-          b.car?.rentalPricePerDay ||
-          b.car?.rental_price_per_day ||
-          b.rentalPricePerDay ||
-          0,
-        status: (b.status || "").toString(),
-        startDateFormatted: b.startDate ? formatReadableDate(b.startDate) : "-",
-        endDateFormatted: b.endDate ? formatReadableDate(b.endDate) : "-",
-      }));
-
+      const mapped = mapBookings(payload);
       setBookingData(mapped);
       setTotal(payload?.total || payload?.data?.total || mapped.length || 0);
     } catch (err) {
@@ -128,137 +205,87 @@ const BookingList = () => {
     setLocalSearch(searchText || "");
   }, [searchText]);
 
-  async function searchData(val = "", overrides = {}) {
-    try {
-      setLoading(true);
-      const params = { ...bookingQ, ...overrides, searchText: val };
-      const { payload } = await dispatch(fetchBookingsThunk(params));
-      const rawList = payload?.data?.bookings || payload?.data || payload || [];
-      const raw = Array.isArray(rawList) ? rawList : rawList.bookings || [];
-      const mapped = (Array.isArray(raw) ? raw : [raw]).map((b) => ({
-        id: b.id,
-        ...b,
-        car: b.car || {},
-        guest: b.guest || {},
-        rental_price_per_day:
-          b.car?.rentalPricePerDay || b.car?.rental_price_per_day || 0,
-        status: (b.status || "").toString(),
-      }));
-      setBookingData(mapped);
-      setTotal(payload?.total || payload?.data?.total || mapped.length || 0);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleSearch = (e) => {
-    const { value } = e.target;
+  const onSearchChange = (e) => {
+    const v = e.target.value;
+    setLocalSearch(v);
     clearTimeout(delayTimerRef.current);
     delayTimerRef.current = setTimeout(() => {
-      const [pg, lm] = getPaginationInfo();
-      dispatch(updateBookingState({ page: 1, searchText: value || "" }));
-      loadBookings({ page: 1, limit: lm, searchText: value || "" });
+      const [, lm] = getPaginationInfo();
+      dispatch(updateBookingState({ page: 1, limit: lm, searchText: v || "" }));
+      loadBookings({ page: 1, limit: lm, searchText: v || "", ...buildFilterParams() });
     }, 500);
   };
 
   const handleFilterChange = (newFilters) => {
     const merged = { ...filters, ...newFilters };
     setFilters(merged);
-
-    // build `filter` object
-    const filter = {};
-    if (merged.status) filter.status = merged.status;
-    // with driver filtering
-    if (merged.withDriver !== null && merged.withDriver !== undefined)
-      filter.withDriver = merged.withDriver;
-    let startDate = null;
-    let endDate = null;
-    if (merged.dateRange && merged.dateRange.length === 2) {
-      startDate = merged.dateRange[0].toISOString();
-      endDate = merged.dateRange[1].toISOString();
-    }
-
-    const [pg, lm] = getPaginationInfo();
+    const [, lm] = getPaginationInfo();
     dispatch(updateBookingState({ page: 1 }));
     setSearchParams({ page: 1, limit: lm });
-    // pass date range as top-level params to match BookingService.searchBookings
-    loadBookings({ page: 1, limit: lm, filter, startDate, endDate });
+    loadBookings({ page: 1, limit: lm, ...buildFilterParams(merged) });
   };
 
   const handlePagination = (pg, pageSize) => {
     setSearchParams({ page: pg, limit: pageSize });
     dispatch(updateBookingState({ page: pg, limit: pageSize }));
-    loadBookings({ page: pg, limit: pageSize });
+    loadBookings({ page: pg, limit: pageSize, ...buildFilterParams() });
   };
 
-  const tableChange = (pagination, filters, sorter) => {
+  const tableChange = (pagination, _filters, sorter) => {
     let field = sorter?.field;
     if (Array.isArray(field)) field = field.join(".");
     const order = sorter?.order || "";
     dispatch(updateBookingState({ sort: field || "", order }));
-    loadBookings();
-  };
-
-  const paymentTag = (status) => {
-    if (!status) return <Tag color="default">N/A</Tag>;
-    const s = status.toString().toLowerCase();
-    if (s.includes("paid") || s.includes("completed") || s === "success")
-      return <Tag color="green">{status}</Tag>;
-    if (s.includes("pending") || s.includes("await"))
-      return <Tag color="orange">{status}</Tag>;
-    if (s.includes("failed") || s.includes("declined"))
-      return <Tag color="red">{status}</Tag>;
-    return <Tag color="blue">{status}</Tag>;
-  };
-
-  const bookingTag = (status) => {
-    if (!status) return <Tag color="default">N/A</Tag>;
-    const s = status.toString().toLowerCase();
-    if (s.includes("completed")) return <Tag color="green">{status}</Tag>;
-    if (s.includes("cancel")) return <Tag color="red">{status}</Tag>;
-    if (s.includes("pending") || s.includes("new") || s.includes("await"))
-      return <Tag color="orange">{status}</Tag>;
-    if (s.includes("confirmed")) return <Tag color="blue">{status}</Tag>;
-    return <Tag color="purple">{status}</Tag>;
+    loadBookings({ sort: field || "", order, ...buildFilterParams() });
   };
 
   const onRowClick = (record) => {
     if (record && (record.id || record._id)) {
-      const bookingId = record.id || record._id;
-      navigate(`/dash/bookings/${bookingId}`);
+      navigate(`/dash/bookings/${record.id || record._id}`);
     }
   };
 
+  const openChat = (record) => {
+    const bookingId = record.id || record._id;
+    if (bookingId)
+      navigate(`/dash/messages/${bookingId}`, {
+        state: { from: "bookingList", chatPartner: record.guest },
+      });
+  };
+
+  const canChat = (record) => {
+    const status = String(record?.status || "").toLowerCase();
+    if (currentRole === "host") return status === "confirmed";
+    return !!record?.dispute;
+  };
+
   const onActionClick = (value, record) => {
-    const key = value?.key || (value && value.key);
+    const key = value?.key;
     if (key === "edit") {
       setSelectedBooking(record);
       setIsUpdateModalOpen(true);
+    } else if (key === "view") {
+      onRowClick(record);
+    } else if (key === "chat") {
+      openChat(record);
     }
   };
 
   const handleReload = () => {
+    setLocalSearch("");
+    setFilters({ status: null, withDriver: null, dateRange: null });
     setSearchParams({ page: 1, limit: 10 });
     dispatch(
-      updateBookingState({
-        page: 1,
-        limit: 10,
-        sort: "",
-        order: "",
-        searchText: "",
-      })
+      updateBookingState({ page: 1, limit: 10, sort: "", order: "", searchText: "" })
     );
     loadBookings({ page: 1, limit: 10, sort: "", order: "", searchText: "" });
+    fetchSummary();
   };
-  // Fetch summary on load
+
   const fetchSummary = async () => {
     try {
       const res = await api.get("users/summary?entity=booking");
-      setBookingSummary(res.data.data?.booking);
-
-      console.log("fetchSummary: ", res.data);
+      setBookingSummary(res.data.data?.booking || {});
     } catch (error) {
       console.error("fetchSummary: ", error);
     }
@@ -268,199 +295,193 @@ const BookingList = () => {
     fetchSummary();
   }, []);
 
+  const actionMenu = (record) => {
+    const items = [
+      { key: "view", icon: <EyeOutlined />, label: "View details" },
+    ];
+    if (currentRole !== "host")
+      items.push({ key: "edit", icon: <EditOutlined />, label: "Update booking" });
+    if (canChat(record))
+      items.push({ key: "chat", icon: <MessageOutlined />, label: "Open chat" });
+    return items;
+  };
+
   const columns = [
     {
-      title: " ",
-      dataIndex: "action",
-      render: (_, record) => {
+      title: "Booking",
+      dataIndex: "car",
+      fixed: "left",
+      render: (_, r) => {
+        const name =
+          `${r.car?.make?.name || ""} ${r.car?.model?.name || ""}`.trim() || "Unknown car";
+        const sub = [r.car?.year, r.car?.plateNumber || r.car?.licensePlate]
+          .filter(Boolean)
+          .join(" · ");
         return (
-          <Dropdown
-            menu={{
-              items: [
-                {
-                  key: "edit",
-                  label: <Button type="text">Update</Button>,
-                },
-              ],
-              onClick: (info) => {
-                try {
-                  info?.domEvent?.stopPropagation();
-                } catch (err) {
-                  // ignore
-                }
-                onActionClick(info, record);
-              },
-            }}
-            trigger={["click"]}
-            placement="bottomLeft"
-          >
-            <Button
-              type="text"
-              icon={<MoreOutlined style={{ fontSize: 18 }} />}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </Dropdown>
+          <div className="mp-cell">
+            <span className="mp-car-icon">
+              <FaCar />
+            </span>
+            <div className="min-w-0">
+              <div className="mp-cell-main">{name}</div>
+              <div className="mp-cell-sub">
+                {sub || `#${String(r.id || "").slice(0, 8)}`}
+              </div>
+            </div>
+          </div>
         );
       },
     },
-    // 1. Car (make + model or fallback to carType)
-    {
-      title: "Car",
-      dataIndex: "car",
-      render: (_, record) =>
-        `${record.car.make?.name || ""} ${
-          record.car.model?.name || ""
-        }`.trim() || "-",
-    },
-    // 2. Host Name
-    {
-      title: "Host",
-      dataIndex: "host",
-      render: (_, record) =>
-        record.host
-          ? `${record.host.firstName || ""} ${
-              record.host.lastName || ""
-            }`.trim()
-          : "-",
-    },
-    // 3. Guest Name
     {
       title: "Guest",
       dataIndex: "guest",
-      render: (_, record) =>
-        record.guest
-          ? `${record.guest.firstName || ""} ${
-              record.guest.lastName || ""
-            }`.trim()
-          : "-",
+      render: (_, r) => <PersonCell person={r.guest} />,
     },
     {
-      title: "Total Price",
-      dataIndex: "totalPrice",
-      render: (p) => (p ? formatCurrency(p) : "-"),
+      title: "Host",
+      dataIndex: "host",
+      render: (_, r) => <PersonCell person={r.host} />,
     },
-    // 10. Payment Status
     {
-      title: "Payment Status",
-      dataIndex: ["payment", "status"],
-      render: (s, r) => paymentTag(s || r?.payment?.status),
-    },
-    // 11. Booking Status
-    {
-      title: "Booking Status",
-      dataIndex: "status",
-      render: (s) => bookingTag(s),
-    },
-    // 4. Start Date
-    {
-      title: "Start Date",
+      title: "Trip dates",
       dataIndex: "startDate",
-      render: (d) => (d ? formatReadableDate(d) : "-"),
+      sorter: true,
+      render: (_, r) => {
+        const days = tripDays(r.startDate, r.endDate);
+        return (
+          <div>
+            <div className="mp-cell-main" style={{ fontWeight: 500 }}>
+              {shortDate(r.startDate)} <span className="text-slate-300 px-1">→</span>{" "}
+              {shortDate(r.endDate)}
+            </div>
+            <div className="mp-cell-sub">
+              {shortTime(r.startDate)}
+              {days ? ` · ${days} day${days > 1 ? "s" : ""}` : ""}
+            </div>
+          </div>
+        );
+      },
     },
-    // 5. End Date
     {
-      title: "End Date",
-      dataIndex: "endDate",
-      render: (d) => (d ? formatReadableDate(d) : "-"),
-    },
-    // 6. Pickup Location (clean formatted)
-    {
-      title: "Pickup",
+      title: "Route",
       dataIndex: "pickupLocation",
-      render: (loc) => {
-        if (!loc) return "-";
-        // expected format: "lat+*+lon+*+Place Name"
-        return String(loc).split("+*+").slice(-1)[0] || loc;
+      render: (_, r) => {
+        const from = placeName(r.pickupLocation);
+        const to = placeName(r.dropoffLocation);
+        if (!from && !to) return <span className="text-slate-400">—</span>;
+        return (
+          <div style={{ maxWidth: 220 }}>
+            <Tooltip title={from}>
+              <div className="mp-chip truncate">
+                <FaMapMarkerAlt style={{ color: "#059669", fontSize: 11 }} />
+                <span className="truncate">{from || "—"}</span>
+              </div>
+            </Tooltip>
+            <Tooltip title={to}>
+              <div className="mp-chip truncate" style={{ marginTop: 4 }}>
+                <FaMapMarkerAlt style={{ color: "#fc6b38", fontSize: 11 }} />
+                <span className="truncate">{to || "—"}</span>
+              </div>
+            </Tooltip>
+          </div>
+        );
       },
     },
-    // 7. Dropoff Location
     {
-      title: "Dropoff",
-      dataIndex: "dropoffLocation",
-      render: (loc) => {
-        if (!loc) return "-";
-        return String(loc).split("+*+").slice(-1)[0] || loc;
-      },
+      title: "Amount",
+      dataIndex: "totalPrice",
+      sorter: true,
+      align: "right",
+      render: (p, r) => (
+        <div style={{ textAlign: "right" }}>
+          <div className="mp-price">{p ? formatCurrency(p) : "—"}</div>
+          <div className="mp-cell-sub">
+            {r.withDriver ? (
+              <span className="inline-flex items-center gap-1">
+                <FaUserTie /> With driver
+              </span>
+            ) : (
+              "Self-drive"
+            )}
+          </div>
+        </div>
+      ),
     },
-    // 8. With Driver
     {
-      title: "With Driver",
-      dataIndex: "withDriver",
-      render: (v) => (v ? "Yes" : "No"),
+      title: "Payment",
+      dataIndex: ["payment", "status"],
+      render: (s, r) => <StatusPill status={s || r?.payment?.status} />,
     },
-    // 9. Total Price
-
-    // 12. Created At
     {
-      title: "Created At",
+      title: "Status",
+      dataIndex: "status",
+      render: (s, r) => (
+        <div className="flex items-center gap-2">
+          <StatusPill status={s} />
+          {r.dispute && (
+            <Tooltip title="This booking has an open dispute">
+              <FaExclamationTriangle style={{ color: "#dc2626" }} />
+            </Tooltip>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: "Created",
       dataIndex: "createdAt",
-      render: (d) => (d ? formatReadableDate(d) : "-"),
+      sorter: true,
+      render: (d) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>{shortDate(d)}</div>
+          <div className="mp-cell-sub">{shortTime(d)}</div>
+        </div>
+      ),
     },
-    // 13. Chat link
     {
-      title: "Chat",
-      dataIndex: "chat",
-      render: (_, record) => {
-        if (!record) return null;
-        const status = String(record.status || "").toLowerCase();
-
-        if (currentRole === "host") {
-          if (status === "confirmed") {
-            return (
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const bookingId = record.id || record._id;
-                  if (bookingId)
-                    navigate(`/dash/messages/${bookingId}`, {
-                      state: { from: "bookingList", chatPartner: record.guest },
-                    });
-                }}
-              >
-                Chat
-              </Button>
-            );
-          }
-          return null;
-        }
-
-        if (record.dispute) {
-          return (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                const bookingId = record.id || record._id;
-                if (bookingId)
-                  navigate(`/dash/messages/${bookingId}`, {
-                    state: { from: "bookingList", chatPartner: record.guest },
-                  });
-              }}
-            >
-              Chat
-            </Button>
-          );
-        }
-
-        return null;
-      },
-    },
-    // 13. Dispute
-    {
-      title: "Dispute",
-      dataIndex: "dispute",
-      render: (d) => (d ? "Yes" : "No"),
+      title: "",
+      dataIndex: "action",
+      fixed: "right",
+      width: 96,
+      align: "right",
+      render: (_, record) => (
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          {canChat(record) && (
+            <Tooltip title="Open chat">
+              <button className="mp-iconbtn is-accent" aria-label="Open chat" onClick={() => openChat(record)}>
+                <MessageOutlined />
+              </button>
+            </Tooltip>
+          )}
+          <RowMenu items={actionMenu(record)} record={record} onClick={onActionClick} />
+        </div>
+      ),
     },
   ];
 
-  // If current role is host, hide the action column from table views
-  const tableColumns =
-    currentRole === "host"
-      ? columns.filter((col) => col.dataIndex !== "action")
-      : columns;
+  const s = bookingSummary || {};
+  const totalCount = Number(s.totalBookings || 0);
+  const pct = (n) => (totalCount ? Math.round((Number(n || 0) / totalCount) * 100) : 0);
+  const cancelledTotal =
+    Number(s.cancelledByGuest || 0) +
+    Number(s.cancelledByHost || 0) +
+    Number(s.cancelledByAdmin || 0);
+
+  const stats = [
+    { label: "Total bookings", value: totalCount, icon: FaClipboardList, accent: "navy", foot: "All time", status: null },
+    { label: "Pending", value: s.pending ?? 0, icon: FaHourglassHalf, accent: "amber", percent: pct(s.pending), foot: `${pct(s.pending)}%`, status: "PENDING" },
+    { label: "Completed", value: s.completed ?? 0, icon: FaCheckCircle, accent: "green", percent: pct(s.completed), foot: `${pct(s.completed)}%`, status: "COMPLETED" },
+    { label: "Cancelled · Guest", value: s.cancelledByGuest ?? 0, icon: FaUserSlash, accent: "rose", percent: pct(s.cancelledByGuest), foot: `${pct(s.cancelledByGuest)}%`, status: "CANCELLED_BY_GUEST" },
+    { label: "Cancelled · Host", value: s.cancelledByHost ?? 0, icon: FaTimesCircle, accent: "red", percent: pct(s.cancelledByHost), foot: `${pct(s.cancelledByHost)}%`, status: "CANCELLED_BY_HOST" },
+    { label: "Cancelled · Admin", value: s.cancelledByAdmin ?? 0, icon: FaGavel, accent: "violet", percent: pct(s.cancelledByAdmin), foot: `${pct(s.cancelledByAdmin)}%`, status: "CANCELLED_BY_ADMIN" },
+  ];
+
+  const currentPage = Number(page) || 1;
+  const pageSize = Number(limit) || 10;
+  const from = total ? (currentPage - 1) * pageSize + 1 : 0;
+  const to = Math.min(currentPage * pageSize, total);
 
   return (
-    <div>
-      {/* Create Modal */}
+    <Page>
       {isCreateModalOpen && (
         <CommonModal
           isModalOpen={isCreateModalOpen}
@@ -471,10 +492,10 @@ const BookingList = () => {
           <BookingCreateForm
             onSave={async (newBooking) => {
               try {
-                // newBooking is expected to match the backend payload shape.
                 await BookingService.createBooking(newBooking);
                 setIsCreateModalOpen(false);
                 loadBookings();
+                fetchSummary();
               } catch (err) {
                 console.error("Failed to create booking:", err);
               }
@@ -495,11 +516,11 @@ const BookingList = () => {
             booking={selectedBooking}
             onSave={async (updated) => {
               try {
-                const id = selectedBooking.id;
-                await BookingService.updateBooking(updated, id);
+                await BookingService.updateBooking(updated, selectedBooking.id);
                 setIsUpdateModalOpen(false);
                 setSelectedBooking(null);
                 loadBookings();
+                fetchSummary();
               } catch (err) {
                 console.error("Update failed:", err);
               }
@@ -509,219 +530,158 @@ const BookingList = () => {
         </CommonModal>
       )}
 
-      <div className="flex gap-2 mb-6 flex-wrap px-6 my-6">
-        {/* Booking Cards */}
-        {/* Total Bookings */}
-        <SummaryCard
-          title="Total Bookings"
-          value={bookingSummary?.totalBookings ?? 0}
-          Icon={FaClipboardList}
-          iconBgColor="bg-indigo-100"
-          iconColor="text-indigo-500"
-          description="All bookings"
-        />
+      <PageHeader
+        eyebrow="Operations"
+        title="Bookings"
+        subtitle={`Track every reservation across your fleet${
+          cancelledTotal ? ` · ${cancelledTotal} cancelled overall` : ""
+        }`}
+        actions={
+          <>
+            <ReloadBtn onClick={handleReload} loading={loading} />
+            {currentRole !== "host" && (
+              <Btn variant="primary" icon={<PlusOutlined />} onClick={() => setIsCreateModalOpen(true)}>
+                New booking
+              </Btn>
+            )}
+          </>
+        }
+      />
 
-        {/* Pending */}
-        <SummaryCard
-          title="Pending Bookings"
-          value={bookingSummary?.pending ?? 0}
-          Icon={FaHourglassHalf}
-          iconBgColor="bg-yellow-100"
-          iconColor="text-yellow-500"
-          description="Bookings awaiting confirmation"
-        />
+      <StatsStrip
+        items={[
+          { label: "Total bookings", value: totalCount.toLocaleString(), note: "All time", color: "#09234c", key: null },
+          { label: "Pending", value: s.pending ?? 0, note: `${pct(s.pending)}% · need action`, color: "#f59e0b", key: "PENDING" },
+          { label: "Completed", value: s.completed ?? 0, note: `${pct(s.completed)}% of all bookings`, color: "#1d4f91", key: "COMPLETED" },
+          {
+            label: "Cancelled",
+            value: cancelledTotal,
+            note: `Guest ${s.cancelledByGuest ?? 0} · Host ${s.cancelledByHost ?? 0} · Admin ${s.cancelledByAdmin ?? 0}`,
+            color: "#94a3b8",
+            key: "CANCELLED_BY_GUEST",
+          },
+        ].map((it) => ({
+          ...it,
+          active: it.key && filters.status === it.key,
+          onClick: () => handleFilterChange({ status: it.key }),
+        }))}
+      />
 
-        {/* Cancelled by Guest */}
-        <SummaryCard
-          title="Cancelled by Guest"
-          value={bookingSummary?.cancelledByGuest ?? 0}
-          Icon={FaUserSlash}
-          iconBgColor="bg-red-100"
-          iconColor="text-red-500"
-          description="Guest cancelled"
-        />
-
-        {/* Cancelled by Host */}
-        <SummaryCard
-          title="Cancelled by Host"
-          value={bookingSummary?.cancelledByHost ?? 0}
-          Icon={FaTimesCircle}
-          iconBgColor="bg-red-100"
-          iconColor="text-red-500"
-          description="Host cancelled"
-        />
-
-        {/* Cancelled by Admin */}
-        <SummaryCard
-          title="Cancelled by Admin"
-          value={bookingSummary?.cancelledByAdmin ?? 0}
-          Icon={FaGavel}
-          iconBgColor="bg-red-100"
-          iconColor="text-red-500"
-          description="Admin cancelled"
-        />
-
-        {/* Completed */}
-        <SummaryCard
-          title="Completed Bookings"
-          value={bookingSummary?.completed ?? 0}
-          Icon={FaCheckCircle}
-          iconBgColor="bg-green-100"
-          iconColor="text-green-500"
-          description="Successfully completed"
-        />
-      </div>
-      <span className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700">
-        <div className="flex flex-col p-6 md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Bookings</h1>
-          <div className="flex gap-3 flex-wrap items-center">
-            <Input
-              onChange={(e) => {
-                const v = e.target.value;
-                setLocalSearch(v);
-                clearTimeout(delayTimerRef.current);
-                delayTimerRef.current = setTimeout(() => {
-                  const [pg, lm] = getPaginationInfo();
-                  dispatch(
-                    updateBookingState({
-                      page: 1,
-                      limit: lm,
-                      searchText: v || "",
-                    })
-                  );
-                  searchData(v || "");
-                }, 500);
-              }}
-              placeholder="Search"
-              value={localSearch}
+      <TableCard
+        tabs={STATUS_TABS.map((t) => ({ key: t.key, label: t.label, count: s[t.summaryKey] }))}
+        activeTab={filters.status}
+        onTabChange={(k) => handleFilterChange({ status: k })}
+        search={{ value: localSearch, onChange: onSearchChange, placeholder: "Search by booking ID, car, guest or host" }}
+        filters={
+          <>
+            <Select
+              placeholder="Driver"
               allowClear
-              style={{ borderRadius: "0px 0px 0px 0px" }}
-              className=" drop-shadow-sm rounded-r  py-2"
+              className={`mp-filter ${filters.withDriver !== null && filters.withDriver !== undefined ? "is-on" : ""}`}
+              value={filters.withDriver ?? undefined}
+              style={{ width: 150 }}
+              onChange={(val) => handleFilterChange({ withDriver: val ?? null })}
+              options={[
+                { value: true, label: "With driver" },
+                { value: false, label: "Self-drive" },
+              ]}
             />
-
-            <Select
-              placeholder="Status"
-              allowClear
-              style={{ width: 190 }}
-              onChange={(val) => handleFilterChange({ status: val })}
-            >
-              <Select.Option value="PENDING">PENDING</Select.Option>
-              <Select.Option value="CONFIRMED">CONFIRMED</Select.Option>
-              <Select.Option value="COMPLETED">COMPLETED</Select.Option>
-              <Select.Option value="CANCELLED_BY_HOST">
-                CANCELLED_BY_HOST
-              </Select.Option>
-              <Select.Option value="CANCELLED_BY_ADMIN">
-                CANCELLED_BY_ADMIN
-              </Select.Option>
-              <Select.Option value="CANCELLED_BY_GUEST">
-                CANCELLED_BY_GUEST
-              </Select.Option>
-            </Select>
-
-            <Select
-              placeholder="With Driver"
-              allowClear
-              style={{ width: 140 }}
-              onChange={(val) => handleFilterChange({ withDriver: val })}
-            >
-              <Select.Option value={true}>Yes</Select.Option>
-              <Select.Option value={false}>No</Select.Option>
-            </Select>
-
             <DatePicker.RangePicker
+              value={filters.dateRange}
               onChange={(dates) => handleFilterChange({ dateRange: dates })}
+              style={{ width: 260 }}
             />
-          </div>
-        </div>
-        <span className="flex ml-6 mb-6 md:mr-6">
-          <button
-            onClick={handleReload}
-            className="
-             border border-[var(--color-primary)] py-2 px-3
-             text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
-          >
-            <ReloadOutlined className=" boder boder-red-900" />
-          </button>
-
-          {currentRole !== "host" && (
-            <button
-              className="px-4  py-2 border border-[var(--color-primary)] 
-            text-white bg-[var(--color-primary)] rounded"
-              onClick={() => setIsCreateModalOpen(true)}
-            >
-              <span className="flex flex-row">
-                <PlusOutlined />
-                <p className="pl-2">Create Booking</p>
-              </span>
-            </button>
-          )}
-        </span>
-      </span>
-
-      {/* Table */}
-      <div style={{ fontSize: 3 }}>
+          </>
+        }
+        chips={[
+          filters.status && {
+            k: "Status",
+            v: STATUS_TABS.find((t) => t.key === filters.status)?.label || filters.status,
+            onRemove: () => handleFilterChange({ status: null }),
+          },
+          filters.withDriver !== null &&
+            filters.withDriver !== undefined && {
+              k: "Driver",
+              v: filters.withDriver ? "With driver" : "Self-drive",
+              onRemove: () => handleFilterChange({ withDriver: null }),
+            },
+          filters.dateRange &&
+            filters.dateRange.length === 2 && {
+              k: "Dates",
+              v: `${filters.dateRange[0].format("MMM D")} – ${filters.dateRange[1].format("MMM D")}`,
+              onRemove: () => handleFilterChange({ dateRange: null }),
+            },
+        ]}
+        onClearChips={handleReload}
+        resultLabel={`${total} result${total === 1 ? "" : "s"}`}
+      >
         <div className="hidden md:block">
           <CommonTable
+            rowKey={(r) => r?.id}
+            columns={columns}
             data={bookingData}
-            columns={tableColumns}
-            handlePagination={handlePagination}
-            total={total}
-            loading={loading}
             loadding={loading}
             tableChange={tableChange}
-            onRow={(record) => ({
-              onClick: () => onRowClick(record),
-              style: { cursor: "pointer" },
-            })}
-            rowKey={(r) => r?.id}
-            currentPage={Number(page) || 1}
-            pageSize={Number(limit) || 10}
+            total={total}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            handlePagination={handlePagination}
+            unit="bookings"
+            onRow={(record) => ({ onClick: () => onRowClick(record), style: { cursor: "pointer" } })}
           />
         </div>
 
-        {loading &&
-          Array(5)
-            .fill(1)
-            .map((_) => <CommonCardSkeleton />)}
-
-        <div className="block md:hidden px-6">
-          {bookingData && bookingData.length > 0 ? (
+        <div className="block md:hidden mp-mlist">
+          {loading ? (
+            Array(4)
+              .fill(0)
+              .map((_, i) => (
+                <div key={i} className="mp-mcard">
+                  <Skeleton active paragraph={{ rows: 3 }} />
+                </div>
+              ))
+          ) : bookingData.length ? (
             bookingData.map((b) => (
-              <CommonCard
-                key={b?.id || b?._id}
-                item={b}
-                title={["car.make.name", "car.model.name"]}
-                fieldMap={{
-                  "guest.firstName": "Guest",
-                  totalPrice: "Total Price",
-                  status: "Status",
-                  startDateFormatted: "Start Date",
-                  endDateFormatted: "End Date",
-                }}
-                actionItems={[
-                  { key: "edit", label: <Button type="text">Update</Button> },
-                ]}
-                onActionClick={(info, item) => onActionClick(info, item)}
-                onCardClick={(record) => onRowClick(record)}
-              />
+              <div key={b.id} className="mp-mcard" onClick={() => onRowClick(b)}>
+                <div className="mp-mcard-head">
+                  <div className="mp-cell">
+                    <span className="mp-car-icon">
+                      <FaCar />
+                    </span>
+                    <div>
+                      <div className="mp-cell-main">
+                        {`${b.car?.make?.name || ""} ${b.car?.model?.name || ""}`.trim() || "Unknown car"}
+                      </div>
+                      <div className="mp-cell-sub">
+                        {shortDate(b.startDate)} → {shortDate(b.endDate)}
+                      </div>
+                    </div>
+                  </div>
+                  <RowMenu items={actionMenu(b)} record={b} onClick={onActionClick} />
+                </div>
+                <div className="mp-mcard-row">
+                  <span>Guest</span>
+                  <span>{`${b.guest?.firstName || ""} ${b.guest?.lastName || ""}`.trim() || "—"}</span>
+                </div>
+                <div className="mp-mcard-row">
+                  <span>Amount</span>
+                  <span className="mp-price">{b.totalPrice ? formatCurrency(b.totalPrice) : "—"}</span>
+                </div>
+                <div className="mp-mcard-row">
+                  <span>Status</span>
+                  <StatusPill status={b.status} />
+                </div>
+              </div>
             ))
           ) : (
-            <div className="p-6">No bookings found</div>
+            <EmptyState title="No bookings found" text="Try clearing the filters." />
           )}
-
           <div className="my-4 flex justify-center">
-            <Pagination
-              current={Number(page) || 1}
-              pageSize={Number(limit) || 10}
-              total={total}
-              onChange={handlePagination}
-              showSizeChanger
-            />
+            <Pagination current={currentPage} pageSize={pageSize} total={total} onChange={handlePagination} size="small" />
           </div>
         </div>
-      </div>
-    </div>
+      </TableCard>
+    </Page>
   );
 };
 

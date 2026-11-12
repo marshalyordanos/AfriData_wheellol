@@ -63,8 +63,12 @@ import ProfileDetails from "./views/profile/ProfileDetails";
 import ChangePassword from "./views/auth/ChangePassword";
 
 import CartypesList from "./views/cartypes/CartypesList";
+import LocationList from "./views/locations/LocationList";
 import { connectSocket } from "./redux/socketSlice";
 import ProfileContactInfo from "./views/ProfileContactInfo";
+import RentalRequestList from "./views/rental-requests/RentalRequestList";
+import RentalPaymentsPage from "./views/rental-requests/RentalPaymentsPage";
+import RentalRequestDetails from "./views/rental-requests/RentalRequestDetails";
 
 const LayoutRouting = () => {
   const dispatch = useDispatch();
@@ -166,7 +170,13 @@ const LayoutRouting = () => {
     { path: "cars", element: <CarsList /> },
     { path: "cars/details/:id", element: <CarsDetails /> },
     { path: "cartypes", element: <CartypesList /> },
+    { path: "locations", element: <LocationList /> },
     { path: "cars/:carId/insurance", element: <CarInsurancePage /> },
+    // Simple "car with driver" request flow
+    { path: "requests", element: <RentalRequestList /> },
+    { path: "requests/:id", element: <RentalRequestDetails /> },
+    { path: "request-payments", element: <RentalPaymentsPage /> },
+    // Old self-service booking flow (hidden from the sidebar for now)
     { path: "bookings", element: <BookingList /> },
     { path: "bookings/:id", element: <BookingDetails /> },
     { path: "payments", element: <PaymentList /> },

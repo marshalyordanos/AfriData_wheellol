@@ -2,7 +2,30 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonTable from "../../components/commons/CommonTable";
 import CarInsurancePage from "./CarInsurancePage";
-import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  CarOutlined,
+  SafetyCertificateOutlined,
+} from "@ant-design/icons";
+import {
+  Page,
+  PageHeader,
+  Btn,
+  ReloadBtn,
+  StatsStrip,
+  TableCard,
+  StatusPill,
+  ActivePill,
+  TwoLine,
+  RowMenu,
+  actionColumn,
+  EmptyState,
+  prettyStatus,
+} from "../../components/modern/ModernUI";
+import { shortDate, shortTime } from "../../utils/dateFormat";
 import api from "../../api/api";
 import {
   Button,
@@ -82,7 +105,6 @@ const CarsList = () => {
   const carpage = useSelector(carsPage);
   const carlimit = useSelector(carsLimit);
   const userData = useSelector(selectCurrentUser);
-  console.log("userData:: ", userData);
 
   // console.log("userData===========: ", userData);
   const role = userData?.user?.role?.name || userData?.role?.name;
@@ -103,7 +125,6 @@ const CarsList = () => {
     return [searchParams.get("page") || 1, searchParams.get("limit") || 10];
   };
 
-  console.log("userData: ", userData);
   useEffect(() => {
     const [page, limit] = getPaginationInfo();
     dispatch(updateCarsState({ page, limit }));
@@ -350,13 +371,21 @@ const CarsList = () => {
   };
 
   const items = [
-    { key: "edit", label: <Button type="text">Edit</Button> },
-    { key: "delete", label: <Button type="text">Delete</Button> },
-    { key: "insurance", label: <Button type="text">Insurance</Button> },
+    { key: "view", icon: <EyeOutlined />, label: "View details" },
+    { key: "edit", icon: <EditOutlined />, label: "Edit car" },
+    { key: "insurance", icon: <SafetyCertificateOutlined />, label: "Insurance" },
+    { type: "divider" },
+    { key: "delete", icon: <DeleteOutlined />, label: "Delete", danger: true },
   ];
+
+  const openDetails = (record) => {
+    const id = record?.id || record?._id;
+    if (id) navigate(`/dash/cars/details/${id}`, { state: record });
+  };
 
   const onActionClick = ({ key, domEvent }, record) => {
     domEvent?.stopPropagation();
+    if (key === "view") openDetails(record);
     if (key === "edit") {
       setCarId(record?.id || record?._id);
       setIsModalOpen(true);
@@ -365,138 +394,110 @@ const CarsList = () => {
       setDeleteTarget(record);
       setIsDeleteModalOpen(true);
     }
-    if (key === "insurance") {
-      navigate(`/dash/cars/${record?.id || record?._id}/insurance`);
-    }
+    if (key === "insurance") navigate(`/dash/cars/${record?.id || record?._id}/insurance`);
   };
+
+  const carTitle = (r) =>
+    `${r.make?.name || ""} ${findNameById(models, r.modelId || r.model?.id) !== "-" ? findNameById(models, r.modelId || r.model?.id) : r.model?.name || ""}`.trim() || "Unnamed car";
 
   const columns = [
     {
-      title: "Action",
-      dataIndex: "action",
-      width: 60,
-      render: (_, record) => (
-        <Dropdown
-          menu={{ items, onClick: (value) => onActionClick(value, record) }}
-          trigger={["click"]}
-          placement="bottomLeft"
-        >
-          <Button
-            type="text"
-            icon={<MoreOutlined style={{ fontSize: 20 }} />}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </Dropdown>
+      title: "Car",
+      dataIndex: "make",
+      render: (_, r) => (
+        <div className="mp-cell">
+          {Array.isArray(r.photos) && r.photos[0] ? (
+            <span onClick={(e) => e.stopPropagation()}>
+              <Image
+                width={64}
+                height={46}
+                style={{ objectFit: "cover", borderRadius: 9, border: "1px solid #eceef2" }}
+                src={r.photos[0]}
+                preview={{ src: r.photos[0] }}
+                alt={carTitle(r)}
+              />
+            </span>
+          ) : (
+            <span className="mp-thumb is-wide" style={{ width: 64, height: 46 }}>
+              <CarOutlined />
+            </span>
+          )}
+          <div className="min-w-0">
+            <div className="mp-cell-main">{carTitle(r)}</div>
+            <div className="mp-cell-sub">
+              {[r.year, r.licensePlate].filter(Boolean).join(" · ") || "—"}
+            </div>
+          </div>
+        </div>
       ),
     },
     {
-      title: "Image",
-      dataIndex: "photos",
-      render: (_, record) => {
-        console.log(record);
-        const imagesArr = Array.isArray(record.photos) ? record.photos : [];
-        const first = imagesArr[0];
-        if (!first) return null;
-        return (
-          <Image
-            width={80}
-            style={{ objectFit: "cover", maxHeight: 50 }}
-            src={first}
-            preview={{ src: first }}
-            alt={record.make?.name || record.model?.name || "car image"}
-            onClick={(e) => e.stopPropagation()}
-          />
-        );
-      },
-    },
-    {
-      title: "Car Type",
+      title: "Type",
       dataIndex: "carType",
-      render: (_, record) => record.carType?.name || "-",
+      render: (_, r) => (r.carType?.name ? <StatusPill tone="gray">{r.carType.name}</StatusPill> : <span className="mp-muted">—</span>),
     },
     {
-      title: "Brand",
-      dataIndex: "make",
-      render: (_, record) => record.make?.name || "-",
+      title: "Specs",
+      key: "specs",
+      render: (_, r) => (
+        <TwoLine
+          main={r.seatingCapacity && r.seatingCapacity !== "-" ? `${r.seatingCapacity} seats` : "—"}
+          sub={[r.transmission && prettyStatus(r.transmission), r.fuelType && prettyStatus(r.fuelType), r.ecoFriendly && prettyStatus(r.ecoFriendly)]
+            .filter(Boolean)
+            .join(" · ")}
+        />
+      ),
     },
     {
-      title: "Model",
-      dataIndex: "modelId",
-      render: (modelId, record) =>
-        findNameById(models, modelId || record.model?.id),
+      title: "Color",
+      dataIndex: "color",
+      render: (c) =>
+        c ? (
+          <span className="mp-chip">
+            <span className="mp-dot" style={{ background: String(c).toLowerCase(), border: "1px solid #e2e6ec", width: 10, height: 10 }} />
+            {c}
+          </span>
+        ) : (
+          <span className="mp-muted">—</span>
+        ),
     },
-    { title: "Year", dataIndex: "year" },
-    {
-      title: "Rental Price / Day",
-      dataIndex: "rentalPricePerDay",
-      render: (price, record) =>
-        price || price === 0
-          ? record.rentalPricePerDayFormatted || formatCurrency(price)
-          : "-",
-    },
-    {
-      title: "Active",
-      dataIndex: "isActive",
-      render: (val) =>
-        val ? <Tag color="green">Active</Tag> : <Tag color="red">Inactive</Tag>,
-    },
-    {
-      title: "Details",
-      key: "details",
-      render: (_, record) => {
-        const id = record._id || record.id;
-        return (
-          <Button
-            type="link"
-            style={{ color: "var(--color-primary)" }}
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/dash/cars/details/${id}`, { state: record });
-            }}
-          >
-            View
-          </Button>
-        );
-      },
-    },
+    // Price is negotiated per booking request — column hidden for now
     // {
-    //   title: "Reviews",
-    //   key: "reviews",
-    //   render: (_, record) => {
-    //     const id = record._id || record.id;
-    //     return (
-    //       <Button
-    //         type="link"
-    //         onClick={(e) => {
-    //           e.stopPropagation();
-    //           navigate(`/dash/cars/reviews/${id}`, { state: record });
-    //         }}
-    //       >
-    //         View Reviews
-    //       </Button>
-    //     );
-    //   },
+    //   title: "Rental Price / Day",
+    //   dataIndex: "rentalPricePerDay",
+    //   render: (price, record) =>
+    //     price || price === 0 ? record.rentalPricePerDayFormatted || formatCurrency(price) : "-",
     // },
+    {
+      title: "Status",
+      dataIndex: "isActive",
+      render: (val) => <ActivePill active={val} />,
+    },
+    {
+      title: "Added",
+      dataIndex: "createdAt",
+      render: (d) => <TwoLine main={shortDate(d)} sub={shortTime(d)} />,
+    },
+    actionColumn((_, r) => <RowMenu items={items} record={r} onClick={onActionClick} />),
   ];
 
+  const eco = (k) => carSummary?.byEco?.find((i) => i.ecoFriendly === k)?.count ?? 0;
+  const activeCount = filteredCars.filter((c) => c.isActive).length;
+  const nameOf = (list, id) => list.find((x) => (x.id || x.name) === id)?.name || id;
+
   return (
-    <div className="p-6">
-      {/* ✅ Modal for Create / Edit */}
+    <Page>
       {isModalOpen && (
         <CommonModal
           width={1000}
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
+          title={carId ? "Edit car" : "Add a car"}
         >
-          <CarsEdit
-            carId={carId}
-            setIsModalOpen={setIsModalOpen}
-            refreshData={searchData}
-          />
+          <CarsEdit carId={carId} setIsModalOpen={setIsModalOpen} refreshData={searchData} />
         </CommonModal>
       )}
 
-      {/* Delete Modal */}
       {isDeleteModalOpen && (
         <CommonDeleteModal
           setIsModalOpen={setIsDeleteModalOpen}
@@ -504,207 +505,139 @@ const CarsList = () => {
           loading={loading}
           isModalOpen={isDeleteModalOpen}
         >
-          <h1 className="text-2xl text-center font-semibold mb-2">
-            Are you sure?
-          </h1>
-          <p className="text-center text-gray-600">
-            This will permanently delete{" "}
-            <strong>
-              {deleteTarget?.model?.name || deleteTarget?.id || "this car"}
-            </strong>
-            .
-          </p>
+          This will permanently delete <strong>{deleteTarget ? carTitle(deleteTarget) : "this car"}</strong>.
         </CommonDeleteModal>
       )}
 
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {/* Booking Cards */}
+      <PageHeader
+        eyebrow="Operations"
+        title="Fleet"
+        subtitle="Every car on the platform, with its type, specs and status."
+        actions={
+          <>
+            <ReloadBtn onClick={handleReload} loading={loading} />
+            {/* Admin adds the cars in the request flow — was: role == "HOST" */}
+            {Boolean(userData) && (
+              <Btn
+                variant="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setCarId("");
+                  setIsModalOpen(true);
+                }}
+              >
+                Add car
+              </Btn>
+            )}
+          </>
+        }
+      />
 
-        {/* Total Cars */}
-        <SummaryCard
-          title="Total Cars"
-          value={carSummary?.totalCars ?? 0}
-          Icon={FaCar}
-          iconBgColor="bg-indigo-100"
-          iconColor="text-indigo-500"
-          description="Available cars"
-        />
+      <StatsStrip
+        items={[
+          { label: "Total cars", value: carSummary?.totalCars ?? total ?? 0, note: "Listed on the platform", color: "#09234c" },
+          { label: "Active", value: activeCount, note: "On this page", color: "#059669" },
+          { label: "Inactive", value: filteredCars.length - activeCount, note: "On this page", color: "#94a3b8" },
+          { label: "Electric", value: eco("ELECTRIC"), note: "Fully electric", color: "#0284c7" },
+          { label: "Hybrid", value: eco("HYBRID"), note: "Hybrid engines", color: "#d97706" },
+        ]}
+      />
 
-        {/* Electric Cars */}
-        <SummaryCard
-          title="Electric Cars"
-          value={
-            carSummary?.byEco?.find((item) => item.ecoFriendly === "ELECTRIC")
-              ?.count ?? 0
-          }
-          Icon={FaBolt}
-          iconBgColor="bg-green-100"
-          iconColor="text-green-500"
-          description="Electric cars available"
-        />
-
-        {/* Hybrid Cars */}
-        <SummaryCard
-          title="Hybrid Cars"
-          value={
-            carSummary?.byEco?.find((item) => item.ecoFriendly === "HYBRID")
-              ?.count ?? 0
-          }
-          Icon={FaLeaf}
-          iconBgColor="bg-yellow-100"
-          iconColor="text-yellow-500"
-          description="Hybrid cars available"
-        />
-      </div>
-      {/* ✅ Header with Add Car */}
-      <div className="flex flex-col border-b border-gray-300 pb-4 mb-4">
-        <div className="flex flex-wrap items-center gap-3 mb-3">
-          <Input
-            placeholder="Search"
-            value={searchText}
-            onChange={searchHandler}
-            allowClear
-            className="rounded-lg py-2 drop-shadow-sm w-52"
+      <TableCard
+        search={{ value: searchText, onChange: searchHandler, placeholder: "Search make, model or plate" }}
+        filters={
+          <>
+            <Select
+              placeholder="Brand"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              className={`mp-filter ${selectedBrand ? "is-on" : ""}`}
+              style={{ width: 170 }}
+              value={selectedBrand}
+              onChange={(val) => setSelectedBrand(val ?? null)}
+              options={brands.map((b) => ({ value: b.id, label: b.name }))}
+            />
+            <Select
+              placeholder="Model"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              className={`mp-filter ${selectedModel ? "is-on" : ""}`}
+              style={{ width: 170 }}
+              value={selectedModel}
+              onChange={(val) => setSelectedModel(val ?? null)}
+              options={filteredModels.map((m) => ({ value: m.id || m.name, label: m.name }))}
+            />
+            <Select
+              placeholder="Type"
+              allowClear
+              className={`mp-filter ${selectedCarType ? "is-on" : ""}`}
+              style={{ width: 150 }}
+              value={selectedCarType}
+              onChange={(val) => setSelectedCarType(val ?? null)}
+              options={filteredCarType.map((m) => ({ value: m.id || m.name, label: m.name }))}
+            />
+          </>
+        }
+        chips={[
+          selectedBrand && { k: "Brand", v: nameOf(brands, selectedBrand), onRemove: () => setSelectedBrand(null) },
+          selectedModel && { k: "Model", v: nameOf(filteredModels, selectedModel), onRemove: () => setSelectedModel(null) },
+          selectedCarType && { k: "Type", v: nameOf(filteredCarType, selectedCarType), onRemove: () => setSelectedCarType(null) },
+        ]}
+        onClearChips={handleReload}
+        resultLabel={`${total || 0} cars`}
+      >
+        <div className="hidden md:block">
+          <CommonTable
+            data={filteredCars}
+            columns={columns}
+            setSelection={setCarsSelection}
+            handlePagination={handlePagination}
+            total={total}
+            loadding={loading}
+            tableChange={tableChange}
+            currentPage={Number(carpage) || 1}
+            pageSize={Number(carlimit) || 10}
+            rowKey={(r) => r?.id || r?._id}
+            unit="cars"
+            onRow={(record) => ({ onClick: () => openDetails(record), style: { cursor: "pointer" } })}
           />
-
-          <Select
-            placeholder="Filter by Brand"
-            allowClear
-            style={{ width: 180 }}
-            value={selectedBrand}
-            onChange={(val) => setSelectedBrand(val)}
-          >
-            {brands.map((b) => (
-              <Select.Option key={b.id} value={b.id}>
-                {b.name}
-              </Select.Option>
-            ))}
-          </Select>
-
-          <Select
-            placeholder="Filter by Model"
-            allowClear
-            style={{ width: 180 }}
-            value={selectedModel}
-            onChange={(val) => setSelectedModel(val)}
-          >
-            {filteredModels.map((m) => (
-              <Select.Option key={m.id || m.name} value={m.id || m.name}>
-                {m.name}
-              </Select.Option>
-            ))}
-          </Select>
-
-          <Select
-            placeholder="Filter by Type"
-            allowClear
-            style={{ width: 180 }}
-            value={selectedCarType}
-            onChange={(val) => setSelectedCarType(val)}
-          >
-            {filteredCarType.map((m) => (
-              <Select.Option key={m.id || m.name} value={m.id || m.name}>
-                {m.name}
-              </Select.Option>
-            ))}
-          </Select>
-
-          <Button
-            onClick={handleReload}
-            icon={<ReloadOutlined />}
-            className="border border-[var(--color-primary)] text-[var(--color-primary)]"
-          >
-            Reset Filters
-          </Button>
-          {role == "HOST" && (
-            <button
-              className="px-4  py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded ml-auto"
-              onClick={() => {
-                setCarId("");
-                setIsModalOpen(true);
-              }}
-            >
-              <span className="flex flex-row items-center">
-                <PlusOutlined />
-                <p className="pl-2 m-0">Add New Car</p>
-              </span>
-            </button>
-          )}
         </div>
-      </div>
 
-      {/* Cars Table */}
-      <div className="hidden md:block">
-        <CommonTable
-          // rowSelectionType="checkbox"
-          data={filteredCars}
-          columns={columns}
-          setSelection={setCarsSelection}
-          handlePagination={handlePagination}
-          total={total}
-          loadding={loading}
-          tableChange={tableChange}
-          currentPage={Number(carpage)}
-          pageSize={Number(carlimit)}
-          rowKey={(r) => r?.id || r?._id}
-          onRow={(record) => ({
-            onClick: () => {
-              const id = record?.id || record?._id;
-              if (id) navigate(`/dash/cars/details/${id}`, { state: record });
-            },
-            style: { cursor: "pointer" },
-          })}
-        />
-      </div>
-
-      <div className="block md:hidden">
-        {loading &&
-          Array(5)
-            .fill(1)
-            .map((_) => <CommonCardSkeleton />)}
-        {filteredCars.length > 0 &&
-          filteredCars.map((car) => {
-            return (
+        <div className="block md:hidden mp-mlist">
+          {loading && Array(4).fill(1).map((_, i) => <CommonCardSkeleton key={i} />)}
+          {!loading && filteredCars.length === 0 && <EmptyState title="No cars found" text="Try clearing the filters." />}
+          {!loading &&
+            filteredCars.map((car) => (
               <CommonCard
+                key={car.id || car._id}
                 item={car}
                 fieldMap={{
-                  // route_schedule: "Vist name",
                   year: "Year",
                   color: "Color",
-                  licensePlate: "License Plate",
-                  vin: "Vin",
-                  "model.name": "Model",
-                  rentalPricePerDayFormatted: "Price",
-                  createdAtFormatted: "Created At",
+                  licensePlate: "Licence plate",
+                  "carType.name": "Type",
+                  isActive: "Status",
                 }}
                 title={["make.name", "model.name"]}
                 actionItems={items}
                 onActionClick={onActionClick}
-                onCardClick={(item) => {
-                  navigate(`/dash/cars/details/${item.id}`, { state: item });
-                }}
+                onCardClick={openDetails}
               />
-            );
-          })}
-
-        {/* {carpage} */}
-        <div className="flex justify-center my-5">
-          <Pagination
-            pageSizeOptions={["10", "20"]}
-            onChange={(current, pageSize) => {
-              handlePagination(current, pageSize);
-            }}
-            onShowSizeChange={(current, pageSize) => {
-              handlePagination(current, pageSize);
-            }}
-            current={Number(carpage)}
-            pageSize={Number(carlimit)}
-            // defaultCurrent={}
-            total={total}
-          />
+            ))}
+          <div className="flex justify-center my-5">
+            <Pagination
+              onChange={(current, pageSize) => handlePagination(current, pageSize)}
+              current={Number(carpage) || 1}
+              pageSize={Number(carlimit) || 10}
+              total={total}
+              size="small"
+            />
+          </div>
         </div>
-      </div>
-    </div>
+      </TableCard>
+    </Page>
   );
 };
 

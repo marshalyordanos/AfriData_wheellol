@@ -1,7 +1,27 @@
 // src/views/brands/BrandsList.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Button, Dropdown, Input, message } from "antd";
-import { MoreOutlined, ReloadOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  AppstoreOutlined,
+} from "@ant-design/icons";
+import {
+  Page,
+  PageHeader,
+  Btn,
+  ReloadBtn,
+  StatsStrip,
+  TableCard,
+  ThumbCell,
+  ActivePill,
+  TwoLine,
+  RowMenu,
+  actionColumn,
+  EmptyState,
+} from "../../components/modern/ModernUI";
+import { shortDate, shortTime } from "../../utils/dateFormat";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
@@ -136,81 +156,80 @@ const BrandsList = () => {
   };
 
   const dropdownItems = [
-    { key: "edit", label: <Button type="text">Edit</Button> },
-    { key: "delete", label: <Button type="text">Delete</Button> },
+    { key: "edit", icon: <EditOutlined />, label: "Edit brand" },
+    { key: "models", icon: <AppstoreOutlined />, label: "View models" },
+    { type: "divider" },
+    { key: "delete", icon: <DeleteOutlined />, label: "Delete", danger: true },
   ];
+
+  const onMenu = (info, record) => {
+    if (info.key === "models") {
+      info?.domEvent?.stopPropagation();
+      return navigate(`/dash/brands/${record.id}/models`);
+    }
+    handleMenuClick(info, record);
+  };
 
   const columns = [
     {
-      title: "Action",
-      dataIndex: "action",
-      width: 60,
-      render: (_, record) => (
-        <Dropdown
-          menu={{
-            items: dropdownItems,
-            onClick: (info) => handleMenuClick(info, record),
-          }}
-          trigger={["click"]}
-          placement="bottomLeft"
-          getPopupContainer={() => document.body}
-        >
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-            onClick={(e) => {
-              e.stopPropagation();
-              setModeID(record.id);
-            }}
-          />
-        </Dropdown>
-      ),
-    },
-    {
-      title: "Name",
+      title: "Brand",
       dataIndex: "name",
       key: "name",
-    },
-    {
-      title: "Active",
-      dataIndex: "isActive",
-      key: "isActive",
-      render: (val) => (val ? "Yes" : "No"),
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => (date ? formatReadableDate(date) : "N/A"),
+      render: (name, r) => (
+        <ThumbCell
+          img={r.logo || r.logoUrl || r.image}
+          icon={<span style={{ fontWeight: 700, fontSize: 14 }}>{String(name || "?").charAt(0).toUpperCase()}</span>}
+          title={name}
+          sub={r.country || (r.models ? `${r.models.length} model${r.models.length === 1 ? "" : "s"}` : null)}
+        />
+      ),
     },
     {
       title: "Models",
       key: "models",
       render: (_, record) =>
         record.models && record.models.length > 0 ? (
-          <Button
-            type="link"
+          <button
+            className="mp-link"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/dash/brands/${record.id}/models`);
             }}
           >
-            View Models ({record.models.length})
-          </Button>
+            View {record.models.length} model{record.models.length === 1 ? "" : "s"} →
+          </button>
         ) : (
-          <span>No models</span>
+          <span className="mp-muted">No models yet</span>
         ),
     },
+    {
+      title: "Status",
+      dataIndex: "isActive",
+      key: "isActive",
+      render: (val) => <ActivePill active={val} />,
+    },
+    {
+      title: "Created",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (d) => <TwoLine main={shortDate(d)} sub={shortTime(d)} />,
+    },
+    actionColumn((_, r) => <RowMenu items={dropdownItems} record={r} onClick={onMenu} />),
   ];
 
+  const onPage = (page, pageSize) => {
+    setSearchParams({ page, limit: pageSize });
+    dispatch(updateBrandsState({ page, limit: pageSize }));
+    searchData();
+  };
+
+  const activeCount = brandsData.filter((b) => b.isActive).length;
+  const modelCount = brandsData.reduce((a, b) => a + (b.models?.length || 0), 0);
+
   return (
-    <div className="p-6">
+    <Page>
       {isModalOpen && (
-        <CommonModal
-          width={600}
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
-        >
+        <CommonModal width={600} isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} title={modeID ? "Edit brand" : "New brand"}>
           <BrandsEdit
             searchData={() => searchData()}
             mode={modeID}
@@ -228,112 +247,84 @@ const BrandsList = () => {
           handleDelete={handleDelete}
           loading={loading}
         >
-          <h1 className="text-2xl">Are you sure?</h1>
+          The brand will be removed permanently. Brands that still have models can't be deleted.
         </CommonDeleteModal>
       )}
 
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
-        <div className="flex flex-col md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Brands</h1>
-          <div className="flex gap-3 flex-wrap items-center">
-            <Input
-              placeholder="Search Brands"
-              value={reduxSearchText}
-              onChange={searchHandler}
-              className=" drop-shadow-sm rounded-r py-2"
-              allowClear
-              style={{ width: "100%" }}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center mt-4 md:mt-0">
-          <button
-            onClick={handleReload}
-            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4"
-          >
-            <ReloadOutlined />
-          </button>
-
-          <button
-            className="px-4 py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded"
-            onClick={() => {
-              setModeID("");
-              setIsModalOpen(true);
-            }}
-          >
-            <span className="flex flex-row items-center gap-2">
-              <PlusOutlined /> <span>Add Brand</span>
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <div className="hidden md:block">
-        <CommonTable
-          data={brandsData}
-          columns={columns}
-          rowKey="id"
-          setSelection={setBrandsSelection}
-          onRow={(record) => ({
-            onClick: (e) => {
-              navigate(`/dash/brands/${record.id}`, { state: record });
-            },
-          })}
-          handlePagination={(page, pageSize) => {
-            setSearchParams({ page, limit: pageSize });
-            dispatch(updateBrandsState({ page, limit: pageSize }));
-            searchData();
-          }}
-          total={total}
-          loadding={loading}
-          currentPage={Number(reduxPage) || Number(getPaginationInfo()[0])}
-          pageSize={Number(reduxLimit) || Number(getPaginationInfo()[1])}
-        />
-      </div>
-
-      {/* Mobile cards */}
-      <div className="block md:hidden px-4">
-        {loading &&
-          Array(5)
-            .fill(1)
-            .map((_) => <CommonCardSkeleton />)}
-        {brandsData && brandsData.length > 0 ? (
-          brandsData.map((b) => (
-            <CommonCard
-              key={b.id}
-              item={b}
-              title={["name", "name"]}
-              fieldMap={{
-                createdAtFormatted: "Created At",
-                isActive: "Active",
+      <PageHeader
+        eyebrow="Catalog"
+        title="Brands"
+        subtitle="Car makes available when hosts list a vehicle."
+        actions={
+          <>
+            <ReloadBtn onClick={handleReload} loading={loading} />
+            <Btn
+              variant="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setModeID("");
+                setIsModalOpen(true);
               }}
-              actionItems={dropdownItems}
-              onActionClick={(info, item) => handleMenuClick(info, item)}
-              onCardClick={(record) =>
-                navigate(`/dash/brands/${record.id}`, { state: record })
-              }
-            />
-          ))
-        ) : (
-          <div className="p-6">No brands found</div>
-        )}
+            >
+              Add brand
+            </Btn>
+          </>
+        }
+      />
 
-        <div className="my-4 flex justify-center">
-          <Pagination
-            current={getPaginationInfo()[0]}
-            pageSize={getPaginationInfo()[1]}
+      <StatsStrip
+        items={[
+          { label: "Total brands", value: total || 0, note: "In the catalog", color: "#09234c" },
+          { label: "Active", value: activeCount, note: "On this page", color: "#059669" },
+          { label: "Inactive", value: brandsData.length - activeCount, note: "On this page", color: "#94a3b8" },
+          { label: "Models", value: modelCount, note: "Across brands on this page", color: "#fc6b38" },
+        ]}
+      />
+
+      <TableCard
+        search={{ value: reduxSearchText, onChange: searchHandler, placeholder: "Search brands" }}
+        resultLabel={`${total || 0} brands`}
+      >
+        <div className="hidden md:block">
+          <CommonTable
+            data={brandsData}
+            columns={columns}
+            rowKey="id"
+            setSelection={setBrandsSelection}
+            onRow={(record) => ({
+              onClick: () => navigate(`/dash/brands/${record.id}`, { state: record }),
+              style: { cursor: "pointer" },
+            })}
+            handlePagination={onPage}
             total={total}
-            onChange={(p, ps) => {
-              setSearchParams({ page: p, limit: ps });
-              dispatch(updateBrandsState({ page: p, limit: ps }));
-              searchData();
-            }}
-            showSizeChanger
+            loadding={loading}
+            currentPage={Number(reduxPage) || Number(getPaginationInfo()[0])}
+            pageSize={Number(reduxLimit) || Number(getPaginationInfo()[1])}
+            unit="brands"
           />
         </div>
-      </div>
-    </div>
+
+        <div className="block md:hidden mp-mlist">
+          {loading && Array(4).fill(1).map((_, i) => <CommonCardSkeleton key={i} />)}
+          {!loading && brandsData.length > 0
+            ? brandsData.map((b) => (
+                <CommonCard
+                  key={b.id}
+                  item={b}
+                  title="name"
+                  fieldMap={{ createdAtFormatted: "Created", isActive: "Status" }}
+                  actionItems={dropdownItems}
+                  onActionClick={(info, item) => onMenu(info, item)}
+                  onCardClick={(record) => navigate(`/dash/brands/${record.id}`, { state: record })}
+                />
+              ))
+            : !loading && <EmptyState title="No brands found" />}
+          <div className="my-4 flex justify-center">
+            <Pagination current={getPaginationInfo()[0]} pageSize={getPaginationInfo()[1]} total={total} onChange={onPage} size="small" />
+          </div>
+        </div>
+      </TableCard>
+    </Page>
   );
 };
 

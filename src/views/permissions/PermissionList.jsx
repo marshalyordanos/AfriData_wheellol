@@ -11,12 +11,22 @@ import {
   Empty,
 } from "antd";
 import styled from "styled-components";
+import { PlusOutlined, EditOutlined, DeleteOutlined, LockOutlined } from "@ant-design/icons";
+import CommonTable from "../../components/commons/CommonTable";
 import {
-  PlusOutlined,
-  ReloadOutlined,
-  EditOutlined,
-  DeleteOutlined,
-} from "@ant-design/icons";
+  Page,
+  PageHeader,
+  Btn,
+  ReloadBtn,
+  StatsStrip,
+  TableCard,
+  ThumbCell,
+  TwoLine,
+  RowMenu,
+  actionColumn,
+  EmptyState,
+} from "../../components/modern/ModernUI";
+import { shortDate, shortTime } from "../../utils/dateFormat";
 import PermissionService from "./PermissionService";
 import { formatReadableDate } from "../../utils/date_currency_formatter";
 import CommonCard from "../../components/commons/CommonCard";
@@ -150,51 +160,57 @@ const PermissionList = () => {
     }
   };
 
+  const rowItems = [
+    { key: "edit", icon: <EditOutlined />, label: "Edit permission" },
+    { type: "divider" },
+    { key: "delete", icon: <DeleteOutlined />, label: "Delete", danger: true },
+  ];
+  const onMenu = ({ key }, record) => {
+    if (key === "edit") openEdit(record);
+    if (key === "delete")
+      Modal.confirm({
+        title: "Delete this permission?",
+        content: "Roles that use it will lose access to this resource.",
+        okText: "Delete",
+        okButtonProps: { danger: true },
+        onOk: () => handleDelete(record.id),
+      });
+  };
+
   const columns = [
-    {
-      title: "#",
-      dataIndex: "index",
-      width: 60,
-      render: (_, __, i) => ((page || 1) - 1) * (limit || PAGE_SIZE) + i + 1,
-    },
     {
       title: "Resource",
       dataIndex: "resource",
-      render: (text) => <span className="font-medium">{text}</span>,
+      render: (text, r) => (
+        <ThumbCell
+          icon={<LockOutlined />}
+          title={text}
+          sub={`#${((page || 1) - 1) * (limit || PAGE_SIZE) + data.indexOf(r) + 1}`}
+        />
+      ),
     },
     {
       title: "Description",
       dataIndex: "description",
-      render: (text) => <span>{text || "-"}</span>,
+      render: (text) =>
+        text ? (
+          <span style={{ whiteSpace: "normal", display: "block", maxWidth: 420, color: "var(--c-text-2)" }}>{text}</span>
+        ) : (
+          <span className="mp-muted">No description</span>
+        ),
     },
     {
-      title: "Created At",
-      dataIndex: "createdAtFormatted",
-      render: (text) => <span>{text || "-"}</span>,
+      title: "Created",
+      dataIndex: "createdAt",
+      render: (d) => <TwoLine main={shortDate(d)} sub={shortTime(d)} />,
     },
-    {
-      title: "Actions",
-      dataIndex: "actions",
-      align: "right",
-      width: 140,
-      render: (_, record) => (
-        <Space>
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => openEdit(record)}
-          />
-          <Popconfirm
-            title="Delete permission?"
-            okButtonProps={{ danger: true }}
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Button size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      ),
-    },
+    actionColumn((_, r) => <RowMenu items={rowItems} record={r} onClick={onMenu} />),
   ];
+
+  const onPage = (p, ps) => {
+    dispatch(updateVehicleTypesState({ page: p, limit: ps }));
+    fetchList({ page: p, limit: ps, searchText });
+  };
 
   useEffect(() => {
     dispatch(
@@ -204,144 +220,98 @@ const PermissionList = () => {
   }, [page, limit, searchText]);
 
   return (
-    <div className="p-4">
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-end borde border-rose-700 mb-5">
-        <div className="flex flex-col p-6 md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Permissions</h1>
-          <div className="flex">
-            <Input
-              onChange={handleSearchChange}
-              placeholder="Search"
-              value={searchText}
-              allowClear
-              className="drop-shadow-sm rounded-lg py-2"
-            />
-          </div>
-        </div>
-        <div className="flex ml-6 mb-6 md:mr-6">
-          <button
-            onClick={() => {
-              dispatch(updateVehicleTypesState({ page: 1 }));
-              fetchList({ page: 1, limit: limit || PAGE_SIZE, searchText });
-            }}
-            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
-          >
-            <ReloadOutlined className="boder boder-red-900" />
-          </button>
-          <button
-            className="px-4 py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded"
-            onClick={openCreate}
-          >
-            <span className="flex flex-row">
-              <PlusOutlined />
-              <p className="pl-2">Add Permission</p>
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <div className="hidden md:block">
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={data}
-          loading={loading}
-          pagination={{
-            current: page,
-            pageSize: limit || PAGE_SIZE,
-            total,
-            onChange: (p, ps) => {
-              dispatch(updateVehicleTypesState({ page: p, limit: ps }));
-              fetchList({ page: p, limit: ps, searchText });
-            },
-            showTotal: (t) => `${t} item${t === 1 ? "" : "s"}`,
-            showSizeChanger: true,
-            pageSizeOptions: ["10", "20"],
-            showQuickJumper: false,
-          }}
-          locale={{
-            emptyText: loading ? "" : <Empty description="No permissions" />,
-          }}
-        />
-      </div>
-
-      {/* Mobile card list */}
-      <div className="block md:hidden px-4">
-        {loading &&
-          Array(5)
-            .fill(1)
-            .map((_) => <CommonCardSkeleton />)}
-        {data && data.length > 0 ? (
-          data.map((rec) => (
-            <CommonCard
-              key={rec.id}
-              item={rec}
-              title={"resource"}
-              fieldMap={{
-                description: "Description",
-                createdAtFormatted: "Created At",
-              }}
-              actionItems={[
-                { key: "edit", label: <Button type="text">Edit</Button> },
-                { key: "delete", label: <Button type="text">Delete</Button> },
-              ]}
-              onActionClick={(info, item) => {
-                if (!info) return;
-                const key = info.key;
-                if (key === "edit") {
-                  openEdit(item);
-                }
-                if (key === "delete") {
-                  Modal.confirm({
-                    title: "Delete permission?",
-                    okButtonProps: { danger: true },
-                    onOk: () => handleDelete(item.id),
-                  });
-                }
+    <Page>
+      <PageHeader
+        eyebrow="Access & settings"
+        title="Permissions"
+        subtitle="Resources that roles can be granted access to."
+        actions={
+          <>
+            <ReloadBtn
+              loading={loading}
+              onClick={() => {
+                dispatch(updateVehicleTypesState({ page: 1 }));
+                fetchList({ page: 1, limit: limit || PAGE_SIZE, searchText });
               }}
             />
-          ))
-        ) : (
-          <div className="p-6">No permissions found</div>
-        )}
+            <Btn variant="primary" icon={<PlusOutlined />} onClick={openCreate}>
+              Add permission
+            </Btn>
+          </>
+        }
+      />
 
-        <div className="my-4 flex justify-center">
-          <Pagination
-            current={page}
-            pageSize={limit || PAGE_SIZE}
+      <StatsStrip
+        items={[
+          { label: "Total permissions", value: total || 0, note: "Defined resources", color: "#09234c" },
+          { label: "With description", value: data.filter((d) => d.description).length, note: "On this page", color: "#059669" },
+          { label: "Missing description", value: data.filter((d) => !d.description).length, note: "On this page", color: "#d97706" },
+        ]}
+      />
+
+      <TableCard
+        search={{ value: searchText, onChange: handleSearchChange, placeholder: "Search resources" }}
+        resultLabel={`${total || 0} permissions`}
+      >
+        <div className="hidden md:block">
+          <CommonTable
+            rowKey="id"
+            columns={columns}
+            data={data}
+            loadding={loading}
             total={total}
-            onChange={(p, ps) => {
-              dispatch(updateVehicleTypesState({ page: p, limit: ps }));
-              fetchList({ page: p, limit: ps, searchText });
-            }}
-            showSizeChanger
+            currentPage={page || 1}
+            pageSize={limit || PAGE_SIZE}
+            handlePagination={onPage}
+            unit="permissions"
           />
         </div>
-      </div>
+
+        <div className="block md:hidden mp-mlist">
+          {loading && Array(4).fill(1).map((_, i) => <CommonCardSkeleton key={i} />)}
+          {!loading && data && data.length > 0
+            ? data.map((rec) => (
+                <CommonCard
+                  key={rec.id}
+                  item={rec}
+                  title="resource"
+                  fieldMap={{ description: "Description", createdAtFormatted: "Created" }}
+                  actionItems={rowItems}
+                  onActionClick={(info, item) => info && onMenu(info, item)}
+                />
+              ))
+            : !loading && <EmptyState title="No permissions found" />}
+          <div className="my-4 flex justify-center">
+            <Pagination current={page} pageSize={limit || PAGE_SIZE} total={total} onChange={onPage} size="small" />
+          </div>
+        </div>
+      </TableCard>
 
       <Modal
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
-        title={editing ? "Edit Permission" : "Create Permission"}
-        okText={editing ? "Save" : "Create"}
+        title={editing ? "Edit permission" : "New permission"}
+        okText={editing ? "Save changes" : "Create permission"}
         onOk={handleSubmit}
         confirmLoading={submitting}
         destroyOnClose
+        className="mp-modal"
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical" preserve={false} style={{ marginTop: 12 }}>
           <Form.Item
             name="resource"
             label="Resource"
+            extra="The name used in code, e.g. Booking, Car, Role."
             rules={[{ required: true, message: "Resource is required" }]}
           >
             <Input placeholder="e.g. Role" autoFocus />
           </Form.Item>
           <Form.Item name="description" label="Description">
-            <Input placeholder="Description" />
+            <Input.TextArea rows={3} placeholder="What does this permission allow?" />
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </Page>
   );
 };
 

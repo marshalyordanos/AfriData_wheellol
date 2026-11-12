@@ -22,6 +22,8 @@
     "dayjs": "^1.11.10",
     "framer-motion": "^12.23.12",
     "i18next": "^25.5.2",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
     "lodash": "^4.17.21",
     "lucide-react": "^0.454.0",
     "mapbox-gl": "^3.7.0",

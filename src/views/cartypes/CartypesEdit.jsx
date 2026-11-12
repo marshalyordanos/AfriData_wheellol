@@ -149,7 +149,7 @@ const CartypesEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         {/* <Form.Item name={['cartype', 'active']} label="active" >

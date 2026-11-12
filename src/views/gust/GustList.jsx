@@ -1,6 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button, Dropdown, Input, message, Tag, Pagination } from "antd";
-import { PlusOutlined, ReloadOutlined, MoreOutlined } from "@ant-design/icons";
+import { Button, Dropdown, Input, message, Tag, Pagination, Modal, Typography } from "antd";
+import { StopOutlined, CheckCircleOutlined, KeyOutlined } from "@ant-design/icons";
+import {
+  Page,
+  PageHeader,
+  ReloadBtn,
+  StatsStrip,
+  TableCard,
+  PersonCell,
+  ActivePill,
+  TwoLine,
+  RowMenu,
+  actionColumn,
+  EmptyState,
+  prettyStatus,
+} from "../../components/modern/ModernUI";
+import { shortDate, shortTime } from "../../utils/dateFormat";
 import CommonTable from "../../components/commons/CommonTable";
 import CommonCard from "../../components/commons/CommonCard";
 import GustService from "./GustService";
@@ -84,196 +99,211 @@ const GustList = () => {
     }
   };
 
+  const handleToggleVerified = async (id, isVerified) => {
+    try {
+      setLoading(true);
+      const res = await GustService.setPhoneVerified(id, !isVerified);
+      message.success(res?.message || "Verification status updated");
+      await searchData();
+    } catch (err) {
+      message.error(
+        err?.response?.data?.message || err?.message || "Failed to update verification status"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reset password -> backend generates a temp password (e.g. QWERTY23).
+  // It stays visible in the list until the guest sets their own password.
+  const handleResetPassword = (record) => {
+    const id = record._id || record.id;
+    const name = [record.firstName, record.lastName].filter(Boolean).join(" ");
+    Modal.confirm({
+      title: "Reset password?",
+      content: `A new temporary password will be generated for ${name || "this guest"}. Their current password will stop working.`,
+      okText: "Reset password",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          const res = await GustService.resetPassword(id);
+          const temp = res?.data?.tempPassword;
+          await searchData();
+          Modal.success({
+            title: "Password reset",
+            content: (
+              <div>
+                <p style={{ marginBottom: 8 }}>Share this temporary password with the guest:</p>
+                <Typography.Text copyable code style={{ fontSize: 18, letterSpacing: 2 }}>
+                  {temp}
+                </Typography.Text>
+                <p className="mp-muted" style={{ marginTop: 8, fontSize: 12 }}>
+                  It stays visible in the guest list until they change it.
+                </p>
+              </div>
+            ),
+          });
+        } catch (err) {
+          message.error(err?.response?.data?.message || err?.message || "Failed to reset password");
+        }
+      },
+    });
+  };
+
   const handleReload = () => searchData();
 
   const items = (record) => [
     {
       key: "toggleActive",
-      label: (
-        <Button type="text">
-          {record.isActive ? "Deactivate" : "Activate"}
-        </Button>
-      ),
+      icon: record.isActive ? <StopOutlined /> : <CheckCircleOutlined />,
+      label: record.isActive ? "Deactivate guest" : "Activate guest",
+      danger: !!record.isActive,
+    },
+    {
+      key: "toggleVerified",
+      icon: <CheckCircleOutlined />,
+      label: record.isVerified ? "Mark phone unverified" : "Verify phone",
+    },
+    {
+      key: "resetPassword",
+      icon: <KeyOutlined />,
+      label: "Reset password",
     },
   ];
 
   const onClick = ({ key }, record) => {
     const id = record._id || record.id;
     setModeID(id);
-    if (key === "toggleActive") {
-      handleToggleActive(id, record.isActive);
-      return;
-    }
+    if (key === "toggleActive") handleToggleActive(id, record.isActive);
+    if (key === "toggleVerified") handleToggleVerified(id, record.isVerified);
+    if (key === "resetPassword") handleResetPassword(record);
   };
 
   const columns = [
     {
-      title: " ",
-      dataIndex: "action",
-      render: (_, record) => (
-        <Dropdown
-          menu={{
-            items: items(record),
-            onClick: (value) => onClick(value, record),
-          }}
-          trigger={["click"]}
-          placement="bottomLeft"
-        >
-          <Button
-            type="text"
-            icon={<MoreOutlined style={{ fontSize: 20 }} />}
-            onClick={() => setModeID(record._id)}
-          />
-        </Dropdown>
-      ),
+      title: "Guest",
+      dataIndex: "firstName",
+      key: "firstName",
+      sorter: true,
+      render: (_, r) => <PersonCell person={r} sub={r.email} />,
     },
-    ...["firstName", "lastName", "email", "phone", "role", "active"].map(
-      (key) => ({
-        title:
-          key === "role" || key === "active" ? (
-            <span style={{ fontWeight: "normal", color: "inherit" }}>
-              {key.charAt(0).toUpperCase() +
-                key.slice(1).replace(/([A-Z])/g, " $1")}
-            </span>
-          ) : (
-            key.charAt(0).toUpperCase() +
-            key.slice(1).replace(/([A-Z])/g, " $1")
-          ),
-        dataIndex: key,
-        key,
-        sorter: !(key === "role" || key === "active"),
-        onCell: (record) => ({
-          // onClick: () => {
-          //   const id = record?._id || record?.id;
-          //   if (id) navigate(`/dash/gust/details/${id}`, { state: record });
-          // },
-          style: { cursor: "pointer" },
-        }),
-        render:
-          key === "role"
-            ? (role) => role?.name || "-"
-            : key === "active"
-            ? (_, record) =>
-                record?.isActive ? (
-                  <Tag color="green">Active</Tag>
-                ) : (
-                  <Tag color="red">Inactive</Tag>
-                )
-            : undefined,
-      })
-    ),
-    // {
-    //   title: "Reviews",
-    //   dataIndex: "reviews",
-    //   key: "reviews",
-    //   render: (_, record) => (
-    //     <Button
-    //       type="link"
-    //       onClick={(e) => {
-    //         e.stopPropagation();
-    //         const id = record._id || record.id;
-    //         if (id) navigate(`/dash/gust/reviews/${id}`);
-    //       }}
-    //     >
-    //       View Reviews
-    //     </Button>
-    //   ),
-    // },
+    {
+      title: "Phone",
+      dataIndex: "phone",
+      key: "phone",
+      sorter: true,
+      render: (v) => v || <span className="mp-muted">—</span>,
+    },
+    {
+      title: "Role",
+      dataIndex: "role",
+      key: "role",
+      render: (role) => (role?.name ? prettyStatus(role.name) : <span className="mp-muted">—</span>),
+    },
+    {
+      title: "Status",
+      dataIndex: "isActive",
+      key: "isActive",
+      render: (v) => <ActivePill active={v} />,
+    },
+    {
+      title: "Phone verified",
+      dataIndex: "isVerified",
+      key: "isVerified",
+      render: (v) => <ActivePill active={!!v} on="Verified" off="Unverified" />,
+    },
+    {
+      title: "Temp password",
+      dataIndex: "tempPassword",
+      key: "tempPassword",
+      render: (v) =>
+        v ? (
+          <Typography.Text copyable code>{v}</Typography.Text>
+        ) : (
+          <span className="mp-muted">—</span>
+        ),
+    },
+    {
+      title: "Joined",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      sorter: true,
+      render: (d) => <TwoLine main={shortDate(d)} sub={shortTime(d)} />,
+    },
+    actionColumn((_, r) => <RowMenu items={items(r)} record={r} onClick={onClick} />),
   ];
 
-  // handle table sort and pagination
   const tableChange = (pagination, filters, sorter) => {
-    let sortField = sorter.field;
-    let sortOrder = sorter.order;
-    let order =
-      sortOrder === "ascend"
-        ? "asc"
-        : sortOrder === "descend"
-        ? "desc"
-        : undefined;
-    const [page, limit] = [pagination.current, pagination.pageSize];
-    dispatch(updateGustState({ page, limit, sort: sortField, order }));
+    const sortField = sorter.field;
+    const order = sorter.order === "ascend" ? "asc" : sorter.order === "descend" ? "desc" : undefined;
+    dispatch(updateGustState({ sort: sortField, order }));
     searchData();
   };
 
+  const activeCount = (gustData || []).filter((g) => g.isActive).length;
+
   return (
-    <div>
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
-        <div className="flex flex-col md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Guests</h1>
-          <Input
-            onChange={searchHandler}
-            placeholder="Search"
-            value={searchText}
-            allowClear
-            className="drop-shadow-sm py-2"
-          />
-        </div>
-        <div className="flex items-center mt-4 md:mt-0">
-          <button
-            onClick={handleReload}
-            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
-          >
-            <ReloadOutlined />
-          </button>
-        </div>
-      </div>
+    <Page>
+      <PageHeader
+        eyebrow="People"
+        title="Guests"
+        subtitle="Everyone who rents cars on Wheellol."
+        actions={<ReloadBtn onClick={handleReload} loading={loading} />}
+      />
 
-      <div className="hidden md:block">
-        <CommonTable
-          // rowSelectionType={"checkbox"}
-          data={gustData}
-          columns={columns}
-          total={total}
-          loadding={loading}
-          rowKey={(r) => r?._id}
-          tableChange={tableChange}
-          handlePagination={handlePagination}
-          currentPage={parseInt(page) || 1}
-          pageSize={parseInt(limit) || 10}
-        />
-      </div>
+      <StatsStrip
+        items={[
+          { label: "Total guests", value: total || 0, note: "Registered accounts", color: "#09234c" },
+          { label: "Active", value: activeCount, note: "On this page", color: "#059669" },
+          { label: "Inactive", value: (gustData || []).length - activeCount, note: "On this page", color: "#94a3b8" },
+        ]}
+      />
 
-      <div className="block md:hidden px-6">
-        {loading &&
-          Array(5)
-            .fill(1)
-            .map((_) => <CommonCardSkeleton />)}
-        {gustData && gustData.length > 0 ? (
-          gustData.map((g) => (
-            <CommonCard
-              key={g?._id || g?.id}
-              item={g}
-              title={["firstName", "lastName"]}
-              fieldMap={{
-                email: "Email",
-                phone: "Phone",
-                "role.name": "Role",
-                // isActive: "Active",
-              }}
-              actionItems={items(g)}
-              onActionClick={(info, item) => onClick(info, item)}
-              // onCardClick={(record) => {
-              //   const id = record?._id || record?.id;
-              //   if (id) navigate(`/dash/gust/details/${id}`, { state: record });
-              // }}
-            />
-          ))
-        ) : (
-          <div className="p-6">No guests found</div>
-        )}
-
-        <div className="my-4 flex justify-center">
-          <Pagination
-            current={parseInt(page) || 1}
-            pageSize={parseInt(limit) || 10}
+      <TableCard
+        search={{ value: searchText, onChange: searchHandler, placeholder: "Search by name, email or phone" }}
+        resultLabel={`${total || 0} guests`}
+      >
+        <div className="hidden md:block">
+          <CommonTable
+            data={gustData}
+            columns={columns}
             total={total}
-            onChange={handlePagination}
-            showSizeChanger
+            loadding={loading}
+            rowKey={(r) => r?._id || r?.id}
+            tableChange={tableChange}
+            handlePagination={handlePagination}
+            currentPage={parseInt(page) || 1}
+            pageSize={parseInt(limit) || 10}
+            unit="guests"
           />
         </div>
-      </div>
-    </div>
+
+        <div className="block md:hidden mp-mlist">
+          {loading && Array(4).fill(1).map((_, i) => <CommonCardSkeleton key={i} />)}
+          {!loading && gustData && gustData.length > 0
+            ? gustData.map((g) => (
+                <CommonCard
+                  key={g?._id || g?.id}
+                  item={g}
+                  title={["firstName", "lastName"]}
+                  fieldMap={{ email: "Email", phone: "Phone", isActive: "Status", ...(g?.tempPassword ? { tempPassword: "Temp password" } : {}) }}
+                  actionItems={items(g)}
+                  onActionClick={(info, item) => onClick(info, item)}
+                />
+              ))
+            : !loading && <EmptyState title="No guests found" text="Try a different search." />}
+          <div className="my-4 flex justify-center">
+            <Pagination
+              current={parseInt(page) || 1}
+              pageSize={parseInt(limit) || 10}
+              total={total}
+              onChange={handlePagination}
+              size="small"
+            />
+          </div>
+        </div>
+      </TableCard>
+    </Page>
   );
 };
 

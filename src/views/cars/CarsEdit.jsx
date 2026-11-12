@@ -362,10 +362,11 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
       </Row>
 
       <Title level={4} style={{ marginTop: 24 }}>
-        Pricing & Capacity
+        Capacity
       </Title>
 
       <Row gutter={16}>
+        {/* Price is negotiated per booking request — hidden for now
         <Col xs={24} md={12}>
           <Form.Item
             label="Rental Price / Day"
@@ -374,7 +375,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
           >
             <Input type="number" placeholder="Rental Price per Day" />
           </Form.Item>
-        </Col>
+        </Col> */}
         <Col xs={24} md={12}>
           <Form.Item
             label="Seating Capacity"
@@ -423,7 +424,15 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
           listType="picture-card"
           fileList={photoList}
           onPreview={handlePreview}
-          onChange={({ fileList }) => setPhotoList(fileList)}
+          multiple
+          accept="image/*"
+          onChange={({ fileList }) => {
+            // allow picking several at once, but keep max 6 photos
+            if (fileList.length > 6) {
+              message.warning({ key: "photo-limit", content: "Maximum 6 photos — extra files were skipped." });
+            }
+            setPhotoList(fileList.slice(0, 6));
+          }}
           beforeUpload={beforeUpload}
         >
           {photoList.length >= 6 ? null : (
@@ -527,17 +536,12 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         </Upload>
       </Form.Item>
 
-      <div style={{ display: "flex", gap: "10px", marginTop: 20 }}>
+      <div className="mp-form-actions">
         <Button onClick={() => setIsModalOpen?.(false)}>Cancel</Button>
         <Button
           loading={submitLoading}
           type="primary"
           htmlType="submit"
-          style={{
-            background: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            color: "#fff",
-          }}
         >
           {isEdit ? "Update" : "Create"}
         </Button>

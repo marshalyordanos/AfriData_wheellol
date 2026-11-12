@@ -141,6 +141,7 @@ const CarDetails = () => {
           <Descriptions.Item label="Mileage">
             {car.mileage || "-"}
           </Descriptions.Item>
+          {/* Price is negotiated per booking request — hidden for now
           <Descriptions.Item label="Rental Price / Day">
             {car.rentalPricePerDay ||
             car.dailyRate ||
@@ -153,7 +154,7 @@ const CarDetails = () => {
           </Descriptions.Item>
           <Descriptions.Item label="Long Term Discount (%)">
             {car.longTermDiscount || "-"}
-          </Descriptions.Item>
+          </Descriptions.Item> */}
           <Descriptions.Item label="Seating Capacity">
             {car.seatingCapacity || "-"}
           </Descriptions.Item>

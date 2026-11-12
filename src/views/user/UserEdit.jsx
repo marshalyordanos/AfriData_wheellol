@@ -148,7 +148,7 @@ const UserEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -161,7 +161,7 @@ const UserEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -174,7 +174,7 @@ const UserEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -187,7 +187,7 @@ const UserEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -200,7 +200,7 @@ const UserEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -213,7 +213,7 @@ const UserEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -226,7 +226,7 @@ const UserEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <ButtonStyle>

@@ -12,13 +12,23 @@ import {
   Spin,
   Pagination,
 } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined, CarOutlined } from "@ant-design/icons";
+import CommonTable from "../../components/commons/CommonTable";
 import {
-  PlusOutlined,
-  ReloadOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  CarOutlined,
-} from "@ant-design/icons";
+  Page,
+  PageHeader,
+  Btn,
+  ReloadBtn,
+  StatsStrip,
+  TableCard,
+  ThumbCell,
+  ActivePill,
+  TwoLine,
+  RowMenu,
+  actionColumn,
+  EmptyState,
+} from "../../components/modern/ModernUI";
+import { shortDate, shortTime } from "../../utils/dateFormat";
 import { useNavigate } from "react-router-dom";
 import CommonModal from "../../components/commons/CommonModel";
 import CommonDeleteModal from "../../components/commons/CommonDeleteModal";
@@ -41,6 +51,7 @@ const CarModelsList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const navigate = useNavigate();
+  const [brandTab, setBrandTab] = useState("__all");
 
   // ============================
   // FETCH MODELS
@@ -148,131 +159,138 @@ const CarModelsList = () => {
   // ============================
   // RENDER
   // ============================
+  const brandNames = Object.keys(grouped).sort();
+  const visible = models.filter((m) => {
+    const q = searchText.toLowerCase();
+    const okSearch =
+      !q || m.name?.toLowerCase().includes(q) || (m.make?.name || "").toLowerCase().includes(q);
+    const okBrand = brandTab === "__all" || (m.make?.name || "Unknown Brand") === brandTab;
+    return okSearch && okBrand;
+  });
+  const activeCount = models.filter((m) => m.isActive).length;
+
+  const rowItems = [
+    { key: "edit", icon: <EditOutlined />, label: "Edit model" },
+    { type: "divider" },
+    { key: "delete", icon: <DeleteOutlined />, label: "Delete", danger: true },
+  ];
+  const onMenu = ({ key }, model) => {
+    if (key === "edit") openEdit(model);
+    if (key === "delete") confirmDelete(model);
+  };
+
+  const columns = [
+    {
+      title: "Model",
+      dataIndex: "name",
+      render: (name, m) => (
+        <ThumbCell icon={<CarOutlined />} title={name} sub={m.year || m.make?.name} />
+      ),
+    },
+    {
+      title: "Brand",
+      dataIndex: ["make", "name"],
+      render: (v) => v || <span className="mp-muted">—</span>,
+    },
+    {
+      title: "Status",
+      dataIndex: "isActive",
+      render: (v) => <ActivePill active={v} />,
+    },
+    {
+      title: "Created",
+      dataIndex: "createdAt",
+      render: (d) => <TwoLine main={shortDate(d)} sub={shortTime(d)} />,
+    },
+    actionColumn((_, m) => <RowMenu items={rowItems} record={m} onClick={onMenu} />),
+  ];
+
   return (
-    <div className="p-1">
-      {/* Header controls */}
-      <div className="flex md:flex-row flex-col justify-between items-start md:items-end p-6">
-        <div className="flex flex-col md:w-[45vw] w-full">
-          <h1 className="text-2xl font-bold pb-4">Car Models</h1>
-          <Input
-            placeholder="Search model or brand"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onPressEnter={() => fetchData(1, limit)}
-            allowClear
-            className="drop-shadow-sm py-2"
+    <Page>
+      <PageHeader
+        eyebrow="Catalog"
+        title="Car models"
+        subtitle="Models grouped by brand. Hosts choose from these when listing a car."
+        actions={
+          <>
+            <ReloadBtn onClick={() => fetchData(page, limit)} loading={loading} />
+            <Btn variant="primary" icon={<PlusOutlined />} onClick={openCreate}>
+              Add model
+            </Btn>
+          </>
+        }
+      />
+
+      <StatsStrip
+        items={[
+          { label: "Total models", value: total || 0, note: "In the catalog", color: "#09234c" },
+          { label: "Brands", value: brandNames.length, note: "On this page", color: "#fc6b38" },
+          { label: "Active", value: activeCount, note: "On this page", color: "#059669" },
+          { label: "Inactive", value: models.length - activeCount, note: "On this page", color: "#94a3b8" },
+        ]}
+      />
+
+      <TableCard
+        tabs={[
+          { key: "__all", label: "All brands", count: models.length },
+          ...brandNames.map((b) => ({ key: b, label: b, count: grouped[b].length })),
+        ]}
+        activeTab={brandTab}
+        onTabChange={setBrandTab}
+        search={{
+          value: searchText,
+          onChange: (e) => setSearchText(e.target.value),
+          onPressEnter: () => fetchData(1, limit),
+          placeholder: "Search model or brand — press Enter to search all",
+        }}
+        resultLabel={`${visible.length} shown`}
+      >
+        <div className="hidden md:block">
+          <CommonTable
+            data={visible}
+            columns={columns}
+            rowKey="id"
+            loadding={loading}
+            total={total}
+            currentPage={page}
+            pageSize={limit}
+            handlePagination={(p, ps) => fetchData(p, ps)}
+            unit="models"
+            onRow={(m) => ({ onClick: () => navigate(`/dash/models/${m.id}`), style: { cursor: "pointer" } })}
           />
         </div>
-
-        <div className="flex items-center mt-4 md:mt-0">
-          <button
-            onClick={() => fetchData(page, limit)}
-            className="border border-[var(--color-primary)] py-2 px-3 text-[var(--color-primary)] rounded mr-4 flex items-center justify-center"
-          >
-            <ReloadOutlined />
-          </button>
-
-          <button
-            className="px-4 py-2 border border-[var(--color-primary)] text-white bg-[var(--color-primary)] rounded"
-            onClick={openCreate}
-          >
-            <PlusOutlined className="mr-2" /> Add Model
-          </button>
-        </div>
-      </div>
-
-      {/* Loader */}
-      {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <Spin size="large" />
-        </div>
-      ) : Object.keys(filteredGroups).length === 0 ? (
-        <Empty description="No car models found" />
-      ) : (
-        <>
-          <Collapse
-            bordered={false}
-            expandIconPosition="end"
-            style={{ background: "transparent" }}
-            defaultActiveKey={Object.keys(filteredGroups)} // ✅ all expanded initially
-          >
-            {Object.entries(filteredGroups).map(([brand, models]) => (
-              <Panel
-                header={
-                  <div className="flex items-center gap-2">
-                    <CarOutlined />
-                    <span className="font-semibold text-base">{brand}</span>
-                    <Tag color="blue">{models.length}</Tag>
-                  </div>
-                }
-                key={brand}
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {models.map((model) => (
-                    <Card
-                      key={model.id}
-                      hoverable
-                      title={model.name}
-                      size="small"
-                      onClick={() => navigate(`/dash/models/${model.id}`)}
-                      extra={
-                        <div
-                          className="flex gap-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Tooltip title="Edit">
-                            <Button
-                              icon={<EditOutlined />}
-                              type="text"
-                              onClick={() => openEdit(model)}
-                            />
-                          </Tooltip>
-                          <Tooltip title="Delete">
-                            <Button
-                              icon={<DeleteOutlined />}
-                              type="text"
-                              danger
-                              onClick={() => confirmDelete(model)} // ✅ show confirmation
-                            />
-                          </Tooltip>
-                        </div>
-                      }
-                    >
-                      <p>
-                        <strong>Brand:</strong> {model.make?.name || "N/A"}
-                      </p>
-                      <p>
-                        <strong>Status:</strong>{" "}
-                        <Tag color={model.isActive ? "green" : "red"}>
-                          {model.isActive ? "Active" : "Inactive"}
-                        </Tag>
-                      </p>
-                    </Card>
-                  ))}
+        <div className="block md:hidden mp-mlist">
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <Spin />
+            </div>
+          ) : visible.length === 0 ? (
+            <EmptyState title="No car models found" />
+          ) : (
+            visible.map((m) => (
+              <div key={m.id} className="mp-mcard" onClick={() => navigate(`/dash/models/${m.id}`)}>
+                <div className="mp-mcard-head">
+                  <ThumbCell icon={<CarOutlined />} title={m.name} sub={m.make?.name} />
+                  <RowMenu items={rowItems} record={m} onClick={onMenu} />
                 </div>
-              </Panel>
-            ))}
-          </Collapse>
-
-          {/* Pagination */}
-          <div className="flex justify-end mt-6 mb-8">
-            <Pagination
-              current={page}
-              pageSize={limit}
-              total={total}
-              showSizeChanger
-              pageSizeOptions={["10", "20"]}
-              onChange={(p, ps) => fetchData(p, ps)}
-            />
+                <div className="mp-mcard-row">
+                  <span>Status</span>
+                  <ActivePill active={m.isActive} />
+                </div>
+              </div>
+            ))
+          )}
+          <div className="my-4 flex justify-center">
+            <Pagination current={page} pageSize={limit} total={total} onChange={(p, ps) => fetchData(p, ps)} size="small" />
           </div>
-        </>
-      )}
+        </div>
+      </TableCard>
 
-      {/* Add / Edit Modal (mounted immediately like HostList) */}
       {openModalFor === "edit" || openModalFor === "add" ? (
         <CommonModal
           width={700}
           isModalOpen={true}
+          title={openModalFor === "add" ? "New model" : "Edit model"}
           setIsModalOpen={(open) => {
             if (!open) {
               setOpenModalFor(null);
@@ -307,7 +325,6 @@ const CarModelsList = () => {
         </CommonModal>
       ) : null}
 
-      {/* ✅ Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <CommonDeleteModal
           isModalOpen={isDeleteModalOpen}
@@ -315,16 +332,10 @@ const CarModelsList = () => {
           handleDelete={handleDelete}
           loading={loading}
         >
-          <h1 className="text-2xl text-center font-semibold mb-2">
-            Are you sure?
-          </h1>
-          <p className="text-center text-gray-600">
-            This will permanently delete{" "}
-            <strong>{deleteTarget?.name || "this model"}</strong>.
-          </p>
+          This will permanently delete <strong>{deleteTarget?.name || "this model"}</strong>.
         </CommonDeleteModal>
       )}
-    </div>
+    </Page>
   );
 };
 

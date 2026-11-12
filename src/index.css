@@ -2,59 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-input {
-  /* border: 1px solid lightgray !important; */
-}
-
 * {
-  font-family: "DM Sans", sans-serif;
+  font-family: "DM Sans", system-ui, sans-serif;
   font-optical-sizing: auto;
-  font-weight: normal;
-  font-style: normal;
 }
 
-.ant-select-selector {
-  /* border: 1px solid rgb(161, 161, 161) !important; */
-  padding: 19px !important;
-  min-width: 200px;
-  height: 38px !important;
-  background-color: #f4f4f5 !important;
+html,
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
 }
 
 .horizontal-dots {
   transform: rotate(90deg);
-  color: #000;
+  color: var(--c-text);
   font-size: 24px !important;
 }
-
-/* .ant-switch-inner-unchecked,.ant-switch-inner-checked{
-    background-color: gray !important;
-}
-
-&.ant-switch-checked .ant-switch-handle {
-    background-color: red !important;
-  } */
 
 .card-content {
   font-weight: bold !important;
 }
 
-.ant-select-selector > *,
-.ant-select-selector {
-  /* border: 2px solid red !important; */
-  min-width: 130px !important;
-  padding: 5px !important;
-  margin: 0 !important;
-}
-
 :root {
-  --color-primary: #fc6b38;
+  --color-primary: var(--c-primary);
+  --color-primary-strong: var(--c-primary-strong);
   --color-secondary: #09234c;
 }
-
-/* 
-background-color: var(--color-primary);
-color: var(--color-secondary);
- */
-
-

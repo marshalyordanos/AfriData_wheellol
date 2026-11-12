@@ -138,11 +138,11 @@ const CarModelsEdit = ({
 
           {/* Logo field removed */}
 
-          <div style={{ display: "flex", gap: "10px", marginTop: 20 }}>
+          <div className="mp-form-actions">
             <button
               type="button"
               onClick={() => setIsModalOpen && setIsModalOpen(false)}
-              className="px-4 py-2 border rounded"
+              className="mp-btn"
             >
               Cancel
             </button>
@@ -150,12 +150,7 @@ const CarModelsEdit = ({
               type="primary"
               htmlType="submit"
               loading={submitLoading}
-              className="px-4 py-2 rounded"
-              style={{
-                background: "var(--color-primary)",
-                borderColor: "var(--color-primary)",
-                color: "white",
-              }}
+             
             >
               {isEdit ? "Update" : "Create"}
             </Button>

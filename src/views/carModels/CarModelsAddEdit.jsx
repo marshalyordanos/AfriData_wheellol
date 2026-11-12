@@ -228,7 +228,7 @@ const BrandsEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item
@@ -241,7 +241,7 @@ const BrandsEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         <Form.Item name={["brand", "is_featured"]} label="is_featured">
@@ -262,7 +262,7 @@ const BrandsEdit = ({
             },
           ]}
         >
-          <Input className="border-gray-400 py-2" />
+          <Input />
         </Form.Item>
 
         {brandsData2.length > 0 && (
