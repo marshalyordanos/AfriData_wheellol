@@ -79,6 +79,8 @@ model User {
   email           String?        @unique
   phone           String         @unique
   password        String?
+  // Plain temporary password set by an admin reset; shown in admin until the user changes it
+  tempPassword    String?
   profilePhoto    String?
   isVerified      Boolean        @default(false)
   createdAt       DateTime       @default(now())
@@ -114,6 +116,11 @@ model User {
 
   hostPenalties HostPenalty[] // back-relation for HostPenalty.host
   payouts       Payout[]
+
+  // Simple "car with driver" request flow
+  rentalRequests         RentalRequest[] @relation("CustomerRentalRequests")
+  recordedRentalPayments RentalPayment[] @relation("RecordedRentalPayments")
+  rentalRequestEvents    RentalRequestEvent[] @relation("RentalRequestEventActor")
 }
 
 model RefreshToken {
@@ -240,8 +247,8 @@ model Car {
   mileage      Int
 
   // Pricing & Discounts                                                                                                          
-  dailyRate         Float
-  rentalPricePerDay Float
+  dailyRate         Float  @default(0)
+  rentalPricePerDay Float  @default(0) // not used by the request flow; price is negotiated per request
   longTermDiscount  Float? // discount for long rentals
 
   // Capacity & Features                                                                                                                                                                                
@@ -278,12 +285,13 @@ model Car {
   // Relations
   photos         String[]
   reviews        Review[]
-  wishlistUsers  GuestProfile[] @relation("Wishlist")
+  wishlistUsers  GuestProfile[]     @relation("Wishlist")
   insurancePlans CarInsurance[]
   disputes       Dispute[]
   bookings       Booking[]
-  emailVerified  Boolean        @default(false)
-  phoneVerified  Boolean        @default(false)
+  rentalRequests RentalRequestCar[]
+  emailVerified  Boolean            @default(false)
+  phoneVerified  Boolean            @default(false)
 }
 
 enum InsuranceType {
@@ -659,6 +667,7 @@ enum BookingStatus {
   CANCELLED_BY_ADMIN
   COMPLETED
 }
+
 model PlatformContactInfo {
   id String @id @default(cuid())
 
@@ -688,4 +697,130 @@ model PlatformContactInfo {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+///////////////////////////
+// RENTAL REQUEST (car with driver, negotiated price)
+///////////////////////////
+
+enum RentalRequestStatus {
+  PENDING // submitted by customer, not yet contacted
+  UNDER_NEGOTIATION // admin is in contact with owner / customer
+  APPROVED // price agreed
+  ACTIVE // vehicle handed over, trip in progress
+  COMPLETED
+  CANCELLED
+}
+
+enum RentalPaymentMethod {
+  CASH
+  TELEBIRR
+  CHAPA
+  BANK_TRANSFER
+  OTHER
+}
+
+model RentalRequest {
+  id           String  @id @default(cuid())
+  trackingCode String  @unique
+  customer     User?   @relation("CustomerRentalRequests", fields: [customerId], references: [id])
+  customerId   String?
+
+  // Contact details (copied from the account when the customer is signed in)
+  contactName  String
+  contactPhone String
+  contactEmail String?
+
+  // Trip details
+  pickupCity   String
+  destinations String[]
+  purpose      String
+  ruralAccess  Boolean  @default(false)
+  pickupDate   DateTime
+  days         Int
+  note         String?
+
+  // Back office
+  status     RentalRequestStatus @default(PENDING)
+  totalPrice Float? // set by admin after negotiation
+  adminNote  String?
+
+  cars     RentalRequestCar[]
+  payments RentalPayment[]
+  events   RentalRequestEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model RentalRequestCar {
+  id        String        @id @default(cuid())
+  request   RentalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestId String
+  car       Car           @relation(fields: [carId], references: [id])
+  carId     String
+
+  @@unique([requestId, carId])
+}
+
+model RentalPayment {
+  id           String              @id @default(cuid())
+  request      RentalRequest       @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestId    String
+  amount       Float
+  method       RentalPaymentMethod
+  reference    String? // receipt / transaction number
+  receiptUrl   String? // uploaded receipt image / pdf
+  note         String?
+  paidAt       DateTime            @default(now())
+  recordedBy   User?               @relation("RecordedRentalPayments", fields: [recordedById], references: [id])
+  recordedById String?
+  createdAt    DateTime            @default(now())
+
+  @@index([requestId])
+}
+
+// Audit trail: everything that happened to a request
+model RentalRequestEvent {
+  id        String        @id @default(cuid())
+  request   RentalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestId String
+  type      String // CREATED, STATUS_CHANGED, PRICE_CHANGED, NOTE_CHANGED, DATES_CHANGED, PAYMENT_ADDED, PAYMENT_REMOVED
+  message   String
+  details   Json? // e.g. { from, to }
+  actor     User?         @relation("RentalRequestEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorId   String?
+  createdAt DateTime      @default(now())
+
+  @@index([requestId, createdAt])
+}
+
+///////////////////////////
+// LOCATIONS (managed in admin → used by the request flow)
+///////////////////////////
+
+enum LocationType {
+  REGION // e.g. Afar, Amhara, Oromia
+  CITY_ADMINISTRATION // Addis Ababa, Dire Dawa
+  CITY // a town inside a region, e.g. Jijiga
+}
+
+model Location {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  nameAm    String? // Amharic name shown in the app when the language is Amharic
+  type      LocationType @default(REGION)
+  region    String? // parent region for a CITY, e.g. "Somali"
+  latitude  Float?
+  longitude Float?
+  isPickup  Boolean      @default(true) // customers can choose it as the pickup city
+  isActive  Boolean      @default(true)
+  sortOrder Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([isActive, sortOrder])
 }

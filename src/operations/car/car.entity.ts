@@ -69,10 +69,12 @@ export class CarDto {
   @IsInt()
   mileage: number;
 
-  @ApiProperty({ example: 45 })
+  // Price is optional: in the request flow the price is negotiated per request.
+  @ApiPropertyOptional({ example: 45 })
   @Type(() => Number)
+  @IsOptional()
   @IsNumber()
-  rentalPricePerDay: number;
+  rentalPricePerDay?: number;
 
   @ApiPropertyOptional({ example: 10 })
   @Type(() => Number)

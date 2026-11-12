@@ -280,6 +280,23 @@ export class UserMessageController {
 
   @UseGuards(permissionGuard.PermissionGuard)
   @CheckPermission('USER', PermissionActions.UPDATE)
+  @MessagePattern(PATTERNS.USER_SET_PHONE_VERIFIED)
+  async setPhoneVerified(
+    @Payload() payload: { id: string; data: HostVerifyDto },
+  ) {
+    try {
+      const user = await this.usecases.setPhoneVerified(
+        payload.id,
+        payload.data.isVerified,
+      );
+      return IResponse.success('User verification status updated', user);
+    } catch (error) {
+      handleCatch(error);
+    }
+  }
+
+  @UseGuards(permissionGuard.PermissionGuard)
+  @CheckPermission('USER', PermissionActions.UPDATE)
   @MessagePattern(PATTERNS.ACTIVE_DISACTIVE_USER)
   async activeOrDiactiveUser(
     @Payload() payload: { id: string; data: IsActiveDto },
@@ -290,6 +307,18 @@ export class UserMessageController {
         payload.data.isActive,
       );
       return IResponse.success(' Host is verified  successfully', user);
+    } catch (error) {
+      handleCatch(error);
+    }
+  }
+
+  @UseGuards(permissionGuard.PermissionGuard)
+  @CheckPermission('USER', PermissionActions.UPDATE)
+  @MessagePattern(PATTERNS.USER_ADMIN_RESET_PASSWORD)
+  async adminResetPassword(@Payload() payload: { id: string }) {
+    try {
+      const result = await this.usecases.adminResetPassword(payload.id);
+      return IResponse.success('Password reset successfully', result);
     } catch (error) {
       handleCatch(error);
     }

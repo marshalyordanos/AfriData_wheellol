@@ -48,7 +48,7 @@ export class CarRepository {
         mileage: data.mileage!,
         dailyRate: 0,
         location: data?.location,
-        rentalPricePerDay: data.rentalPricePerDay!,
+        rentalPricePerDay: data.rentalPricePerDay ?? 0,
         longTermDiscount: data.longTermDiscount ?? null,
         seatingCapacity: data.seatingCapacity!,
         mileageLimit: data.mileageLimit ?? null,
@@ -122,7 +122,12 @@ export class CarRepository {
         mileage: Number(data.mileage),
         dailyRate: Number(0),
         location: data?.location,
-        rentalPricePerDay: Number(data.rentalPricePerDay),
+        rentalPricePerDay:
+          data.rentalPricePerDay !== undefined &&
+          data.rentalPricePerDay !== null &&
+          (data.rentalPricePerDay as any) !== ''
+            ? Number(data.rentalPricePerDay)
+            : undefined,
         longTermDiscount: data.longTermDiscount
           ? Number(data.longTermDiscount)
           : null,

@@ -215,12 +215,28 @@ export class UserRepository {
     return hostProfile;
   });
 }
+  async setPhoneVerified(userId: string, isVerified: boolean): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isVerified },
+    });
+  }
+
   async activeOrDiactiveUser(userId: string, isActive: boolean): Promise<User> {
     return this.prisma.user.update({
       where: { id: userId },
       data: {
         isActive: isActive ?? undefined,
       },
+    });
+  }
+
+  // Admin reset: store hashed password + plain temp copy so admin can share it
+  async adminResetPassword(userId: string, tempPassword: string): Promise<User> {
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword, tempPassword },
     });
   }
 

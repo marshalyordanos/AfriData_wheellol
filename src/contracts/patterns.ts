@@ -28,6 +28,8 @@ export const PATTERNS = {
   USER_VERIFY_HOST_PROFILE: 'user.verifyHostProfile',
   CREATE_HOST_USER: 'user.host.create',
   ACTIVE_DISACTIVE_USER: 'user.active.disactive',
+  USER_SET_PHONE_VERIFIED: 'user.set.phone_verified',
+  USER_ADMIN_RESET_PASSWORD: 'user.admin.reset_password',
   USER_FIND_ME_BY_ID: 'user.find.me',
   USER_UPDATE_ME: 'user.update.me',
   DELETE_ACCOUNT: 'DELETE_ACCOUNT',
@@ -85,6 +87,13 @@ export const PATTERNS = {
   CAR_Type_FIND_ALL: 'carType.findAll',
   CAR_Type_UPDATE: 'carType.update',
   CAR_Type_DELETE: 'carType.delete',
+
+  // Locations (pickup cities / regions)
+  LOCATION_CREATE: 'location.create',
+  LOCATION_FIND_BY_ID: 'location.findById',
+  LOCATION_FIND_ALL: 'location.findAll',
+  LOCATION_UPDATE: 'location.update',
+  LOCATION_DELETE: 'location.delete',
 
   CAR_CREATE: 'car.create',
   CAR_UPDATE: 'car.update',
@@ -170,4 +179,15 @@ export const PATTERNS = {
   MESSAGE_NEW_EVENT: 'message.new', // emitted event for PUSH
 
   CHAPA_CALL_BACK: 'chapa.call.back',
+
+  // Simple "car with driver" request flow
+  RENTAL_REQUEST_CREATE: 'rentalRequest.create',
+  RENTAL_REQUEST_GET_MY: 'rentalRequest.getMy',
+  RENTAL_REQUEST_TRACK: 'rentalRequest.track',
+  RENTAL_REQUEST_GET_ALL: 'rentalRequest.getAll',
+  RENTAL_REQUEST_GET_BY_ID: 'rentalRequest.getById',
+  RENTAL_REQUEST_UPDATE: 'rentalRequest.update',
+  RENTAL_REQUEST_ADD_PAYMENT: 'rentalRequest.addPayment',
+  RENTAL_REQUEST_DELETE_PAYMENT: 'rentalRequest.deletePayment',
+  RENTAL_PAYMENT_LIST: 'rentalRequest.paymentList',
 } as const;

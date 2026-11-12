@@ -17,9 +17,19 @@ export class AuthRepository {
       include: { role: true },
     });
   }
+  // Ethiopian numbers can be stored as 09XXXXXXXX, 9XXXXXXXX, 2519XXXXXXXX or
+  // +2519XXXXXXXX (admin-created vs self-signup). Match any of them.
+  private phoneVariants(phone: string): string[] {
+    const clean = (phone ?? '').toString().trim().replace(/[^\d+]/g, '');
+    const m = clean.match(/^(?:\+?251|0)?([79]\d{8})$/);
+    if (!m) return [clean];
+    const core = m[1];
+    return [...new Set([clean, `+251${core}`, `251${core}`, `0${core}`, core])];
+  }
+
   async findByPhone(phone: string) {
-    return this.prisma.user.findUnique({
-      where: { phone },
+    return this.prisma.user.findFirst({
+      where: { phone: { in: this.phoneVariants(phone) } },
       include: {
         role: { include: { rolePermissions: true } },
         guestProfile: true,
@@ -150,7 +160,8 @@ export class AuthRepository {
   async updatePassword(userId: string, hashedPassword: string): Promise<void> {
     await this.prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword },
+      // user chose their own password -> drop any admin-issued temp password
+      data: { password: hashedPassword, tempPassword: null },
     });
   }
 

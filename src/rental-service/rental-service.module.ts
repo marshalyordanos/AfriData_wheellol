@@ -23,6 +23,9 @@ import { redisProvider } from '../notify-hub/redis/redis.provider';
 import { PaymentMessageController } from './payment/payment.controller';
 import { PaymentUseCasesImpl } from './payment/payment.usecase.impl';
 import { PaymentRepository } from './payment/payment.repository';
+import { RentalRequestMessageController } from './rental-request/rental-request.controller';
+import { RentalRequestUseCasesImpl } from './rental-request/rental-request.usecase.impl';
+import { RentalRequestRepository } from './rental-request/rental-request.repository';
 
 @Module({
   imports: [
@@ -40,6 +43,7 @@ import { PaymentRepository } from './payment/payment.repository';
     CancellationPolicyMessageController,
     MessageMessageController,
     PaymentMessageController,
+    RentalRequestMessageController,
   ],
 
   providers: [
@@ -58,6 +62,8 @@ import { PaymentRepository } from './payment/payment.repository';
     redisProvider,
     PaymentUseCasesImpl,
     PaymentRepository,
+    RentalRequestUseCasesImpl,
+    RentalRequestRepository,
   ],
   exports: [
     BookingUseCasesImp,

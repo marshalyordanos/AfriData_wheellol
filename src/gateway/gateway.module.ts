@@ -15,6 +15,8 @@ import { MessageGatewayController } from './message.gateway.controller';
 import { PaymentGatewayController } from './payment.gateway.controller';
 import { CarTypeGatewayController } from './car-type.gateway.controller';
 import { ConfigModule } from '@nestjs/config';
+import { RentalRequestGatewayController } from './rental-request.gateway.controller';
+import { LocationGatewayController } from './location.gateway.controller';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { ConfigModule } from '@nestjs/config';
     MessageGatewayController,
     PaymentGatewayController,
     CarTypeGatewayController,
+    RentalRequestGatewayController,
+    LocationGatewayController,
   ],
 })
 export class GatewayModule {}

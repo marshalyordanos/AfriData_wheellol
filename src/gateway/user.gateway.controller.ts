@@ -204,6 +204,32 @@ export class UserGatewayController {
     });
   }
 
+  // Admin: mark a user's phone as verified / unverified (skips the SMS OTP)
+  @Patch('update-verified-status/:id')
+  async setPhoneVerified(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() data: HostVerifyDto,
+  ) {
+    const authHeader = req.headers['authorization'] || null;
+
+    return this.usersClient.send(PATTERNS.USER_SET_PHONE_VERIFIED, {
+      headers: { authorization: authHeader },
+      id,
+      data,
+    });
+  }
+
+  @Patch('reset-password/:id')
+  async adminResetPassword(@Req() req, @Param('id') id: string) {
+    const authHeader = req.headers['authorization'] || null;
+
+    return this.usersClient.send(PATTERNS.USER_ADMIN_RESET_PASSWORD, {
+      headers: { authorization: authHeader },
+      id,
+    });
+  }
+
   @Get('me/:id')
   async findMe(@Req() req, @Param('id') id: string) {
     const authHeader = req.headers['authorization'] || null;

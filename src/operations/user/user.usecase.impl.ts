@@ -1,4 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { UserRepository } from './user.repository';
 import {
   CreateHostDto,
@@ -144,6 +145,7 @@ export class UserUseCasesImp {
     return this.userRepo.updateUser(id, data, uploadedFiles);
   }
 
+  
   async updateHostProfile(userId: string, data: HostProfileDto) {
     return this.userRepo.upsertHostProfile(userId, data);
   }
@@ -151,8 +153,24 @@ export class UserUseCasesImp {
     return this.userRepo.verifyHostProfile(userId, isVerified);
   }
 
+  async setPhoneVerified(userId: string, isVerified: boolean) {
+    return this.userRepo.setPhoneVerified(userId, isVerified);
+  }
+
   async activeOrDiactiveUser(userId: string, isActive: boolean) {
     return this.userRepo.activeOrDiactiveUser(userId, isActive);
+  }
+
+  async adminResetPassword(userId: string) {
+    const user = await this.userRepo.findUserById(userId);
+    if (!user) throw new RpcException('User not found');
+    // Uppercase letters + digits, skipping look-alikes (O/0, I/1)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = randomBytes(8);
+    let tempPassword = '';
+    for (let i = 0; i < 8; i++) tempPassword += chars[bytes[i] % chars.length];
+    await this.userRepo.adminResetPassword(userId, tempPassword);
+    return { id: userId, tempPassword };
   }
 
   async deleteUser(id: string) {

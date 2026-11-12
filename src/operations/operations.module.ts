@@ -23,6 +23,9 @@ import { CarRepository } from './car/car.repository';
 import { CarTypeRepository } from './car-type/car-type.repository';
 import { CarTypeUseCasesImp } from './car-type/car-typeusecase.impl';
 import { CarTypeMessageController } from './car-type/car-type.controller';
+import { LocationMessageController } from './location/location.controller';
+import { LocationUseCasesImpl } from './location/location.usecase.impl';
+import { LocationRepository } from './location/location.repository';
 
 @Module({
   imports: [
@@ -41,6 +44,7 @@ import { CarTypeMessageController } from './car-type/car-type.controller';
     CarMakeMessageController,
     CarMessageController,
     CarTypeMessageController,
+    LocationMessageController,
   ],
   providers: [
     UserUseCasesImp,
@@ -59,6 +63,8 @@ import { CarTypeMessageController } from './car-type/car-type.controller';
     CarRepository,
     CarTypeRepository,
     CarTypeUseCasesImp,
+    LocationRepository,
+    LocationUseCasesImpl,
   ],
   exports: [
     UserUseCasesImp,
