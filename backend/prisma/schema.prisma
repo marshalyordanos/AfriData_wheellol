@@ -118,9 +118,18 @@ model User {
   payouts       Payout[]
 
   // Simple "car with driver" request flow
-  rentalRequests         RentalRequest[] @relation("CustomerRentalRequests")
-  recordedRentalPayments RentalPayment[] @relation("RecordedRentalPayments")
+  rentalRequests         RentalRequest[]      @relation("CustomerRentalRequests")
+  recordedRentalPayments RentalPayment[]      @relation("RecordedRentalPayments")
   rentalRequestEvents    RentalRequestEvent[] @relation("RentalRequestEventActor")
+  carEvents              CarEvent[]           @relation("CarEventActor")
+
+  // Saved e-signature (data URL), reused when signing contracts in the app
+  signatureImage     String?
+  signatureUpdatedAt DateTime?
+
+  // Contracts
+  contractTemplates ContractTemplate[] @relation("ContractTemplateAuthor")
+  rentalContracts   RentalContract[]   @relation("RentalContractAuthor")
 }
 
 model RefreshToken {
@@ -186,17 +195,35 @@ model HostProfile {
   payoutMethod String?
   earnings     Float   @default(0)
   isVerified   Boolean @default(false)
+
+  // Supplier (car owner who lists cars through the mobile app)
+  businessName   String? // company / fleet name, optional
+  nationalId     String? // uploaded ID document URL
+  // Wheellol commission % for this supplier; null = use the global default
+  // (SystemSetting SUPPLIER_COMMISSION_PERCENT)
+  commissionRate Float?
 }
 
 ///////////////////////////
 // CAR ENTITIES
 ///////////////////////////
+
+// Supplier cars must be approved by an admin before customers can see them.
+// Cars added by the admin are APPROVED straight away.
+enum CarApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model CarType {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String? // short help text, e.g. "Abadula, Dolphin — 10–14 seats"
+  image       String? // picture shown in pickers
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relation field
   cars Car[] @relation("TypeToCar")
@@ -205,6 +232,7 @@ model CarType {
 model CarMake {
   id        String   @id @default(cuid())
   name      String   @unique
+  logo      String? // brand logo / picture
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -219,6 +247,8 @@ model CarModel {
   make      CarMake  @relation(fields: [makeId], references: [id])
   makeId    String
   name      String
+  localName String? // what Ethiopians call it, e.g. "Cobra", "Abadula · Dolphin"
+  image     String? // picture of the model
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -264,13 +294,25 @@ model Car {
   rejectionReason String?
   location        String?  @default("Addis Ababa")
 
+  // Approval (supplier cars)
+  approvalStatus CarApprovalStatus @default(APPROVED)
+  submittedAt    DateTime? // last time the supplier sent it for review
+  reviewedAt     DateTime?
+
   // Status
   average_rating Int      @default(0)
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  technicalInspectionCertificateUrl String? // Technical Inspection Upload
+  technicalInspectionCertificateUrl String? // Technical Inspection Upload (kept in step with documents.inspection)
+
+  // Which photo is which: { front, back, left, right, insideFront, insideBack } → URL.
+  // null on old cars: then the first 6 photos are the slots, in that order.
+  photoSlots Json?
+  // Car & driver documents from the rental agreement (art. 3.2 / 5.2), all optional:
+  // { libre, insurance, inspection, businessLicense, vatCertificate, driverLicense } → { url, name, uploadedAt }
+  documents  Json?
 
   // GPS Information
   hasGPS                    Boolean   @default(false)
@@ -290,6 +332,7 @@ model Car {
   disputes       Dispute[]
   bookings       Booking[]
   rentalRequests RentalRequestCar[]
+  events         CarEvent[]
   emailVerified  Boolean            @default(false)
   phoneVerified  Boolean            @default(false)
 }
@@ -428,6 +471,16 @@ model Notification {
 
   dispute   Dispute? @relation(fields: [disputeId], references: [id])
   disputeId String?
+
+  // In-app link opened when the notification is tapped
+  // (admin: "/dash/requests/<id>", mobile: "/request/trip?id=<id>")
+  link     String?
+  // Extra info for clients, e.g. { requestId, trackingCode, status }
+  data     Json?
+  // "ADMIN" or "CUSTOMER" — which app the link belongs to
+  audience String?
+
+  @@index([userId, isRead])
 }
 
 ///////////////////////////
@@ -745,9 +798,10 @@ model RentalRequest {
   totalPrice Float? // set by admin after negotiation
   adminNote  String?
 
-  cars     RentalRequestCar[]
-  payments RentalPayment[]
-  events   RentalRequestEvent[]
+  cars      RentalRequestCar[]
+  payments  RentalPayment[]
+  events    RentalRequestEvent[]
+  contracts RentalContract[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -762,6 +816,14 @@ model RentalRequestCar {
   requestId String
   car       Car           @relation(fields: [carId], references: [id])
   carId     String
+
+  // Price split for this car (set by the admin after negotiation).
+  // price = what the customer pays for this car; for a supplier's car
+  // Wheellol keeps commissionRate % of it and the rest goes to the supplier.
+  price            Float?
+  commissionRate   Float? // % snapshot at the time the price was set
+  commissionAmount Float?
+  supplierAmount   Float?
 
   @@unique([requestId, carId])
 }
@@ -784,6 +846,21 @@ model RentalPayment {
 }
 
 // Audit trail: everything that happened to a request
+/// History of a car: sent for review, approved / rejected, edited (by supplier or admin), hidden / shown
+model CarEvent {
+  id        String   @id @default(cuid())
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  carId     String
+  type      String // CREATED, UPDATED, ADMIN_UPDATED, APPROVED, REJECTED, HIDDEN, SHOWN
+  message   String
+  details   Json? // e.g. { changes: [{ field, label, from, to }] }
+  actor     User?    @relation("CarEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorId   String?
+  createdAt DateTime @default(now())
+
+  @@index([carId, createdAt])
+}
+
 model RentalRequestEvent {
   id        String        @id @default(cuid())
   request   RentalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
@@ -823,4 +900,71 @@ model Location {
   updatedAt DateTime     @updatedAt
 
   @@index([isActive, sortOrder])
+}
+
+///////////////////////////
+// CONTRACTS
+// Admins build reusable contract templates (articles, fields from the DB,
+// vehicle schedule, signatures). For each booking request the admin picks a
+// template, fills it in and sends it; the customer reviews and signs online.
+///////////////////////////
+
+enum ContractStatus {
+  DRAFT // being prepared by the admin
+  SENT // sent to the customer
+  VIEWED // customer opened it
+  SIGNED // customer signed
+  DECLINED // customer declined
+  VOID // cancelled by the admin
+}
+
+model ContractTemplate {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  // { version, settings, fields, blocks } — see admin views/contracts
+  document    Json
+  isDefault   Boolean          @default(false)
+  isActive    Boolean          @default(true)
+  createdBy   User?            @relation("ContractTemplateAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+  contracts   RentalContract[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model RentalContract {
+  id             String            @id @default(cuid())
+  contractNo     String            @unique
+  title          String
+  status         ContractStatus    @default(DRAFT)
+  request        RentalRequest     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestId      String
+  template       ContractTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateId     String?
+  // Copy of the template document (may be edited for this booking only)
+  document       Json
+  // Values filled for this booking: { meta, fields, schedule }
+  values         Json
+  // Rendered contract the customer sees (snapshot at send time)
+  html           String?
+  publicToken    String            @unique
+  sentAt         DateTime?
+  viewedAt       DateTime?
+  signedAt       DateTime?
+  declinedAt     DateTime?
+  declineReason  String?
+  signerName     String?
+  // Values the customer typed when signing (fields with source customer/signer)
+  customerValues Json?
+  signatureImage String? // data:image/png;base64,… or SVG from the app
+  signerIp       String?
+  signerAgent    String?
+  createdBy      User?             @relation("RentalContractAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([requestId])
+  @@index([status])
 }

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   Alert,
   Button,
   DatePicker,
+  Dropdown,
   Form,
   Input,
   InputNumber,
@@ -22,6 +24,7 @@ import {
   CarOutlined,
   RightOutlined,
   HistoryOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
 import {
   Page,
@@ -35,12 +38,19 @@ import {
   EmptyState,
 } from "../../components/modern/ModernUI";
 import RecordPaymentModal from "./RecordPaymentModal";
+import ContractPanel from "../contracts/ContractPanel";
+import SupplierSplitPanel from "./SupplierSplitPanel";
+import AgreementPanel from "./AgreementPanel";
+import { isSupplierCar, supplierName } from "../suppliers/SupplierService";
+import { StatusChangeModal, statusMenuItems } from "./StatusActions";
 import { RequestStatus } from "./RentalRequestList";
 import dayjs from "dayjs";
 import RentalRequestService, {
   MILESTONES,
   NEEDS_PRICE,
   PAYMENT_METHODS,
+  ACCEPTED,
+  canRecordPayment,
   STATUS,
   STATUS_ORDER,
   carName,
@@ -51,11 +61,18 @@ import RentalRequestService, {
 const EVENT_META = {
   CREATED: { color: "#1d4f91" },
   STATUS_CHANGED: { color: "#7c3aed" },
+  CUSTOMER_ACCEPTED: { color: "#059669" },
   PRICE_CHANGED: { color: "#fc6b38" },
   NOTE_CHANGED: { color: "#94a3b8" },
   DATES_CHANGED: { color: "#f59e0b" },
   PAYMENT_ADDED: { color: "#059669" },
   PAYMENT_REMOVED: { color: "#b42318" },
+  CONTRACT_CREATED: { color: "#94a3b8" },
+  CONTRACT_SENT: { color: "#1d4f91" },
+  CONTRACT_VIEWED: { color: "#7c3aed" },
+  CONTRACT_SIGNED: { color: "#059669" },
+  CONTRACT_DECLINED: { color: "#b42318" },
+  CONTRACT_VOIDED: { color: "#94a3b8" },
 };
 
 const RentalRequestDetails = () => {
@@ -67,6 +84,7 @@ const RentalRequestDetails = () => {
   const [paying, setPaying] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [tab, setTab] = useState("details");
+  const [nextStatus, setNextStatus] = useState(null);
   const [dealForm] = Form.useForm();
   const [payForm] = Form.useForm();
 
@@ -92,6 +110,15 @@ const RentalRequestDetails = () => {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Live: customer accepted / payment recorded elsewhere → refresh this page
+  const liveNotif = useSelector((st) => st.notifications?.items?.[0]);
+  useEffect(() => {
+    if (liveNotif?.data?.requestId === id) {
+      RentalRequestService.get(id).then(apply).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveNotif?.id]);
 
   const saveDeal = async (values) => {
     setSaving(true);
@@ -246,6 +273,18 @@ const RentalRequestDetails = () => {
         subtitle={`Requested ${dayjs(req.createdAt).format("dddd, DD MMM YYYY · HH:mm")}`}
         actions={
           <>
+            <Dropdown
+              trigger={["click"]}
+              menu={{
+                items: statusMenuItems(req),
+                onClick: ({ key }) => setNextStatus(key.replace("status:", "")),
+              }}
+            >
+              <Button type="primary" loading={saving}>
+                Change status <DownOutlined />
+              </Button>
+            </Dropdown>
+            {/* Old single-step buttons, replaced by the "Change status" menu above
             {["PENDING", "UNDER_NEGOTIATION", "APPROVED"].includes(req.status) && (
               <Popconfirm
                 title="Start the trip?"
@@ -275,13 +314,15 @@ const RentalRequestDetails = () => {
                 </Button>
               </Popconfirm>
             )}
+            */}
             {req.contactEmail && (
               <a className="mp-btn" href={`mailto:${req.contactEmail}`}>
                 <MailOutlined /> Email
               </a>
             )}
             <a className="mp-btn mp-btn-primary" href={`tel:${req.contactPhone}`}>
-              <PhoneOutlined /> Call {req.contactName?.split(" ")[0] || "customer"}
+              {/* <PhoneOutlined /> Call {req.contactName?.split(" ")[0] || "customer"} */}
+              <PhoneOutlined /> {req.contactPhone}
             </a>
           </>
         }
@@ -359,7 +400,18 @@ const RentalRequestDetails = () => {
       <div className="mp-detail" style={{ display: tab === "details" ? undefined : "none" }}>
         {/* ---------- Main: deal + payments ---------- */}
         <div className="mp-detail-main">
-          <FormSection num={1} title="Agreement" subtitle="Price and status agreed with the customer and car owner">
+          {/* 1. Agreement first: customer price + supplier price (Wheellol keeps the difference) */}
+          <AgreementPanel request={req} num={1} onSaved={apply} />
+
+          {/* 2. Contract — can be selected and sent once the agreement is saved */}
+          <ContractPanel
+            request={req}
+            num={2}
+            onChanged={() => RentalRequestService.get(id).then(apply).catch(() => {})}
+          />
+
+          {/* Old agreement form (replaced by AgreementPanel above, which uses a modal)
+          <FormSection num={2} title="Agreement" subtitle="Price and status agreed with the customer and car owner">
             <Form form={dealForm} layout="vertical" onFinish={saveDeal} requiredMark={false}>
               <div className="mp-grid-form">
                 <Form.Item
@@ -380,6 +432,7 @@ const RentalRequestDetails = () => {
                     parser={(v) => v?.replace(/,/g, "")}
                   />
                 </Form.Item>
+                {/ * Status field hidden — status is changed with the action buttons instead
                 <Form.Item
                   label="Status"
                   name="status"
@@ -398,6 +451,7 @@ const RentalRequestDetails = () => {
                 >
                   <Select options={STATUS_ORDER.map((s) => ({ value: s, label: STATUS[s].label }))} />
                 </Form.Item>
+                * /}
               </div>
               <Form.Item label="Internal note (not shown to customer)" name="adminNote">
                 <Input.TextArea rows={3} placeholder="Owner rate, driver arrangement, fuel, start time…" />
@@ -410,8 +464,18 @@ const RentalRequestDetails = () => {
             </Form>
           </FormSection>
 
+          */}
+
+          {/* Old supplier commission % panel — the supplier price is now part of the agreement
+          <SupplierSplitPanel
+            request={req}
+            num={3}
+            onChanged={() => RentalRequestService.get(id).then(apply).catch(() => {})}
+          />
+          */}
+
           <FormSection
-            num={2}
+            num={3}
             title="Payments"
             subtitle="Every payment received for this request"
             extra={hasPrice && req.balance <= 0 ? <StatusPill tone="green">Fully paid</StatusPill> : null}
@@ -484,12 +548,20 @@ const RentalRequestDetails = () => {
               </div>
             </div>
 
-            {!isCancelled && !(hasPrice && req.balance <= 0) && (
+            {canRecordPayment(req) && (
               <div className="flex justify-end">
                 <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => setPayOpen(true)}>
                   Record payment
                 </Button>
               </div>
+            )}
+            {!isCancelled && !ACCEPTED.includes(req.status) && (
+              <Alert
+                type="warning"
+                showIcon
+                message="Payments open after the customer accepts"
+                description="Send the contract with the agreed price. When the customer signs it, the booking is approved and you can record payments."
+              />
             )}
             <RecordPaymentModal request={req} open={payOpen} onClose={() => setPayOpen(false)} onSaved={apply} />
             {/* Old inline payment form (kept, hidden — replaced by the modal above)
@@ -647,6 +719,13 @@ const RentalRequestDetails = () => {
                         .filter(Boolean)
                         .join(" · ")}
                     </span>
+                    <span style={{ display: "block", marginTop: 4 }}>
+                      {isSupplierCar(car) ? (
+                        <span className="sp-owner is-supplier">Supplier · {supplierName(car.host)}</span>
+                      ) : (
+                        <span className="sp-owner is-own">Wheellol car</span>
+                      )}
+                    </span>
                   </span>
                   <RightOutlined style={{ color: "#94a3b8" }} />
                 </button>
@@ -656,6 +735,12 @@ const RentalRequestDetails = () => {
           </Card>
         </aside>
       </div>
+      <StatusChangeModal
+        request={req}
+        status={nextStatus}
+        onClose={() => setNextStatus(null)}
+        onSaved={apply}
+      />
     </Page>
   );
 };

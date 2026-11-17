@@ -22,6 +22,11 @@ export const STATUS_ORDER = [
 // Statuses that require an agreed price (mirrors the backend rule)
 export const NEEDS_PRICE = ["APPROVED", "ACTIVE", "COMPLETED"];
 
+// Payments only after the customer accepted (signed the contract / accepted the price)
+export const ACCEPTED = ["APPROVED", "ACTIVE", "COMPLETED"];
+export const canRecordPayment = (r) =>
+  !!r && ACCEPTED.includes(r.status) && !(r.totalPrice > 0 && r.balance <= 0);
+
 export const PAYMENT_METHODS = [
   { value: "CASH", label: "Cash" },
   { value: "TELEBIRR", label: "telebirr" },

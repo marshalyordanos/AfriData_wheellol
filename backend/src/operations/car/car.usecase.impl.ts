@@ -123,7 +123,8 @@ export class CarUseCasesImp {
   }
 
   async searchCars(filter: ListQueryDto) {
-    return this.repo.searchCars(filter);
+    // public search (customer app)
+    return this.repo.searchCars(filter, { onlyApproved: true });
   }
   async searchCarsAdmin(filter: ListQueryDto, userId: string) {
     const user = await this.repo.findUserById(userId);

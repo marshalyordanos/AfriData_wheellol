@@ -193,7 +193,9 @@ export class RentalPaymentListQueryDto {
   @Max(100)
   pageSize?: number = 10;
 
-  @ApiPropertyOptional({ description: 'Tracking code, customer, phone or reference' })
+  @ApiPropertyOptional({
+    description: 'Tracking code, customer, phone or reference',
+  })
   @IsOptional()
   @IsString()
   search?: string;

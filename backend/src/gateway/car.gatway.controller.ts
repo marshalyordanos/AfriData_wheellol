@@ -102,9 +102,10 @@ export class CarGatewayController {
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'photos', maxCount: 7 },
+        { name: 'photos', maxCount: 20 }, // was 10 — 15 guide photos + extras
         { name: 'technicalInspectionCertificate', maxCount: 1 },
         { name: 'gpsInstallationReceipt', maxCount: 1 },
+        { name: 'documentFiles', maxCount: 7 }, // was 6 — added licence back // Libre, insurance… (image or PDF)
       ],
       { storage: multer.memoryStorage() }, // file stays in memory
     ),
@@ -116,6 +117,7 @@ export class CarGatewayController {
       photos?: Express.Multer.File[];
       technicalInspectionCertificate?: Express.Multer.File[];
       gpsInstallationReceipt?: Express.Multer.File[];
+      documentFiles?: Express.Multer.File[];
     },
 
     @Body() dto: CarDto,
@@ -169,12 +171,34 @@ export class CarGatewayController {
       );
     }
 
+
+    // Photo slots + documents (see common/car-files.ts). Read from the raw body:
+    // the DTO whitelist drops unknown fields.
+    let documentUploads: { url: string; name: string | null }[] = [];
+    try {
+      documentUploads = await Promise.all(
+        (files?.documentFiles || []).map(async (f) => ({
+          url: await uploadToSpaces(f, 'cars/documents'),
+          name: f.originalname || null,
+        })),
+      );
+    } catch (err) {
+      throw new RpcException(err?.message || 'Could not upload the documents');
+    }
+    const fileInput = {
+      photoSlots: req.body?.photoSlots,
+      extraPhotos: req.body?.extraPhotos,
+      documents: req.body?.documents,
+    };
+
     return this.carClient.send(PATTERNS.CAR_CREATE, {
       headers: { authorization: authHeader },
       carData: dto,
       hostId: dto.hostId,
       photos: uploadedFiles,
       otherFiles: uploadedFiles2,
+      fileInput,
+      documentUploads,
     });
   }
 
@@ -182,9 +206,10 @@ export class CarGatewayController {
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'photos', maxCount: 7 },
+        { name: 'photos', maxCount: 20 }, // was 10 — 15 guide photos + extras
         { name: 'technicalInspectionCertificate', maxCount: 1 },
         { name: 'gpsInstallationReceipt', maxCount: 1 },
+        { name: 'documentFiles', maxCount: 7 }, // was 6 — added licence back // Libre, insurance… (image or PDF)
       ],
       { storage: multer.memoryStorage() },
     ),
@@ -196,6 +221,7 @@ export class CarGatewayController {
       photos?: Express.Multer.File[];
       technicalInspectionCertificate?: Express.Multer.File[];
       gpsInstallationReceipt?: Express.Multer.File[];
+      documentFiles?: Express.Multer.File[];
     },
     @Param('id') id: string,
     @Body() dto: Partial<CarDto>,
@@ -265,6 +291,26 @@ export class CarGatewayController {
     //   HttpStatus.BAD_REQUEST,
     // );
     // return 'lksd';
+
+    // Photo slots + documents (see common/car-files.ts). Read from the raw body:
+    // the DTO whitelist drops unknown fields.
+    let documentUploads: { url: string; name: string | null }[] = [];
+    try {
+      documentUploads = await Promise.all(
+        (files?.documentFiles || []).map(async (f) => ({
+          url: await uploadToSpaces(f, 'cars/documents'),
+          name: f.originalname || null,
+        })),
+      );
+    } catch (err) {
+      throw new RpcException(err?.message || 'Could not upload the documents');
+    }
+    const fileInput = {
+      photoSlots: req.body?.photoSlots,
+      extraPhotos: req.body?.extraPhotos,
+      documents: req.body?.documents,
+    };
+
     return this.carClient.send(PATTERNS.CAR_UPDATE, {
       headers: { authorization: authHeader },
       carId: id,
@@ -272,6 +318,8 @@ export class CarGatewayController {
       hostId: dto.hostId,
       photos: uploadedFiles,
       otherFiles: uploadedFiles2,
+      fileInput,
+      documentUploads,
     });
   }
 

@@ -16,6 +16,9 @@ import {
   ShieldCheck,
   Phone,
   MapPin,
+  ScrollText,
+  Handshake,
+  BadgeCheck,
 } from "lucide-react";
 
 export const normalizeRole = (u) => {
@@ -39,7 +42,15 @@ const ADMIN_NAV = [
       { key: "overview", label: "Overview", to: "/dash", icon: I(LayoutDashboard), exact: true },
       { key: "requests", label: "Booking requests", to: "/dash/requests", icon: I(ClipboardList) },
       { key: "request-payments", label: "Request payments", to: "/dash/request-payments", icon: I(CreditCard) },
+      { key: "contracts", label: "Contracts", to: "/dash/contracts", icon: I(ScrollText) },
       { key: "cars", label: "Fleet", to: "/dash/cars", icon: I(Car) },
+    ],
+  },
+  {
+    group: "Suppliers",
+    items: [
+      { key: "supplier-cars", label: "Car approvals", to: "/dash/supplier-cars", icon: I(BadgeCheck) },
+      { key: "suppliers", label: "Suppliers", to: "/dash/suppliers", icon: I(Handshake) },
     ],
   },
   {

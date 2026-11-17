@@ -16,7 +16,10 @@ import { PaymentGatewayController } from './payment.gateway.controller';
 import { CarTypeGatewayController } from './car-type.gateway.controller';
 import { ConfigModule } from '@nestjs/config';
 import { RentalRequestGatewayController } from './rental-request.gateway.controller';
+import { NotificationGatewayController } from './notification.gateway.controller';
 import { LocationGatewayController } from './location.gateway.controller';
+import { ContractGatewayController } from './contract.gateway.controller';
+import { SupplierGatewayController } from './supplier.gateway.controller';
 
 @Module({
   imports: [
@@ -40,7 +43,10 @@ import { LocationGatewayController } from './location.gateway.controller';
     PaymentGatewayController,
     CarTypeGatewayController,
     RentalRequestGatewayController,
+    NotificationGatewayController,
     LocationGatewayController,
+    ContractGatewayController,
+    SupplierGatewayController,
   ],
 })
 export class GatewayModule {}

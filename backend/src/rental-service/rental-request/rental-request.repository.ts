@@ -18,12 +18,35 @@ const carSummary = {
   },
 };
 
+// Admin also needs to know who owns each car (Wheellol or a supplier)
+const carSummaryAdmin = {
+  select: {
+    ...carSummary.select,
+    host: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: { select: { name: true } },
+        hostProfile: { select: { businessName: true, commissionRate: true } },
+      },
+    },
+  },
+};
+
 // What the admin sees
 export const adminInclude = {
   customer: {
-    select: { id: true, firstName: true, lastName: true, phone: true, email: true },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      email: true,
+    },
   },
-  cars: { include: { car: carSummary } },
+  cars: { include: { car: carSummaryAdmin } }, // + price split per car
   payments: {
     orderBy: { paidAt: 'asc' as const },
     include: {
@@ -36,14 +59,62 @@ export const adminInclude = {
       actor: { select: { id: true, firstName: true, lastName: true } },
     },
   },
+  // Contract summaries (newest first) — the full contract is loaded on demand
+  contracts: {
+    orderBy: { createdAt: 'desc' as const },
+    select: {
+      id: true,
+      contractNo: true,
+      title: true,
+      status: true,
+      publicToken: true,
+      sentAt: true,
+      viewedAt: true,
+      signedAt: true,
+      declinedAt: true,
+      signerName: true,
+      createdAt: true,
+    },
+  },
 } satisfies Prisma.RentalRequestInclude;
 
 // What the customer sees (no internal admin data)
 export const customerInclude = {
-  cars: { include: { car: carSummary } },
+  // price per car only — the supplier / commission split stays internal
+  cars: { select: { id: true, carId: true, price: true, car: carSummary } },
   payments: {
     orderBy: { paidAt: 'asc' as const },
-    select: { id: true, amount: true, method: true, paidAt: true, reference: true },
+    select: {
+      id: true,
+      amount: true,
+      method: true,
+      paidAt: true,
+      reference: true,
+    },
+  },
+  // Status history for the customer's tracking timeline (no admin names or notes)
+  events: {
+    where: { type: { in: ['CREATED', 'STATUS_CHANGED', 'CUSTOMER_ACCEPTED'] } },
+    orderBy: { createdAt: 'asc' as const },
+    select: { id: true, type: true, details: true, createdAt: true },
+  },
+  // The contract sent to the customer (opened with the public link token)
+  contracts: {
+    where: { status: { in: ['SENT', 'VIEWED', 'SIGNED', 'DECLINED'] } },
+    orderBy: { sentAt: 'desc' as const },
+    take: 1,
+    select: {
+      id: true,
+      contractNo: true,
+      title: true,
+      status: true,
+      publicToken: true,
+      sentAt: true,
+      viewedAt: true,
+      signedAt: true,
+      declinedAt: true,
+      signerName: true,
+    },
   },
 } satisfies Prisma.RentalRequestInclude;
 
@@ -56,7 +127,10 @@ export class RentalRequestRepository {
   }
 
   countActiveCars(ids: string[]) {
-    return this.prisma.car.count({ where: { id: { in: ids }, isActive: true } });
+    return this.prisma.car.count({
+      // supplier cars must be approved by an admin first
+      where: { id: { in: ids }, isActive: true, approvalStatus: 'APPROVED' },
+    });
   }
 
   /** Pickup cities customers may choose (managed in admin → Locations). */
@@ -197,6 +271,14 @@ export class RentalRequestRepository {
 
   addPayment(data: Prisma.RentalPaymentUncheckedCreateInput) {
     return this.prisma.rentalPayment.create({ data });
+  }
+
+  /** Contract sent to the customer and not signed yet */
+  findOpenContract(requestId: string) {
+    return this.prisma.rentalContract.findFirst({
+      where: { requestId, status: { in: ['SENT', 'VIEWED'] } },
+      select: { id: true, contractNo: true },
+    });
   }
 
   findPayment(id: string) {

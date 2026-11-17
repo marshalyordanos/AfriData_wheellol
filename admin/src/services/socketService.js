@@ -1,6 +1,14 @@
 import { io } from "socket.io-client";
+import api from "../api/api";
+import TokenService from "../api/token.service";
 
-const SOCKET_URL = "https://socket.wheellol.com";
+// Socket server (notify-hub). Set VITE_SOCKET_URL to override.
+// Local API (localhost:3000) → local notify-hub on :4004, otherwise production.
+const isLocalApi = /localhost|127\.0\.0\.1/.test(api.defaults.baseURL || "");
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  (isLocalApi ? "http://localhost:4004" : "https://socket.wheellol.com");
+// const SOCKET_URL = "https://socket.wheellol.com";
 
 class SocketService {
   socket = null;
@@ -21,7 +29,9 @@ class SocketService {
     this.socket = io(SOCKET_URL, {
       transports: ["websocket"],
       reconnection: true,
-      // auth: { token: userId }, // optional for JWT
+      reconnectionDelayMax: 10000,
+      // Fresh token on every (re)connect → server joins the user's room itself
+      auth: (cb) => cb({ token: TokenService.getLocalAccessToken() }),
     });
 
     this.socket.on("connect", () => {
@@ -60,8 +70,9 @@ class SocketService {
     this.socket?.on(event, callback);
   }
 
-  off(event) {
-    this.socket?.off(event);
+  off(event, callback) {
+    if (callback) this.socket?.off(event, callback);
+    else this.socket?.off(event);
   }
 }
 

@@ -63,6 +63,28 @@ export class RentalRequestMessageController {
     }
   }
 
+  @Public()
+  @MessagePattern(PATTERNS.RENTAL_REQUEST_CUSTOMER_ACCEPT)
+  async customerAccept(
+    @Payload() payload: { id?: string; code?: string; phone?: string },
+  ) {
+    try {
+      const userId = await this.optionalUserId(payload);
+      const res = await this.usecases.customerAccept({
+        id: payload.id,
+        code: payload.code,
+        phone: payload.phone,
+        userId,
+      });
+      return IResponse.success(
+        'Request accepted. Your booking is confirmed.',
+        res,
+      );
+    } catch (error) {
+      handleCatch(error);
+    }
+  }
+
   @MessagePattern(PATTERNS.RENTAL_REQUEST_GET_MY)
   async getMine(
     @Payload() payload: { query: RentalRequestListQueryDto; user: any },

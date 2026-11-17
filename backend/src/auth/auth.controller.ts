@@ -71,15 +71,17 @@ export class AuthMessageController {
   @MessagePattern(PATTERNS.AUTH_REFRESH_TOKEN)
   async refreshToken(@Payload() data: any) {
     try {
-      const user = data.user; // decoded JWT
-      console.log('Current user:', user);
+      const user = data.user; // decoded refresh token
 
       const tokens = await this.usecases.refreshToken(
         user?.sub,
         data.refreshToken,
+        { typ: user?.typ, client: user?.client },
       );
       return new IResponse(true, 'Token has been refreshed!', tokens);
     } catch (error) {
+      // keep the 401 "session ended" as is (handleCatch would turn it into a 400)
+      if (error instanceof RpcException) throw error;
       handleCatch(error);
     }
   }

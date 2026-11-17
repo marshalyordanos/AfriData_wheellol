@@ -8,13 +8,15 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AuthRegisterDto {
-  @ApiProperty({ description: 'First Name' })
-  @IsNotEmpty({ message: 'First Name is required' })
+  // Required for customers (checked in the use case). Suppliers sign up with
+  // only email + phone + password and can add their name later.
+  @ApiPropertyOptional({ description: 'First Name' })
+  @IsOptional()
   @IsString({ message: 'First Name must be a string' })
   firstName: string;
 
-  @ApiProperty({ description: 'Last Name' })
-  @IsNotEmpty({ message: 'Last Name is required' })
+  @ApiPropertyOptional({ description: 'Last Name' })
+  @IsOptional()
   @IsString({ message: 'Last Name must be a string' })
   lastName: string;
 
@@ -38,6 +40,12 @@ export class AuthRegisterDto {
   @IsOptional()
   @IsString({ message: 'Role ID must be a string' })
   role?: string;
+
+  // Supplier sign-up: company / fleet name (optional)
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  businessName?: string;
 
   // File uploads
   @ApiPropertyOptional({ type: 'string', format: 'binary' })

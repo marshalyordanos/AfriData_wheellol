@@ -8,6 +8,7 @@ import { Server, Socket } from 'socket.io';
 import { Inject } from '@nestjs/common';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from './redis/redis.constants';
+import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
   cors: {
@@ -24,12 +25,35 @@ export class NotifyHubGateway
 
   private connectedUsers = new Map<string, Socket>();
 
-  constructor(@Inject(REDIS_CLIENT) private readonly redisClient: Redis) {
+  constructor(
+    @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
+    private readonly jwt: JwtService,
+  ) {
     this.initRedisSubscriptions();
   }
 
-  handleConnection(client: Socket) {
-    console.log('---------------------------------00000000000000000000000');
+  private joinUser(client: Socket, userId: string) {
+    client.join(`user_${userId}`);
+    client.data.userId = userId;
+    this.connectedUsers.set(userId, client);
+  }
+
+  async handleConnection(client: Socket) {
+    // Preferred: io(url, { auth: { token } }) → verified user room
+    const token =
+      client.handshake?.auth?.token ||
+      (client.handshake?.headers?.authorization || '').replace('Bearer ', '');
+    if (token) {
+      try {
+        const decoded: any = await this.jwt.verifyAsync(token);
+        if (decoded?.sub) {
+          this.joinUser(client, decoded.sub);
+          client.emit('registered', { userId: decoded.sub });
+        }
+      } catch {
+        // expired token → client can still use the old "register" event
+      }
+    }
     client.on('register', (userId: string) => {
       console.log('))))))))))))))))))))))))))): ', userId);
       client.join(`user_${userId}`);

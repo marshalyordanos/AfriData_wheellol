@@ -1,3 +1,4 @@
+import { CarFilesInput, Uploaded, composeCarFiles, hasFilesInput } from '../../common/car-files';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Car, CarInsurance, CarMake, CarModel } from '@prisma/client';
@@ -17,6 +18,8 @@ export class CarRepository {
     files?: {
       gpsInstallationReceipt?: string;
       technicalInspectionCertificate?: string;
+      fileInput?: CarFilesInput;
+      documentUploads?: Uploaded[];
     },
   ) {
     console.log('creteeeeeeeeeeee: ', { hostId, data, photos, files });
@@ -30,6 +33,12 @@ export class CarRepository {
     const gpsDate = data.gpsSubscriptionExpiryDate
       ? new Date(data.gpsSubscriptionExpiryDate)
       : undefined;
+
+    // Photo slots + documents (all optional)
+    const carFiles =
+      files?.fileInput && hasFilesInput(files.fileInput)
+        ? composeCarFiles(files.fileInput, { photos: photos || [], documents: files.documentUploads || [] })
+        : null;
 
     const somdata = await this.prisma.car.create({
       data: {
@@ -62,9 +71,14 @@ export class CarRepository {
         isActive: true,
 
         // Arrays
-        photos: photos ?? [],
+        // photos: photos ?? [],
+        photos: carFiles?.photos ?? photos ?? [],
+        ...(carFiles?.photoSlots ? { photoSlots: carFiles.photoSlots } : {}),
+        ...(carFiles?.documents ? { documents: carFiles.documents } : {}),
         technicalInspectionCertificateUrl:
-          files?.technicalInspectionCertificate,
+          carFiles && carFiles.technicalInspectionCertificateUrl !== undefined
+            ? carFiles.technicalInspectionCertificateUrl
+            : files?.technicalInspectionCertificate,
         gpsInstallationReceiptUrl: files?.gpsInstallationReceipt,
 
         hasGPS: Boolean(data.hasGPS) ?? undefined,
@@ -101,6 +115,8 @@ export class CarRepository {
     files?: {
       gpsInstallationReceipt?: string;
       technicalInspectionCertificate?: string;
+      fileInput?: CarFilesInput;
+      documentUploads?: Uploaded[];
     },
   ): Promise<Car> {
     // Pick out only scalar fields that exist in the Car model
@@ -114,6 +130,16 @@ export class CarRepository {
       photos,
       photos ? (photos?.length > 0 ? photos : undefined) : undefined,
     );
+    // Photo slots + documents (new admin form). Without them: old behaviour.
+    const carFiles =
+      existingCar && files?.fileInput && hasFilesInput(files.fileInput)
+        ? composeCarFiles(
+            files.fileInput,
+            { photos: photos || [], documents: files.documentUploads || [] },
+            existingCar,
+          )
+        : null;
+
     const updatedCar = await this.prisma.car.update({
       where: { id: carId },
       data: {
@@ -144,10 +170,21 @@ export class CarRepository {
         description: data.description ?? null,
         rejectionReason: data.rejectionReason ?? null,
 
+        /* Old: replaced all photos, and cleared the inspection/GPS files when
+           they were not uploaded again
         photos: photos ? (photos?.length > 0 ? photos : undefined) : undefined,
         technicalInspectionCertificateUrl:
           files?.technicalInspectionCertificate ?? null,
         gpsInstallationReceiptUrl: files?.gpsInstallationReceipt ?? null,
+        */
+        photos: carFiles?.photos ?? (photos?.length ? photos : undefined),
+        ...(carFiles?.photoSlots ? { photoSlots: carFiles.photoSlots } : {}),
+        ...(carFiles?.documents ? { documents: carFiles.documents } : {}),
+        technicalInspectionCertificateUrl:
+          carFiles && carFiles.technicalInspectionCertificateUrl !== undefined
+            ? carFiles.technicalInspectionCertificateUrl
+            : files?.technicalInspectionCertificate ?? undefined,
+        gpsInstallationReceiptUrl: files?.gpsInstallationReceipt ?? undefined,
 
         hasGPS: Boolean(data.hasGPS) ?? undefined,
 
@@ -252,7 +289,7 @@ export class CarRepository {
     return this.prisma.car.findMany({ where: { hostId } });
   }
 
-  async searchCars(filter: ListQueryDto) {
+  async searchCars(filter: ListQueryDto, opts: { onlyApproved?: boolean } = {}) {
     const feature = new PrismaQueryFeature({
       search: filter.search,
       filter: filter.filter,
@@ -270,6 +307,8 @@ export class CarRepository {
 
     const query = feature.getQuery();
     const where: any = { ...query.where };
+    // Customers only see cars an admin has approved (supplier cars start PENDING)
+    if (opts.onlyApproved) where.approvalStatus = 'APPROVED';
 
     let startDate: Date | null = null;
     let endDate: Date | null = null;

@@ -26,6 +26,14 @@ import { PaymentRepository } from './payment/payment.repository';
 import { RentalRequestMessageController } from './rental-request/rental-request.controller';
 import { RentalRequestUseCasesImpl } from './rental-request/rental-request.usecase.impl';
 import { RentalRequestRepository } from './rental-request/rental-request.repository';
+import { NotifierService } from './notification/notifier.service';
+import { NotificationMessageController } from './notification/notification.controller';
+import { ContractMessageController } from './contract/contract.controller';
+import { ContractUseCasesImpl } from './contract/contract.usecase.impl';
+import { ContractRepository } from './contract/contract.repository';
+import { SupplierMessageController } from './supplier/supplier.controller';
+import { SupplierUseCases } from './supplier/supplier.usecase';
+import { CommissionService } from './supplier/commission.service';
 
 @Module({
   imports: [
@@ -44,6 +52,9 @@ import { RentalRequestRepository } from './rental-request/rental-request.reposit
     MessageMessageController,
     PaymentMessageController,
     RentalRequestMessageController,
+    NotificationMessageController,
+    ContractMessageController,
+    SupplierMessageController,
   ],
 
   providers: [
@@ -64,6 +75,11 @@ import { RentalRequestRepository } from './rental-request/rental-request.reposit
     PaymentRepository,
     RentalRequestUseCasesImpl,
     RentalRequestRepository,
+    NotifierService,
+    ContractUseCasesImpl,
+    ContractRepository,
+    SupplierUseCases,
+    CommissionService,
   ],
   exports: [
     BookingUseCasesImp,

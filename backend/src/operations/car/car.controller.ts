@@ -30,6 +30,8 @@ export class CarMessageController {
       carData: CarDto;
       photos: string[];
       otherFiles: any;
+      fileInput?: any; // photoSlots / extraPhotos / documents (common/car-files.ts)
+      documentUploads?: any[];
     },
   ) {
     try {
@@ -37,7 +39,11 @@ export class CarMessageController {
         payload.hostId,
         payload.carData,
         payload.photos,
-        payload.otherFiles,
+        {
+          ...(payload.otherFiles || {}),
+          fileInput: payload.fileInput,
+          documentUploads: payload.documentUploads,
+        },
       );
       console.log(
         '8888888888888888888888888888888888888888888888888883333333333333333333: : ',
@@ -61,6 +67,8 @@ export class CarMessageController {
       user: any;
       photos: string[];
       otherFiles: any;
+      fileInput?: any; // photoSlots / extraPhotos / documents (common/car-files.ts)
+      documentUploads?: any[];
     },
   ) {
     try {
@@ -70,7 +78,11 @@ export class CarMessageController {
         payload.carData,
         payload.user?.sub,
         payload.photos,
-        payload.otherFiles,
+        {
+          ...(payload.otherFiles || {}),
+          fileInput: payload.fileInput,
+          documentUploads: payload.documentUploads,
+        },
       );
       return IResponse.success('Car updated successfully', car);
     } catch (error) {

@@ -1,0 +1,97 @@
+/* Suppliers pages — builds on modern.css */
+.sp-car { display: flex; align-items: center; gap: 12px; min-width: 240px; }
+.sp-thumb {
+  width: 56px; height: 42px; border-radius: 10px; object-fit: cover; flex-shrink: 0;
+  background: var(--c-subtle); display: grid; place-items: center; color: var(--c-text-4);
+}
+.sp-name { font-weight: 600; color: var(--c-text); font-size: 14px; line-height: 1.3; }
+.sp-sub { color: var(--c-text-3); font-size: 12.5px; margin-top: 2px; }
+.sp-muted { color: var(--c-text-4); }
+.sp-num { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--c-text); }
+
+/* commission settings card */
+.sp-commission {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  border: 1px solid var(--c-border); border-radius: 16px; background: var(--c-surface);
+  padding: 18px 20px; margin-bottom: 16px;
+}
+.sp-commission-main { flex: 1; min-width: 240px; }
+.sp-commission-title { font-weight: 700; color: var(--c-text); font-size: 15px; }
+.sp-commission-text { color: var(--c-text-3); font-size: 13px; margin-top: 4px; line-height: 1.5; }
+.sp-commission-form { display: flex; align-items: center; gap: 10px; }
+.sp-example {
+  font-size: 12.5px; color: var(--c-text-2); background: var(--c-subtle);
+  border-radius: 10px; padding: 8px 12px; font-variant-numeric: tabular-nums;
+}
+.sp-example b { color: var(--c-text); }
+
+/* review modal */
+.sp-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px; }
+.sp-gallery a { display: block; border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3; background: var(--c-subtle); }
+.sp-gallery img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s; }
+.sp-gallery a:hover img { transform: scale(1.04); }
+.sp-gallery a { position: relative; }
+.sp-photo-label {
+  position: absolute; left: 6px; bottom: 6px; font-size: 11px; font-weight: 700; color: #fff;
+  background: rgba(9, 35, 76, 0.78); padding: 2px 8px; border-radius: 999px;
+}
+.sp-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 16px; margin-bottom: 16px; }
+.sp-fact-k { font-size: 12px; color: var(--c-text-4); }
+.sp-fact-v { font-size: 14px; color: var(--c-text); font-weight: 600; margin-top: 2px; }
+.sp-features { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.sp-chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--c-subtle); color: var(--c-text-2); }
+.sp-reject-note {
+  border: 1px solid #fee4e2; background: #fef3f2; color: #b42318;
+  border-radius: 12px; padding: 10px 12px; font-size: 13px; margin-bottom: 16px;
+}
+.sp-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--c-border); padding-top: 16px; }
+
+/* price split in booking request */
+.sp-split { display: flex; flex-direction: column; gap: 12px; }
+.sp-split-row { border: 1px solid var(--c-border); border-radius: 14px; padding: 14px; background: var(--c-surface); }
+.sp-split-head { display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; margin-bottom: 12px; }
+.sp-split-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; }
+.sp-split-out { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.sp-split-cell { border-radius: 10px; background: var(--c-subtle); padding: 8px 10px; }
+.sp-split-cell .k { font-size: 11.5px; color: var(--c-text-3); }
+.sp-split-cell .v { font-size: 14px; font-weight: 700; color: var(--c-text); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.sp-split-cell.is-brand .v { color: #c2410c; }
+.sp-split-cell.is-ok .v { color: #047857; }
+.sp-owner { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+.sp-owner.is-supplier { background: #f4f3ff; color: #5925dc; }
+.sp-owner.is-own { background: #fff1ea; color: #c2410c; }
+
+/* mobile cards */
+.sp-mcard { border: 1px solid var(--c-border); border-radius: 16px; padding: 14px; background: var(--c-surface); display: flex; flex-direction: column; gap: 10px; }
+.sp-mcard-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--c-text-2); gap: 8px; }
+
+@media (max-width: 640px) {
+  .sp-split-out { grid-template-columns: 1fr; }
+  .sp-commission-form { width: 100%; }
+}
+
+/* car detail page — edit photos */
+.sp-photo-edit { position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3; background: var(--c-subtle); }
+.sp-photo-edit img { width: 100%; height: 100%; object-fit: cover; }
+.sp-photo-tools { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
+.sp-photo-tools button {
+  width: 28px; height: 28px; border-radius: 8px; border: none; cursor: pointer; display: grid; place-items: center;
+  background: rgba(255, 255, 255, 0.92); color: #09234c; font-size: 12px;
+}
+.sp-photo-tools button:disabled { opacity: .4; cursor: default; }
+.sp-photo-tools button.is-danger { color: #dc2626; }
+.sp-photo-add {
+  aspect-ratio: 4 / 3; border-radius: 12px; border: 1.5px dashed var(--c-border-strong); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  color: var(--c-text-3); font-size: 13px; font-weight: 600; background: var(--c-surface);
+}
+.sp-photo-add:hover { border-color: #fc6b38; color: #c2410c; }
+
+/* car detail page — history changes */
+.sp-changes { list-style: none; margin: 6px 0 4px; padding: 8px 12px; border-radius: 10px; background: var(--c-subtle); font-size: 13px; color: var(--c-text-2); }
+.sp-changes li { padding: 2px 0; }
+.sp-changes b { color: var(--c-text); font-weight: 600; }
+.sp-old { text-decoration: line-through; color: var(--c-text-4); }
+.sp-change-photos { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; vertical-align: middle; }
+.sp-change-photos img { width: 38px; height: 28px; border-radius: 6px; object-fit: cover; }
+.sp-change-photos img.is-new { outline: 2px solid #059669; outline-offset: 1px; }

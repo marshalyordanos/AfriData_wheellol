@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { Tooltip, Pagination, Button } from "antd";
 import { DollarOutlined, PhoneOutlined, CarOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -16,9 +17,33 @@ import {
   TwoLine,
   ThumbCell,
   EmptyState,
+  RowMenu,
+  actionColumn,
 } from "../../components/modern/ModernUI";
+import { StatusChangeModal, statusMenuItems } from "./StatusActions";
 import RecordPaymentModal from "./RecordPaymentModal";
-import RentalRequestService, { STATUS, STATUS_ORDER, carName, etb } from "./rentalRequestHelpers";
+import RentalRequestService, { STATUS, STATUS_ORDER, canRecordPayment, carName, etb } from "./rentalRequestHelpers";
+import { CONTRACT_STATUS } from "../contracts/contractApi";
+
+// Contract state of a request; "Needed" when an open request has none yet
+const ContractCell = ({ r }) => {
+  const c = (r.contracts || []).find((x) => x.status !== "VOID");
+  if (!c) {
+    return ["PENDING", "UNDER_NEGOTIATION", "APPROVED"].includes(r.status) ? (
+      <Tooltip title="Open the request to select and send a contract">
+        <span><StatusPill tone="amber">Needed</StatusPill></span>
+      </Tooltip>
+    ) : (
+      <span className="mp-muted">—</span>
+    );
+  }
+  const st = CONTRACT_STATUS[c.status];
+  return (
+    <Tooltip title={`${c.contractNo} · ${c.title}`}>
+      <span><StatusPill tone={st.tone}>{st.label}</StatusPill></span>
+    </Tooltip>
+  );
+};
 
 export const RequestStatus = ({ status }) => (
   <StatusPill tone={STATUS[status]?.tone}>{STATUS[status]?.label || status}</StatusPill>
@@ -51,7 +76,14 @@ const RentalRequestList = () => {
   const [searchInput, setSearchInput] = useState(urlParams.get("search") || "");
   const timer = useRef(null);
   const [payFor, setPayFor] = useState(null);
-  const canPay = (r) => r.status !== "CANCELLED" && !(r.totalPrice && r.balance <= 0);
+  const [statusChange, setStatusChange] = useState(null); // { request, status }
+  const onMenuClick = ({ key }, r) => {
+    if (key === "view") navigate(`/dash/requests/${r.id}`);
+    else if (key.startsWith("status:")) setStatusChange({ request: r, status: key.slice(7) });
+  };
+  // const canPay = (r) => r.status !== "CANCELLED" && !(r.totalPrice && r.balance <= 0);
+  // Payments open only after the customer signed the contract (accepted the price)
+  const canPay = canRecordPayment;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,6 +102,13 @@ const RentalRequestList = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Live: new request / payment / customer accepted → refresh the list
+  const liveNotif = useSelector((st) => st.notifications?.items?.[0]);
+  useEffect(() => {
+    if (liveNotif?.data?.requestId) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveNotif?.id]);
 
   const allCount = Object.values(counts).reduce((a, b) => a + b, 0);
   const pickStatus = (s) => {
@@ -145,6 +184,7 @@ const RentalRequestList = () => {
     },
     { title: "Paid", width: 160, render: (_, r) => <PaidBar r={r} /> },
     { title: "Status", dataIndex: "status", render: (s) => <RequestStatus status={s} /> },
+    { title: "Contract", render: (_, r) => <ContractCell r={r} /> },
     {
       title: "Action",
       align: "right",
@@ -163,6 +203,9 @@ const RentalRequestList = () => {
           </Button>
         ) : null,
     },
+    actionColumn((_, r) => (
+      <RowMenu items={statusMenuItems(r, { withView: true })} record={r} onClick={onMenuClick} />
+    )),
   ];
 
   const stripItems = [
@@ -255,7 +298,10 @@ const RentalRequestList = () => {
                     <div className="mp-cell-main">{r.trackingCode}</div>
                     <div className="mp-cell-sub">{r.contactName}</div>
                   </div>
-                  <RequestStatus status={r.status} />
+                  <span className="flex items-center gap-1">
+                    <RequestStatus status={r.status} />
+                    <RowMenu items={statusMenuItems(r)} record={r} onClick={onMenuClick} />
+                  </span>
                 </div>
                 <div className="mp-mcard-row">
                   <span>Trip</span>
@@ -295,6 +341,12 @@ const RentalRequestList = () => {
         </div>
       </TableCard>
 
+      <StatusChangeModal
+        request={statusChange?.request}
+        status={statusChange?.status}
+        onClose={() => setStatusChange(null)}
+        onSaved={load}
+      />
       <RecordPaymentModal request={payFor} open={!!payFor} onClose={() => setPayFor(null)} onSaved={load} />
     </Page>
   );

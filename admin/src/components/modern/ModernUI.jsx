@@ -42,7 +42,9 @@ export const PageHeader = ({ eyebrow, title, subtitle, actions, back }) => {
           <button
             className="mp-btn mp-btn-icon"
             aria-label="Go back"
-            onClick={() => (typeof back === "string" ? navigate(back) : navigate(-1))}
+            onClick={() =>
+              typeof back === "function" ? back() : typeof back === "string" ? navigate(back) : navigate(-1)
+            }
           >
             <ArrowLeftOutlined />
           </button>

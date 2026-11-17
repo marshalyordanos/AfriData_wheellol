@@ -66,6 +66,29 @@ export class RentalRequestGatewayController {
     });
   }
 
+  /** Customer (signed in) accepts the agreed price. */
+  @Post(':id/accept')
+  accept(@Req() req, @Param('id') id: string) {
+    return this.client.send(PATTERNS.RENTAL_REQUEST_CUSTOMER_ACCEPT, {
+      headers: this.headers(req),
+      id,
+    });
+  }
+
+  /** Guest accepts: POST /rental-requests/track/WL-2026-ABC123/accept?phone=0911... */
+  @Post('track/:code/accept')
+  acceptAsGuest(
+    @Req() req,
+    @Param('code') code: string,
+    @Query('phone') phone: string,
+  ) {
+    return this.client.send(PATTERNS.RENTAL_REQUEST_CUSTOMER_ACCEPT, {
+      headers: this.headers(req),
+      code,
+      phone,
+    });
+  }
+
   // ---------- admin ----------
 
   @Get()
@@ -103,6 +126,26 @@ export class RentalRequestGatewayController {
       headers: this.headers(req),
       id,
       data: dto,
+    });
+  }
+
+  /**
+   * Price of one car in the request (admin). Send `price` (what the customer
+   * pays for this car) or `supplierAmount` (what the supplier asked for).
+   * For supplier cars the commission split is calculated and stored.
+   */
+  @Patch(':id/cars/:carId/price')
+  setCarPrice(
+    @Req() req,
+    @Param('id') id: string,
+    @Param('carId') carId: string,
+    @Body() body: any,
+  ) {
+    return this.client.send(PATTERNS.RENTAL_REQUEST_SET_CAR_PRICE, {
+      headers: this.headers(req),
+      id,
+      carId,
+      data: body,
     });
   }
 

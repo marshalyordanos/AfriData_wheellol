@@ -1,0 +1,641 @@
+{
+  "types/small-car": {
+    "for": "type: Small car",
+    "file": "File:Toyota Vitz, Korle-Klottey (P1100243).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Toyota_Vitz,_Korle-Klottey_(P1100243).jpg",
+    "author": "Matti Blume",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/deed.en",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/small-car.jpg"
+  },
+  "types/sedan": {
+    "for": "type: Sedan",
+    "file": "File:2003-2004_Toyota_Corolla_(ZZE122R)_Conquest_sedan_01.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2003-2004_Toyota_Corolla_(ZZE122R)_Conquest_sedan_01.jpg",
+    "author": "OSX",
+    "license": "Public domain",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Corolla_(E120)",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/sedan.jpg"
+  },
+  "types/suv": {
+    "for": "type: SUV",
+    "file": "File:2024_Toyota_RAV4_Prime_XSE_Premium_in_Silver_Sky_with_Midnight_Black_roof,_front_left.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2024_Toyota_RAV4_Prime_XSE_Premium_in_Silver_Sky_with_Midnight_Black_roof,_front_left.jpg",
+    "author": "Mr.choppers",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_RAV4",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/suv.jpg"
+  },
+  "types/4x4-off-road": {
+    "for": "type: 4x4 / Off-road",
+    "file": "File:2021_Toyota_Land_Cruiser_300_3.4_ZX_(Colombia)_front_view_04.png",
+    "page": "https://commons.wikimedia.org/wiki/File:2021_Toyota_Land_Cruiser_300_3.4_ZX_(Colombia)_front_view_04.png",
+    "author": "Autosdeprimera",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Land_Cruiser",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/4x4-off-road.jpg"
+  },
+  "types/pickup": {
+    "for": "type: Pickup",
+    "file": "File:2016_Toyota_HiLux_Invincible_D-4D_4WD_2.4_Front.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2016_Toyota_HiLux_Invincible_D-4D_4WD_2.4_Front.jpg",
+    "author": "Vauxford",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Hilux",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/pickup.jpg"
+  },
+  "types/minibus": {
+    "for": "type: Minibus",
+    "file": "File:2020_Toyota_HiAce_(front).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2020_Toyota_HiAce_(front).jpg",
+    "author": "User3204",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_HiAce",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/minibus.jpg"
+  },
+  "types/bus": {
+    "for": "type: Bus",
+    "file": "File:Toyota_Coaster_GX_XZB70.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Toyota_Coaster_GX_XZB70.jpg",
+    "author": "Ypy31",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Coaster",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/bus.jpg"
+  },
+  "types/van": {
+    "for": "type: Van",
+    "file": "File:Hyundai_The_New_Grand_Starex_Urban_Front_Side.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Hyundai_The_New_Grand_Starex_Urban_Front_Side.jpg",
+    "author": "Ki hoon",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Hyundai_Starex",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/van.jpg"
+  },
+  "types/luxury-wedding": {
+    "for": "type: Luxury & wedding",
+    "file": "File:2026_Mercedes-Benz_V223_IMG_7632.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2026_Mercedes-Benz_V223_IMG_7632.jpg",
+    "author": "Alexander Migl",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Mercedes-Benz_S-Class",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/luxury-wedding.jpg"
+  },
+  "types/electric": {
+    "for": "type: Electric",
+    "file": "File:2025_Volkswagen_ID4_Pro_Redspot_front.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2025_Volkswagen_ID4_Pro_Redspot_front.jpg",
+    "author": "LuvsMG481",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Volkswagen_ID.4",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/electric.jpg"
+  },
+  "types/taxi": {
+    "for": "type: Taxi",
+    "file": "File:Taxi Stand in Addis Ababa.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Taxi_Stand_in_Addis_Ababa.jpg",
+    "author": "Ginevrajocosa88",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/types/taxi.jpg"
+  },
+  "makes/toyota": {
+    "for": "make: Toyota",
+    "file": "File:Toyota carlogo.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:Toyota_carlogo.svg",
+    "author": "Toyota Motor Corporation",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/toyota.png"
+  },
+  "models/toyota-vitz": {
+    "for": "model: Toyota Vitz",
+    "file": "File:Toyota Vitz, Korle-Klottey (P1100243).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Toyota_Vitz,_Korle-Klottey_(P1100243).jpg",
+    "author": "Matti Blume",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/deed.en",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-vitz.jpg"
+  },
+  "models/toyota-yaris": {
+    "for": "model: Toyota Yaris",
+    "file": "File:2017_Toyota_Yaris_L_5-door,_front_right,_08-25-2024.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2017_Toyota_Yaris_L_5-door,_front_right,_08-25-2024.jpg",
+    "author": "MercurySable99",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Vitz",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-yaris.jpg"
+  },
+  "models/toyota-corolla": {
+    "for": "model: Toyota Corolla",
+    "file": "File:2003-2004_Toyota_Corolla_(ZZE122R)_Conquest_sedan_01.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2003-2004_Toyota_Corolla_(ZZE122R)_Conquest_sedan_01.jpg",
+    "author": "OSX",
+    "license": "Public domain",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Corolla_(E120)",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-corolla.jpg"
+  },
+  "models/toyota-corolla-axio": {
+    "for": "model: Toyota Corolla Axio",
+    "file": "File:2013_Toyota_Corolla-Axio-Hybrid_01.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2013_Toyota_Corolla-Axio-Hybrid_01.jpg",
+    "author": "Mytho88",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Corolla_(E160)",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-corolla-axio.jpg"
+  },
+  "models/toyota-camry": {
+    "for": "model: Toyota Camry",
+    "file": "File:2018_Toyota_Camry_(ASV70R)_Ascent_sedan_(2018-08-27)_01.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2018_Toyota_Camry_(ASV70R)_Ascent_sedan_(2018-08-27)_01.jpg",
+    "author": "EurovisionNim",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Camry",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-camry.jpg"
+  },
+  "models/toyota-rav4": {
+    "for": "model: Toyota RAV4",
+    "file": "File:2024_Toyota_RAV4_Prime_XSE_Premium_in_Silver_Sky_with_Midnight_Black_roof,_front_left.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2024_Toyota_RAV4_Prime_XSE_Premium_in_Silver_Sky_with_Midnight_Black_roof,_front_left.jpg",
+    "author": "Mr.choppers",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_RAV4",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-rav4.jpg"
+  },
+  "models/toyota-rush": {
+    "for": "model: Toyota Rush",
+    "file": "File:2018_Daihatsu_Terios_1.5_R_Deluxe_wagon_(F800RG;_01-12-2019),_South_Tangerang.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2018_Daihatsu_Terios_1.5_R_Deluxe_wagon_(F800RG;_01-12-2019),_South_Tangerang.jpg",
+    "author": "Wilzz99",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Daihatsu_Terios",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-rush.jpg"
+  },
+  "models/toyota-fortuner": {
+    "for": "model: Toyota Fortuner",
+    "file": "File:2015_Toyota_Fortuner_(New_Zealand).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2015_Toyota_Fortuner_(New_Zealand).jpg",
+    "author": "NZ Car Freak",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Fortuner",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-fortuner.jpg"
+  },
+  "models/toyota-land-cruiser-80": {
+    "for": "model: Toyota Land Cruiser 80",
+    "file": "File:1996 Toyota Land Cruiser 80 4.2 VX in Dark Emerald Pearl, front right.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:1996_Toyota_Land_Cruiser_80_4.2_VX_in_Dark_Emerald_Pearl,_front_right.jpg",
+    "author": "Ethan Llamas",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-land-cruiser-80.jpg"
+  },
+  "models/toyota-land-cruiser-100-105": {
+    "for": "model: Toyota Land Cruiser 100 / 105",
+    "file": "File:Toyota Land Cruiser in the Desert Side-Back View 20120409 1.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Toyota_Land_Cruiser_in_the_Desert_Side-Back_View_20120409_1.jpg",
+    "author": "DXR",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-land-cruiser-100-105.jpg"
+  },
+  "models/toyota-land-cruiser-70": {
+    "for": "model: Toyota Land Cruiser 70",
+    "file": "File:Toyota_Land_Cruiser_70_003_(cropped).JPG",
+    "page": "https://commons.wikimedia.org/wiki/File:Toyota_Land_Cruiser_70_003_(cropped).JPG",
+    "author": "Tennen-Gas",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Land_Cruiser_(J70)",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-land-cruiser-70.jpg"
+  },
+  "models/toyota-land-cruiser-200": {
+    "for": "model: Toyota Land Cruiser 200",
+    "file": "File:2014 Toyota Land Cruiser 200 VX V8 in Black, front right.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2014_Toyota_Land_Cruiser_200_VX_V8_in_Black,_front_right.jpg",
+    "author": "Ethan Llamas",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-land-cruiser-200.jpg"
+  },
+  "models/toyota-land-cruiser-300": {
+    "for": "model: Toyota Land Cruiser 300",
+    "file": "File:2021_Toyota_Land_Cruiser_300_3.4_ZX_(Colombia)_front_view_04.png",
+    "page": "https://commons.wikimedia.org/wiki/File:2021_Toyota_Land_Cruiser_300_3.4_ZX_(Colombia)_front_view_04.png",
+    "author": "Autosdeprimera",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Land_Cruiser",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-land-cruiser-300.jpg"
+  },
+  "models/toyota-land-cruiser-prado": {
+    "for": "model: Toyota Land Cruiser Prado",
+    "file": "File:Toyota Land Cruiser Prado 150.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Toyota_Land_Cruiser_Prado_150.jpg",
+    "author": "TTTNIS",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-land-cruiser-prado.jpg"
+  },
+  "models/toyota-hilux": {
+    "for": "model: Toyota Hilux",
+    "file": "File:2016_Toyota_HiLux_Invincible_D-4D_4WD_2.4_Front.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2016_Toyota_HiLux_Invincible_D-4D_4WD_2.4_Front.jpg",
+    "author": "Vauxford",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Hilux",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-hilux.jpg"
+  },
+  "models/toyota-hiace": {
+    "for": "model: Toyota HiAce",
+    "file": "File:2020_Toyota_HiAce_(front).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2020_Toyota_HiAce_(front).jpg",
+    "author": "User3204",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "article": "https://en.wikipedia.org/wiki/Toyota_HiAce",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-hiace.jpg"
+  },
+  "models/toyota-coaster": {
+    "for": "model: Toyota Coaster",
+    "file": "File:Toyota_Coaster_GX_XZB70.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Toyota_Coaster_GX_XZB70.jpg",
+    "author": "Ypy31",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "article": "https://en.wikipedia.org/wiki/Toyota_Coaster",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/toyota-coaster.jpg"
+  },
+  "makes/hyundai": {
+    "for": "make: Hyundai",
+    "file": "File:Hyundai Motor Company logo.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:Hyundai_Motor_Company_logo.svg",
+    "author": "Hyundai Motor Company",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/hyundai.png"
+  },
+  "models/hyundai-i10": {
+    "for": "model: Hyundai i10",
+    "file": "File:Hyundai_i10_1.0_Intro_(III)_–_f_03012021.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Hyundai_i10_1.0_Intro_(III)_%E2%80%93_f_03012021.jpg",
+    "author": "© M 93",
+    "license": "CC BY-SA 3.0 de",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en",
+    "article": "https://en.wikipedia.org/wiki/Hyundai_i10",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/hyundai-i10.jpg"
+  },
+  "models/hyundai-accent": {
+    "for": "model: Hyundai Accent",
+    "file": "File:2019_Hyundai_Accent_1.6L,_front_10.8.19.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2019_Hyundai_Accent_1.6L,_front_10.8.19.jpg",
+    "author": "Kevauto",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Hyundai_Accent",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/hyundai-accent.jpg"
+  },
+  "models/hyundai-elantra": {
+    "for": "model: Hyundai Elantra",
+    "file": "File:2023_Hyundai_Elantra_Limited_in_Silver,_front_left,_04-04-2026.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2023_Hyundai_Elantra_Limited_in_Silver,_front_left,_04-04-2026.jpg",
+    "author": "Cutlass",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "article": "https://en.wikipedia.org/wiki/Hyundai_Elantra",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/hyundai-elantra.jpg"
+  },
+  "models/hyundai-creta": {
+    "for": "model: Hyundai Creta",
+    "file": "File:2024_Hyundai_Creta_1.5_MPi_SX(O)_(India)_front_view.png",
+    "page": "https://commons.wikimedia.org/wiki/File:2024_Hyundai_Creta_1.5_MPi_SX(O)_(India)_front_view.png",
+    "author": "CARS WORLD Kannada",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "article": "https://en.wikipedia.org/wiki/Hyundai_Creta",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/hyundai-creta.jpg"
+  },
+  "models/hyundai-tucson": {
+    "for": "model: Hyundai Tucson",
+    "file": "File:Hyundai_Tucson_1.6_T-GDI_PHEV_Prime_(IV)_–_f_05072025.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Hyundai_Tucson_1.6_T-GDI_PHEV_Prime_(IV)_%E2%80%93_f_05072025.jpg",
+    "author": "© M 93",
+    "license": "CC BY-SA 3.0 de",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en",
+    "article": "https://en.wikipedia.org/wiki/Hyundai_Tucson",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/hyundai-tucson.jpg"
+  },
+  "models/hyundai-santa-fe": {
+    "for": "model: Hyundai Santa Fe",
+    "file": "File:2024_Hyundai_Santa_Fe_Luxury_AWD_in_Hampton_Grey,_front_left,_2024-06-30.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2024_Hyundai_Santa_Fe_Luxury_AWD_in_Hampton_Grey,_front_left,_2024-06-30.jpg",
+    "author": "Elise240SX",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Hyundai_Santa_Fe",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/hyundai-santa-fe.jpg"
+  },
+  "models/hyundai-h-1": {
+    "for": "model: Hyundai H-1",
+    "file": "File:Hyundai_The_New_Grand_Starex_Urban_Front_Side.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Hyundai_The_New_Grand_Starex_Urban_Front_Side.jpg",
+    "author": "Ki hoon",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Hyundai_Starex",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/hyundai-h-1.jpg"
+  },
+  "makes/suzuki": {
+    "for": "make: Suzuki",
+    "file": "File:Suzuki logo 2.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:Suzuki_logo_2025_(vertical).svg",
+    "author": "Suzuki Motor Corporation",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/suzuki.png"
+  },
+  "models/suzuki-alto": {
+    "for": "model: Suzuki Alto",
+    "file": "File:1994-1997_Suzuki_Alto.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:1994-1997_Suzuki_Alto.jpg",
+    "author": "TTTNIS",
+    "license": "Public domain",
+    "article": "https://en.wikipedia.org/wiki/Suzuki_Alto",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/suzuki-alto.jpg"
+  },
+  "models/suzuki-swift": {
+    "for": "model: Suzuki Swift",
+    "file": "File:Suzuki_Swift_(2024)_hybrid_DSC_6076.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Suzuki_Swift_(2024)_hybrid_DSC_6076.jpg",
+    "author": "Alexander-93",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Suzuki_Swift",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/suzuki-swift.jpg"
+  },
+  "models/suzuki-dzire": {
+    "for": "model: Suzuki Dzire",
+    "file": "File:Suzuki_Dzire_II_1.2_GLX_Hybrid_Arctic_White_Pearl.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Suzuki_Dzire_II_1.2_GLX_Hybrid_Arctic_White_Pearl.jpg",
+    "author": "Ethan Llamas",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Suzuki_Dzire",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/suzuki-dzire.jpg"
+  },
+  "models/suzuki-grand-vitara": {
+    "for": "model: Suzuki Grand Vitara",
+    "file": "File:2018_Suzuki_Vitara_(LY)_S_Turbo_wagon_(2018-11-02)_01.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2018_Suzuki_Vitara_(LY)_S_Turbo_wagon_(2018-11-02)_01.jpg",
+    "author": "EurovisionNim",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Suzuki_Vitara",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/suzuki-grand-vitara.jpg"
+  },
+  "makes/nissan": {
+    "for": "make: Nissan",
+    "file": "File:Nissan 2020 logo.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:Nissan_2020_logo.svg",
+    "author": "Nissan Motor Corporation",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/nissan.png"
+  },
+  "models/nissan-sunny": {
+    "for": "model: Nissan Sunny",
+    "file": "File:NISSAN_Sunny_B13.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:NISSAN_Sunny_B13.jpg",
+    "author": "TTTNIS",
+    "license": "Public domain",
+    "article": "https://en.wikipedia.org/wiki/Nissan_Sunny",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/nissan-sunny.jpg"
+  },
+  "models/nissan-x-trail": {
+    "for": "model: Nissan X-Trail",
+    "file": "File:Nissan_X-Trail_(T33)_1X7A7179.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Nissan_X-Trail_(T33)_1X7A7179.jpg",
+    "author": "Alexander-93",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Nissan_X-Trail",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/nissan-x-trail.jpg"
+  },
+  "models/nissan-navara": {
+    "for": "model: Nissan Navara",
+    "file": "File:2021_Nissan_Navara_facelift_(cropped).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2021_Nissan_Navara_facelift_(cropped).jpg",
+    "author": "Vogue2Voke",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Nissan_Navara",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/nissan-navara.jpg"
+  },
+  "models/nissan-patrol": {
+    "for": "model: Nissan Patrol",
+    "file": "File:2016_Nissan_Patrol_(Y62)_Ti-L_wagon_(2018-09-17)_01.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2016_Nissan_Patrol_(Y62)_Ti-L_wagon_(2018-09-17)_01.jpg",
+    "author": "EurovisionNim",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Nissan_Patrol",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/nissan-patrol.jpg"
+  },
+  "makes/mitsubishi": {
+    "for": "make: Mitsubishi",
+    "file": "File:Mitsubishi logo.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:Mitsubishi_logo.svg",
+    "author": "Mitsubishi",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/mitsubishi.png"
+  },
+  "models/mitsubishi-pajero": {
+    "for": "model: Mitsubishi Pajero",
+    "file": "File:Mitsubishi_V98_Pajero_Long_Body_Super_Exceed_3200_DI-D.JPG",
+    "page": "https://commons.wikimedia.org/wiki/File:Mitsubishi_V98_Pajero_Long_Body_Super_Exceed_3200_DI-D.JPG",
+    "author": "DY5W-sport",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "article": "https://en.wikipedia.org/wiki/Mitsubishi_Pajero",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/mitsubishi-pajero.jpg"
+  },
+  "models/mitsubishi-l200": {
+    "for": "model: Mitsubishi L200",
+    "file": "File:Mitsubishi_Triton_LC_2.4_GLS_2WD_Blade_Silver_Metallic_(cropped).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Mitsubishi_Triton_LC_2.4_GLS_2WD_Blade_Silver_Metallic_(cropped).jpg",
+    "author": "Ethan Llamas",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Mitsubishi_Triton",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/mitsubishi-l200.jpg"
+  },
+  "makes/isuzu": {
+    "for": "make: Isuzu",
+    "file": "File:Isuzu wordmark.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:Isuzu_wordmark.svg",
+    "author": "Isuzu; converted from EPS to SVG by User:Stannered",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/isuzu.png"
+  },
+  "models/isuzu-d-max": {
+    "for": "model: Isuzu D-Max",
+    "file": "File:Isuzu_D-Max_(third_generation)_autoMOBIL_Tübingen_2025_DSC_2758.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Isuzu_D-Max_(third_generation)_autoMOBIL_T%C3%BCbingen_2025_DSC_2758.jpg",
+    "author": "Alexander Migl",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Isuzu_D-Max",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/isuzu-d-max.jpg"
+  },
+  "makes/ford": {
+    "for": "make: Ford",
+    "file": "File:Ford logo flat.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:Ford_logo_flat.svg",
+    "author": "Ford Motor Company",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/ford.png"
+  },
+  "models/ford-ranger": {
+    "for": "model: Ford Ranger",
+    "file": "File:Ford_Ranger_(T6,_P703)_Wildtrak_IMG_7320.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Ford_Ranger_(T6,_P703)_Wildtrak_IMG_7320.jpg",
+    "author": "Alexander-93",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Ford_Ranger",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/ford-ranger.jpg"
+  },
+  "makes/mercedes-benz": {
+    "for": "make: Mercedes-Benz",
+    "file": "File:Mercedes-Benz Star 2022.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_Star_2022.svg",
+    "author": "Mercedes-Benz Group",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/mercedes-benz.png"
+  },
+  "models/mercedes-benz-e-class": {
+    "for": "model: Mercedes-Benz E-Class",
+    "file": "File:Mercedes-Benz_W214_1X7A1841.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_W214_1X7A1841.jpg",
+    "author": "Alexander-93",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Mercedes-Benz_E-Class",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/mercedes-benz-e-class.jpg"
+  },
+  "models/mercedes-benz-s-class": {
+    "for": "model: Mercedes-Benz S-Class",
+    "file": "File:2026_Mercedes-Benz_V223_IMG_7632.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2026_Mercedes-Benz_V223_IMG_7632.jpg",
+    "author": "Alexander Migl",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Mercedes-Benz_S-Class",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/mercedes-benz-s-class.jpg"
+  },
+  "models/mercedes-benz-g-class": {
+    "for": "model: Mercedes-Benz G-Class",
+    "file": "File:Mercedes-Benz_W463_G_350_BlueTEC_01.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_W463_G_350_BlueTEC_01.jpg",
+    "author": "Julian Herzog (Website)",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "article": "https://en.wikipedia.org/wiki/Mercedes-Benz_G-Class",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/mercedes-benz-g-class.jpg"
+  },
+  "models/mercedes-benz-sprinter": {
+    "for": "model: Mercedes-Benz Sprinter",
+    "file": "File:2019_Mercedes-Benz_Sprinter_314_CDi_2.1.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2019_Mercedes-Benz_Sprinter_314_CDi_2.1.jpg",
+    "author": "Vauxford",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Mercedes-Benz_Sprinter",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/mercedes-benz-sprinter.jpg"
+  },
+  "makes/volkswagen": {
+    "for": "make: Volkswagen",
+    "file": "File:Volkswagen logo 2019.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:Volkswagen_logo_2019.svg",
+    "author": "Volkswagen",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/volkswagen.png"
+  },
+  "models/volkswagen-id-4": {
+    "for": "model: Volkswagen ID.4",
+    "file": "File:2025_Volkswagen_ID4_Pro_Redspot_front.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2025_Volkswagen_ID4_Pro_Redspot_front.jpg",
+    "author": "LuvsMG481",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Volkswagen_ID.4",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/volkswagen-id-4.jpg"
+  },
+  "models/volkswagen-id-6": {
+    "for": "model: Volkswagen ID.6",
+    "file": "File:2021_SAIC-Volkswagen_ID.6_X_(front).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2021_SAIC-Volkswagen_ID.6_X_(front).jpg",
+    "author": "User3204",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/Volkswagen_ID.6",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/volkswagen-id-6.jpg"
+  },
+  "makes/byd": {
+    "for": "make: BYD",
+    "file": "File:BYD Auto Logo.svg",
+    "page": "https://commons.wikimedia.org/wiki/File:BYD_Auto_Logo.svg",
+    "author": "Unknown authorUnknown author",
+    "license": "Public domain",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/makes/byd.png"
+  },
+  "models/byd-dolphin": {
+    "for": "model: BYD Dolphin",
+    "file": "File:2021_BYD_Dolphin_EV_(front).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2021_BYD_Dolphin_EV_(front).jpg",
+    "author": "User3204",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/BYD_Dolphin",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/byd-dolphin.jpg"
+  },
+  "models/byd-seagull": {
+    "for": "model: BYD Seagull",
+    "file": "File:2023_ВYD_Seagull_(front).jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:2023_%D0%92YD_Seagull_(front).jpg",
+    "author": "User3204",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/BYD_Seagull",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/byd-seagull.jpg"
+  },
+  "models/byd-atto-3": {
+    "for": "model: BYD Atto 3",
+    "file": "File:BYD_Atto_3_1X7A6491.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:BYD_Atto_3_1X7A6491.jpg",
+    "author": "Alexander Migl",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "article": "https://en.wikipedia.org/wiki/BYD_Atto_3",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/byd-atto-3.jpg"
+  },
+  "models/lada-2107": {
+    "for": "model: Lada 2107",
+    "file": "File:Lada_2107_aka_Lada_Riva_October_1995_1452cc.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Lada_2107_aka_Lada_Riva_October_1995_1452cc.jpg",
+    "author": "Charles01",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "article": "https://en.wikipedia.org/wiki/Lada_Riva",
+    "storedAt": "https://wheellol.sfo3.digitaloceanspaces.com/catalog/models/lada-2107.jpg"
+  }
+}

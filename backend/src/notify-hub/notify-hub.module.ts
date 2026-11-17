@@ -10,7 +10,7 @@ import { redisProvider } from './redis/redis.provider';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secret',
+      secret: process.env.JWT_SECRET || 'yourSecret', // same fallback as auth + rental-service
       signOptions: { expiresIn: '15m' },
     }),
   ],

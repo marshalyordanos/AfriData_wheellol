@@ -168,20 +168,16 @@ const LayoutHeader = ({ collapsed, collapsed2, setCollapsed }) => {
         <button
           className="app-ib"
           aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
-          onClick={async () => {
+          onClick={() => {
+            // The panel loads the list itself; items are marked read when opened
+            // (old behaviour marked everything read on open — removed).
             setNotifOpen(true);
-            dispatch(fetchNotifications({ userid: currentUserId }));
-            if (currentUserId) {
-              try {
-                await dispatch(markAllNotificationsRead(currentUserId));
-              } catch (err) {
-                console.error("Failed to mark all notifications read", err);
-              }
-            }
           }}
         >
           <Bell size={18} />
-          {unreadCount > 0 && <span className="dot" />}
+          {unreadCount > 0 && (
+            <span className="notif-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
+          )}
         </button>
 
         <span className="app-divider" />

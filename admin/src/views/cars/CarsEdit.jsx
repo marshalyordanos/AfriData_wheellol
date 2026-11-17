@@ -11,6 +11,7 @@ import {
   Row,
   Col,
   Typography,
+  Spin,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import styled from "styled-components";
@@ -18,6 +19,15 @@ import carsService from "./CarsService";
 import { selectCurrentUser } from "../../redux/auth/authSlice";
 import { useSelector } from "react-redux";
 import CartypesService from "../cartypes/CartypesService";
+import LocationService from "../locations/LocationService";
+import {
+  CarDocumentsEditor,
+  CarPhotosEditor,
+  appendCarFiles,
+  carFilesFromCar,
+  countCarFiles,
+  emptyCarFiles,
+} from "../../components/carFiles/CarFiles";
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -30,13 +40,35 @@ const getBase64 = (file) =>
     reader.onerror = (error) => reject(error);
   });
 
+/** One numbered section of the form (outside the component so inputs keep focus) */
+const Sec = ({ n, title, sub, children }) => (
+  <section className="cf-form-sec">
+    <div className="cf-form-h">
+      <span className="n">{n}</span>
+      <div style={{ minWidth: 0 }}>
+        <b>{title}</b>
+        {sub && (
+          <div>
+            <span className="s">{sub}</span>
+          </div>
+        )}
+      </div>
+    </div>
+    <div className="cf-form-b">{children}</div>
+  </section>
+);
+
 const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
   const [form] = Form.useForm();
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
   const [carTypes, setCarTypes] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [savedLocation, setSavedLocation] = useState("");
 
-  const [photoList, setPhotoList] = useState([]);
+  // Photos (6 slots + extras) and documents — all optional
+  const [files, setFiles] = useState(emptyCarFiles);
+  const [photoList, setPhotoList] = useState([]); // old upload list (unused)
   const [techCertList, setTechCertList] = useState([]);
   const [gpsReceiptList, setGpsReceiptList] = useState([]);
   const [previewImage, setPreviewImage] = useState("");
@@ -66,10 +98,20 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         });
         setCarTypes(typeList?.data);
 
+        // Locations come from Settings → Locations (active ones only)
+        try {
+          const locRes = await LocationService.list({ pageSize: 200, active: "true" });
+          setLocations(locRes?.data || []);
+        } catch (e) {
+          setLocations([]);
+        }
+
         if (isEdit) {
           const carData = await carsService.getCar(carId);
           if (carData) {
             setShowGPS(carData.hasGPS);
+            setFiles(carFilesFromCar(carData));
+            setSavedLocation(carData.location || "");
 
             form.setFieldsValue({
               makeId: carData.makeId,
@@ -89,7 +131,7 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
               ecoFriendly: carData.ecoFriendly,
               isActive: carData.isActive,
               description: carData.description || "",
-              location: carData.location || "",
+              location: carData.location || undefined,
               hasGPS: carData.hasGPS,
               gpsDeviceBrand: carData.gpsDeviceBrand,
               gpsImeiNumber: carData.gpsImeiNumber,
@@ -216,14 +258,17 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
         }
       });
 
+      /* Old: plain photo list + inspection certificate field
       photoList.forEach((file) => {
         if (file.originFileObj) formData.append("photos", file.originFileObj);
       });
-
       techCertList.forEach((file) => {
         if (file.originFileObj)
           formData.append("technicalInspectionCertificate", file.originFileObj);
       });
+      */
+      // photo slots + documents (inspection is one of the documents)
+      appendCarFiles(formData, files);
 
       gpsReceiptList.forEach((file) => {
         if (file.originFileObj)
@@ -248,302 +293,189 @@ const CarsEdit = ({ carId = null, setIsModalOpen, refreshData }) => {
     }
   };
 
+  const counts = countCarFiles(files);
+  const year = new Date().getFullYear() + 1;
+
+  if (loading && isEdit) {
+    return (
+      <div style={{ display: "grid", placeItems: "center", minHeight: 240 }}>
+        <Spin />
+      </div>
+    );
+  }
+
   return (
-    <Form form={form} layout="vertical" onFinish={onFinish}>
-      <Title level={4}>General Info</Title>
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Form.Item
-            label="Brand"
-            name="makeId"
-            rules={[{ required: true, message: "Brand is required" }]}
-          >
+    <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false}>
+      <Sec n={1} title="Photos" sub="One photo for each side. Click a box or drop a photo on it. You can add them later.">
+        <div style={{ paddingBottom: 12 }}>
+          <CarPhotosEditor value={files} onChange={setFiles} />
+        </div>
+      </Sec>
+
+      <Sec n={2} title="Documents" sub="From the rental agreement. Photo or PDF. All optional — add the missing ones later.">
+        <div style={{ paddingBottom: 12 }}>
+          <CarDocumentsEditor value={files} onChange={setFiles} />
+        </div>
+      </Sec>
+
+      <Sec n={3} title="Car details">
+        <div className="cf-form-grid">
+          <Form.Item label="Brand" name="makeId" rules={[{ required: true, message: "Choose the brand" }]}>
             <Select
               showSearch
               placeholder="Select brand"
-              filterOption={false}
-              onSearch={handleSearchBrands}
+              optionFilterProp="label"
               onChange={handleBrandChange}
+              onDropdownVisibleChange={(o) => o && !brands.length && handleSearchBrands()}
               loading={brandLoading}
               options={brands.map((b) => ({ label: b.name, value: b.id }))}
             />
           </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item
-            label="Model"
-            name="modelId"
-            rules={[{ required: true, message: "Model is required" }]}
-          >
-            <Select
-              showSearch
-              placeholder="Select model"
-              options={models.map((m) => ({ label: m.name, value: m.id }))}
-              disabled={!form.getFieldValue("makeId")}
-            />
+          <Form.Item noStyle shouldUpdate={(a, b) => a.makeId !== b.makeId}>
+            {({ getFieldValue }) => (
+              <Form.Item label="Model" name="modelId" rules={[{ required: true, message: "Choose the model" }]}>
+                <Select
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder={getFieldValue("makeId") ? "Select model" : "Choose the brand first"}
+                  options={models.map((m) => ({ label: m.name, value: m.id }))}
+                  disabled={!getFieldValue("makeId")}
+                />
+              </Form.Item>
+            )}
           </Form.Item>
-        </Col>
-      </Row>
-
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Form.Item
-            label="Car Type"
-            name="carType"
-            rules={[{ required: true, message: "Type is required" }]}
-          >
+          <Form.Item label="Car type" name="carType" rules={[{ required: true, message: "Choose the type" }]}>
             <Select
               showSearch
-              placeholder="Select Type"
+              optionFilterProp="label"
+              placeholder="Select type"
               loading={carTypesLoading}
               options={carTypes.map((b) => ({ label: b.name, value: b.id }))}
             />
           </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Year" name="year" rules={[{ required: true }]}>
-            <Input type="number" placeholder="Year" />
+          <Form.Item label="Year" name="year" rules={[{ required: true, message: "Enter the year" }]}>
+            <Input type="number" min={1980} max={year} placeholder="e.g. 2020" />
           </Form.Item>
-        </Col>
-      </Row>
-
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Form.Item label="Color" name="color" rules={[{ required: true }]}>
-            <Input placeholder="Color" />
+          <Form.Item label="Plate number" name="licensePlate" rules={[{ required: true, message: "Enter the plate" }]}>
+            <Input placeholder="e.g. AA-03-A61524" />
           </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item
-            label="License Plate"
-            name="licensePlate"
-            rules={[{ required: true }]}
-          >
-            <Input placeholder="License Plate" />
+          <Form.Item label="Colour" name="color" rules={[{ required: true, message: "Enter the colour" }]}>
+            <Input placeholder="e.g. White" />
           </Form.Item>
-        </Col>
-      </Row>
-
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Form.Item label="VIN" name="vin" rules={[{ required: true }]}>
-            <Input placeholder="VIN" />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item
-            label="Transmission"
-            name="transmission"
-            rules={[{ required: true }]}
-          >
+          <Form.Item label="Transmission" name="transmission" rules={[{ required: true, message: "Choose one" }]}>
             <Select placeholder="Transmission">
               <Option value="AUTOMATIC">Automatic</Option>
               <Option value="MANUAL">Manual</Option>
             </Select>
           </Form.Item>
-        </Col>
-      </Row>
-
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Form.Item
-            label="Mileage"
-            name="mileage"
-            rules={[{ required: true }]}
-          >
-            <Input type="number" placeholder="Mileage" />
+          <Form.Item label="Mileage (km)" name="mileage" rules={[{ required: true, message: "Enter the mileage" }]}>
+            <Input type="number" min={0} placeholder="e.g. 85000" />
           </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
           <Form.Item label="Location" name="location">
-            <Input placeholder="Location" />
+            <Select
+              showSearch
+              allowClear
+              placeholder="Select location"
+              optionFilterProp="label"
+              loading={loading}
+              notFoundContent="No locations. Add them in Locations."
+              options={[
+                ...locations.map((l) => ({
+                  value: l.name,
+                  label: [l.name, l.nameAm ? `· ${l.nameAm}` : "", l.region && l.region !== l.name ? `(${l.region})` : ""]
+                    .filter(Boolean)
+                    .join(" "),
+                })),
+                // Keep an old typed-in value visible so editing doesn't lose it
+                ...(savedLocation && !locations.some((l) => l.name === savedLocation)
+                  ? [{ value: savedLocation, label: savedLocation }]
+                  : []),
+              ]}
+            />
           </Form.Item>
-        </Col>
-      </Row>
+          <Form.Item label="VIN / chassis no." name="vin" rules={[{ required: true, message: "Enter the VIN" }]}>
+            <Input placeholder="VIN" />
+          </Form.Item>
+        </div>
+      </Sec>
 
-      <Title level={4} style={{ marginTop: 24 }}>
-        Capacity
-      </Title>
-
-      <Row gutter={16}>
-        {/* Price is negotiated per booking request — hidden for now
-        <Col xs={24} md={12}>
-          <Form.Item
-            label="Rental Price / Day"
-            name="rentalPricePerDay"
-            rules={[{ required: true }]}
-          >
-            <Input type="number" placeholder="Rental Price per Day" />
+      <Sec n={4} title="Capacity & description">
+        <div className="cf-form-grid">
+          <Form.Item label="Seats" name="seatingCapacity" rules={[{ required: true, message: "Enter the seats" }]}>
+            <Input type="number" min={1} max={80} placeholder="e.g. 5" />
           </Form.Item>
-        </Col> */}
-        <Col xs={24} md={12}>
-          <Form.Item
-            label="Seating Capacity"
-            name="seatingCapacity"
-            rules={[{ required: true }]}
-          >
-            <Input type="number" placeholder="Seating Capacity" />
+          <Form.Item label="Mileage limit (km/day)" name="mileageLimit">
+            <Input type="number" min={0} placeholder="Optional" />
           </Form.Item>
-        </Col>
-      </Row>
-
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Form.Item label="Mileage Limit" name="mileageLimit">
-            <Input type="number" placeholder="Mileage Limit" />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="Eco Friendly" name="ecoFriendly">
-            <Select placeholder="Eco Friendly">
+          <Form.Item label="Fuel" name="ecoFriendly">
+            <Select placeholder="Fuel">
+              <Option value="NONE">Petrol / diesel</Option>
               <Option value="HYBRID">Hybrid</Option>
               <Option value="ELECTRIC">Electric</Option>
-              <Option value="NONE">Gas</Option>
             </Select>
           </Form.Item>
-        </Col>
-      </Row>
-
-      {isEdit && (
-        <Form.Item label="Active" name="isActive" valuePropName="checked">
-          <Switch />
-        </Form.Item>
-      )}
-
-      <Form.Item label="Description" name="description">
-        <Input.TextArea rows={3} placeholder="Description" />
-      </Form.Item>
-
-      <Form.Item label="Photos">
-        <p style={{ marginBottom: 8, color: "#555" }}>
-          Please upload 6 photos of your car: Front, Rear, Driver Side,
-          Passenger Side, Dashboard, and Interior.
-        </p>
-        <Upload
-          customRequest={dummyRequest}
-          listType="picture-card"
-          fileList={photoList}
-          onPreview={handlePreview}
-          multiple
-          accept="image/*"
-          onChange={({ fileList }) => {
-            // allow picking several at once, but keep max 6 photos
-            if (fileList.length > 6) {
-              message.warning({ key: "photo-limit", content: "Maximum 6 photos — extra files were skipped." });
-            }
-            setPhotoList(fileList.slice(0, 6));
-          }}
-          beforeUpload={beforeUpload}
-        >
-          {photoList.length >= 6 ? null : (
-            <div>
-              <PlusOutlined />
-              <div style={{ marginTop: 8 }}>Upload</div>
-            </div>
+          {isEdit && (
+            <Form.Item label="Visible to customers" name="isActive" valuePropName="checked">
+              <Switch checkedChildren="Visible" unCheckedChildren="Hidden" />
+            </Form.Item>
           )}
-        </Upload>
-      </Form.Item>
+        </div>
+        <Form.Item label="Description" name="description">
+          <Input.TextArea rows={3} placeholder="Condition, extras, anything customers should know" />
+        </Form.Item>
+      </Sec>
 
-      <Title level={4} style={{ marginTop: 24 }}>
-        GPS & Technical Inspection
-      </Title>
-
-      <Form.Item label="Has GPS?" name="hasGPS" valuePropName="checked">
-        <Switch onChange={(checked) => setShowGPS(checked)} />
-      </Form.Item>
-
-      {showGPS && (
-        <>
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item label="GPS Device Brand" name="gpsDeviceBrand">
-                <Input placeholder="GPS Device Brand" />
+      <Sec n={5} title="GPS" sub="Optional">
+        <Form.Item label="This car has a GPS tracker" name="hasGPS" valuePropName="checked">
+          <Switch onChange={(checked) => setShowGPS(checked)} />
+        </Form.Item>
+        {showGPS && (
+          <>
+            <div className="cf-form-grid">
+              <Form.Item label="GPS device brand" name="gpsDeviceBrand">
+                <Input placeholder="GPS device brand" />
               </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label="GPS IMEI Number" name="gpsImeiNumber">
-                <Input placeholder="GPS IMEI Number" />
+              <Form.Item label="GPS IMEI number" name="gpsImeiNumber">
+                <Input placeholder="IMEI" />
               </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item label="GPS Platform URL" name="gpsPlatformUrl">
-                <Input placeholder="GPS Platform URL" />
+              <Form.Item label="GPS platform URL" name="gpsPlatformUrl">
+                <Input placeholder="https://" />
               </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="GPS Platform Username"
-                name="gpsPlatformUsername"
-              >
+              <Form.Item label="Platform username" name="gpsPlatformUsername">
                 <Input placeholder="Username" />
               </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="GPS Platform Password"
-                name="gpsPlatformPassword"
-              >
-                <Input placeholder="Password" />
+              <Form.Item label="Platform password" name="gpsPlatformPassword">
+                <Input.Password placeholder="Password" />
               </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="GPS Subscription Expiry"
-                name="gpsSubscriptionExpiryDate"
-              >
+              <Form.Item label="Subscription expiry" name="gpsSubscriptionExpiryDate">
                 <DatePicker style={{ width: "100%" }} />
               </Form.Item>
-            </Col>
-          </Row>
+            </div>
+            <Form.Item label="GPS installation receipt" name="gpsInstallationReceiptFile">
+              <Upload
+                customRequest={dummyRequest}
+                listType="picture"
+                maxCount={1}
+                fileList={gpsReceiptList}
+                onChange={({ fileList }) => setGpsReceiptList(fileList)}
+                beforeUpload={(file) => beforeUpload(file, true)}
+              >
+                <Button icon={<PlusOutlined />}>Upload receipt</Button>
+              </Upload>
+            </Form.Item>
+          </>
+        )}
+      </Sec>
 
-          <Form.Item
-            label="GPS Installation Receipt"
-            name="gpsInstallationReceiptFile"
-          >
-            <Upload
-              customRequest={dummyRequest}
-              listType="picture"
-              maxCount={1}
-              fileList={gpsReceiptList}
-              onChange={({ fileList }) => setGpsReceiptList(fileList)}
-              beforeUpload={(file) => beforeUpload(file, true)}
-            >
-              <Button icon={<PlusOutlined />}>Upload Receipt</Button>
-            </Upload>
-          </Form.Item>
-        </>
-      )}
+      {/* Old sections (Photos upload list, Technical Inspection Certificate) are in CarsEditLegacy.jsx */}
 
-      <Form.Item
-        label="Technical Inspection Certificate"
-        name="technicalInspectionCertificateFile"
-      >
-        <Upload
-          customRequest={dummyRequest}
-          listType="picture"
-          maxCount={1}
-          fileList={techCertList}
-          onChange={({ fileList }) => setTechCertList(fileList)}
-          beforeUpload={(file) => beforeUpload(file, true)}
-        >
-          <Button icon={<PlusOutlined />}>Upload Certificate</Button>
-        </Upload>
-      </Form.Item>
-
-      <div className="mp-form-actions">
+      <div className="cf-form-actions">
+        <span style={{ flex: 1, alignSelf: "center", fontSize: 12.5, color: "var(--c-text-3)" }}>
+          {counts.slots}/6 photos · {counts.docs}/6 documents
+        </span>
         <Button onClick={() => setIsModalOpen?.(false)}>Cancel</Button>
-        <Button
-          loading={submitLoading}
-          type="primary"
-          htmlType="submit"
-        >
-          {isEdit ? "Update" : "Create"}
+        <Button loading={submitLoading} type="primary" htmlType="submit">
+          {isEdit ? "Save car" : "Add car"}
         </Button>
       </div>
     </Form>

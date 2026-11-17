@@ -6,7 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-package-lock.json
+# package-lock.json  (kept in git so Docker/CI builds are reproducible)
 node_modules
 dist
 dist-ssr

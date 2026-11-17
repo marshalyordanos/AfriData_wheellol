@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service'; // Adjust path to your Prisma service
 import { Prisma, Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { AuthRegisterDto } from './auth.entity';
 
 @Injectable()
@@ -88,8 +88,10 @@ export class AuthRepository {
     hashedPassword: string,
     files?: {
       profilePhoto?: string;
+      nationalId?: string;
     },
     nums?: string,
+    isSupplier = false,
   ): Promise<User> {
     const { firstName, lastName, email, phone, role } = data;
 
@@ -103,31 +105,58 @@ export class AuthRepository {
         password: hashedPassword,
         profilePhoto: files?.profilePhoto || undefined,
         role: role ? { connect: { id: role } } : undefined,
+        // Supplier signing up from the mobile app
+        hostProfile: isSupplier
+          ? {
+              create: {
+                businessName: data.businessName?.trim() || null,
+                nationalId: files?.nationalId || null,
+              },
+            }
+          : undefined,
       },
       include: { role: true, guestProfile: true, hostProfile: true },
     });
   }
 
   // ----------------- Refresh Tokens -----------------
-  async saveRefreshToken(userId: string, token: string): Promise<void> {
-    const hashedToken = await bcrypt.hash(token, 10);
+  // Stored as sha256 of the token. (bcrypt only reads the first 72 bytes, and
+  // all JWTs of one user start the same, so bcrypt matched ANY of the user's
+  // tokens.) Old bcrypt rows are still checked so nobody is signed out.
+  private hashToken(token: string) {
+    return 'sha256:' + createHash('sha256').update(token).digest('hex');
+  }
+
+  async saveRefreshToken(
+    userId: string,
+    token: string,
+    expiresAt?: Date,
+  ): Promise<void> {
     await this.prisma.refreshToken.create({
       data: {
-        token: hashedToken,
+        token: this.hashToken(token),
         userId,
+        ...(expiresAt ? { expiresAt } : {}),
       },
     });
   }
 
   async findSessionByRefreshToken(userId: string, token: string) {
-    // Fetch only this user's sessions that are still valid
+    if (!userId || !token) return null;
+    const hashed = this.hashToken(token);
+    const exact = await this.prisma.refreshToken.findFirst({
+      where: { userId, token: hashed, expiresAt: { gt: new Date() } },
+    });
+    if (exact) return exact;
+
+    // Old sessions (bcrypt), still valid
     const sessions = await this.prisma.refreshToken.findMany({
       where: {
         userId,
-        expiresAt: { gt: new Date() }, // only not expired
+        expiresAt: { gt: new Date() },
+        NOT: { token: { startsWith: 'sha256:' } },
       },
     });
-
     for (const session of sessions) {
       const isValid = await bcrypt.compare(token, session.token);
       if (isValid) return session;
@@ -144,15 +173,24 @@ export class AuthRepository {
     }
   }
 
+  /** Rotate: new token for the same session, and push its end date forward. */
   async updateRefreshToken(
     userId: string,
     newToken: string,
     sessionId: string,
+    expiresAt?: Date,
   ) {
-    const hashedToken = await bcrypt.hash(newToken, 10);
     await this.prisma.refreshToken.update({
       where: { id: sessionId },
-      data: { token: hashedToken, createdAt: new Date() },
+      data: {
+        token: this.hashToken(newToken),
+        createdAt: new Date(),
+        ...(expiresAt ? { expiresAt } : {}),
+      },
+    });
+    // tidy up: drop this user's ended sessions
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId, expiresAt: { lt: new Date() } },
     });
   }
 

@@ -1,14 +1,17 @@
 import React, { useEffect, useMemo } from "react";
-import { Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { selectCurrentUser, setSummary } from "./redux/auth/authSlice";
 import {
   fetchNotifications,
   fetchUnreadNotifications,
+  markNotificationRead,
+  notificationReceived,
 } from "./views/notification/NotificationRedux";
 import LayoutApp from "./components/layout/LayoutApp";
 import SocketService from "./services/socketService";
-import { notification } from "antd";
+import { Button, notification } from "antd";
+import { NotificationIcon } from "./views/notification/NotificationList";
 import { BellOutlined } from "@ant-design/icons";
 
 import api from "./api/api";
@@ -48,6 +51,11 @@ import DisputeDetails from "./views/dispute/DisputeDetails";
 import VehicleTypesList from "./views/vehicleTypes/VehicleTypesList";
 
 import PermissionList from "./views/permissions/PermissionList";
+import SupplierList from "./views/suppliers/SupplierList";
+import SupplierDetails from "./views/suppliers/SupplierDetails";
+import SupplierCarsReview from "./views/suppliers/SupplierCarsReview";
+import SupplierCarDetails from "./views/suppliers/SupplierCarDetails";
+import SupplierCarAdd from "./views/suppliers/SupplierCarAdd";
 import RoleList from "./views/roles/RoleList";
 
 import GustList from "./views/gust/GustList";
@@ -69,9 +77,35 @@ import ProfileContactInfo from "./views/ProfileContactInfo";
 import RentalRequestList from "./views/rental-requests/RentalRequestList";
 import RentalPaymentsPage from "./views/rental-requests/RentalPaymentsPage";
 import RentalRequestDetails from "./views/rental-requests/RentalRequestDetails";
+import ContractTemplatesPage from "./views/contracts/ContractTemplatesPage";
+import ContractBuilderPage from "./views/contracts/ContractBuilderPage";
+
+// Short, soft "ping" for new notifications (Web Audio, no sound file needed)
+const playPing = () => {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(880, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.12);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+    o.connect(g).connect(ctx.destination);
+    o.start();
+    o.stop(ctx.currentTime + 0.4);
+    o.onended = () => ctx.close();
+  } catch {
+    // audio blocked until the user interacts with the page — ignore
+  }
+};
 
 const LayoutRouting = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector(selectCurrentUser);
   const { connected } = useSelector((state) => state.socket);
 
@@ -98,10 +132,11 @@ const LayoutRouting = () => {
       console.error("fetchSummary: ", error);
     }
   };
-  dispatch(fetchUnreadNotifications(currentUserId));
+  // (was called on every render) dispatch(fetchUnreadNotifications(currentUserId));
 
   useEffect(() => {
     fetchSummary();
+    if (currentUserId) dispatch(fetchUnreadNotifications());
   }, [currentUserId, dispatch]);
 
   useEffect(() => {
@@ -109,19 +144,29 @@ const LayoutRouting = () => {
 
     const handleNewNotification = (data) => {
       try {
-        console.log("📩 New notification:", data);
-
-        // only fetch for the current user
-        dispatch(fetchNotifications({ userid: currentUserId }));
-        dispatch(fetchUnreadNotifications(currentUserId));
-
+        dispatch(notificationReceived(data));
+        const key = `notif-${data?.id || Date.now()}`;
+        const open = () => {
+          notification.destroy(key);
+          if (data?.id) dispatch(markNotificationRead(data.id));
+          if (data?.link) navigate(data.link);
+        };
         notification.open({
-          message: data.title || "New Notification",
-          description: data.message || "You have a new notification",
-          icon: <BellOutlined style={{ color: "var(--primary-color)" }} />,
-          placement: "bottomRight",
-          duration: 7,
+          key,
+          message: <span style={{ fontWeight: 700 }}>{data?.title || "New notification"}</span>,
+          description: data?.message || "",
+          icon: <NotificationIcon type={data?.type} size={32} />,
+          placement: "topRight",
+          duration: 8,
+          onClick: data?.link ? open : undefined,
+          style: { cursor: data?.link ? "pointer" : "default", borderRadius: 14 },
+          btn: data?.link ? (
+            <Button type="primary" size="small" onClick={(e) => { e.stopPropagation(); open(); }}>
+              Open
+            </Button>
+          ) : null,
         });
+        playPing();
       } catch (err) {
         console.error("handleNewNotification error:", err);
       }
@@ -171,11 +216,20 @@ const LayoutRouting = () => {
     { path: "cars/details/:id", element: <CarsDetails /> },
     { path: "cartypes", element: <CartypesList /> },
     { path: "locations", element: <LocationList /> },
+    // Suppliers (car owners listing cars from the app)
+    { path: "suppliers", element: <SupplierList /> },
+    { path: "suppliers/:id", element: <SupplierDetails /> },
+    { path: "suppliers/:id/add-car", element: <SupplierCarAdd /> },
+    { path: "supplier-cars", element: <SupplierCarsReview /> },
+    { path: "supplier-cars/:id", element: <SupplierCarDetails /> },
     { path: "cars/:carId/insurance", element: <CarInsurancePage /> },
     // Simple "car with driver" request flow
     { path: "requests", element: <RentalRequestList /> },
     { path: "requests/:id", element: <RentalRequestDetails /> },
     { path: "request-payments", element: <RentalPaymentsPage /> },
+    // Contract templates (builder) — one is picked for each booking request
+    { path: "contracts", element: <ContractTemplatesPage /> },
+    { path: "contracts/:id", element: <ContractBuilderPage /> },
     // Old self-service booking flow (hidden from the sidebar for now)
     { path: "bookings", element: <BookingList /> },
     { path: "bookings/:id", element: <BookingDetails /> },

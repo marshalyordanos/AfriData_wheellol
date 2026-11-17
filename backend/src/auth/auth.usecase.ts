@@ -16,7 +16,11 @@ export interface AuthUseCase {
   register(data: AuthRegisterDto): Promise<User>;
   login(data: AuthLoginDto): Promise<{ user: User; tokens: AuthTokens }>;
   logout(userId: string, sessionId?: string): Promise<void>;
-  refreshToken(userId: string, refreshToken: string): Promise<AuthTokens>;
+  refreshToken(
+    userId: string,
+    refreshToken: string,
+    claims?: { typ?: string; client?: string },
+  ): Promise<any>;
 
   // Password management
   changePassword(userId: string, data: AuthChangePasswordDto): Promise<void>;

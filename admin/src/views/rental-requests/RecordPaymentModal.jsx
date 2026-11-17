@@ -47,7 +47,7 @@ const RecordPaymentModal = ({ request, open, onClose, onSaved }) => {
       onCancel={onClose}
       title={`Record payment${request ? ` · ${request.trackingCode}` : ""}`}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       {hasPrice && (
         <div className="flex flex-wrap gap-2" style={{ marginBottom: 12 }}>

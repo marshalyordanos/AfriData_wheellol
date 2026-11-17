@@ -21,7 +21,20 @@ import { RpcException } from '@nestjs/microservices';
 import { IResponse } from '../common/types';
 import { uploadToSpaces } from '../config/cloudinary/upload';
 import { sendSms } from '../utils/sendSms';
-import { randomInt } from 'crypto';
+import { randomInt, randomUUID } from 'crypto';
+
+/**
+ * How long a sign-in lasts.
+ *  - admin web app: access 30 min, refresh 1 hour. Every refresh gives a new
+ *    1-hour refresh token, so an admin who keeps working stays signed in and
+ *    is signed out after 1 hour without using the app.
+ *  - mobile app (customers + suppliers): access 30 min, refresh 30 days.
+ */
+const SESSION = {
+  admin: { access: '30m', refresh: '1h', refreshMs: 60 * 60 * 1000 },
+  app: { access: '30m', refresh: '30d', refreshMs: 30 * 24 * 60 * 60 * 1000 },
+} as const;
+type SessionClient = keyof typeof SESSION;
 
 /**
  * Generate a 6-digit numeric OTP as a string (e.g. "012345")
@@ -42,6 +55,11 @@ export class AuthUseCaseImpl {
     if (!roleName) {
       throw new RpcException(`Invalid role`);
     }
+    // Public sign-up: customers (GUEST) and suppliers (HOST) only.
+    // Staff / admin accounts are created from the admin panel.
+    if (roleName !== 'GUEST' && roleName !== 'HOST') {
+      throw new RpcException(`Invalid role`);
+    }
     const role = await this.authRepository.findRoleByName(roleName!);
     if (!role) {
       throw new RpcException(`Invalid role`);
@@ -50,6 +68,23 @@ export class AuthUseCaseImpl {
     const exists = await this.authRepository.findByPhone(data.phone);
     if (exists) {
       throw new RpcException('You are already registered. Please log in.');
+    }
+
+    if (role.name == 'HOST') {
+      // Supplier sign-up: email + phone + password only
+      data.email = data.email?.trim().toLowerCase();
+      if (!data.email) {
+        throw new RpcException('Email is required');
+      }
+      if (await this.authRepository.findByEmail(data.email)) {
+        throw new RpcException(
+          'This email is already used by another account. Please log in or use another email.',
+        );
+      }
+      data.firstName = data.firstName?.trim() || '';
+      data.lastName = data.lastName?.trim() || '';
+    } else if (!data.firstName?.trim() || !data.lastName?.trim()) {
+      throw new RpcException('First and last name are required');
     }
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
@@ -97,14 +132,20 @@ export class AuthUseCaseImpl {
         hashedPassword,
         uploadedFiles,
         nums,
+        role.name == 'HOST',
       );
     }
 
     await sendSms(`${nums} is your verification code`, data.phone);
 
-    const tokens = await this.generateTokens(user,'1y','1y');
+    // const tokens = await this.generateTokens(user,'1y','1y');
+    const tokens = await this.generateTokens(user, 'app');
 
-    await this.authRepository.saveRefreshToken(user.id, tokens.refreshToken);
+    await this.authRepository.saveRefreshToken(
+      user.id,
+      tokens.refreshToken,
+      this.refreshExpiry('app'),
+    );
     return { user, tokens };
   }
 
@@ -126,7 +167,8 @@ export class AuthUseCaseImpl {
       });
     }
 
-    if (user?.role?.name !== 'GUEST') {
+    // Mobile app: customers and suppliers (suppliers get their own area in the app)
+    if (user?.role?.name !== 'GUEST' && user?.role?.name !== 'HOST') {
       throw new RpcException({
         statusCode: 404,
         message: 'Invalid credentials',
@@ -150,9 +192,14 @@ export class AuthUseCaseImpl {
           'Your account is not active. Please contact wheellol support for assistance.',
       });
     }
-    const tokens = await this.generateTokens(user,'1y','1y');
+    // const tokens = await this.generateTokens(user,'1y','1y');
+    const tokens = await this.generateTokens(user, 'app');
 
-    await this.authRepository.saveRefreshToken(user.id, tokens.refreshToken);
+    await this.authRepository.saveRefreshToken(
+      user.id,
+      tokens.refreshToken,
+      this.refreshExpiry('app'),
+    );
     // delete user.password;
 
     return { user, tokens };
@@ -207,9 +254,14 @@ export class AuthUseCaseImpl {
       });
     }
 
-    const tokens = await this.generateTokens(user,'30m','1h');
+    // const tokens = await this.generateTokens(user,'30m','1h');
+    const tokens = await this.generateTokens(user, 'admin');
 
-    await this.authRepository.saveRefreshToken(user.id, tokens.refreshToken);
+    await this.authRepository.saveRefreshToken(
+      user.id,
+      tokens.refreshToken,
+      this.refreshExpiry('admin'),
+    );
     // delete user.password;
 
     return { user, tokens };
@@ -248,28 +300,48 @@ export class AuthUseCaseImpl {
     await this.authRepository.removeRefreshToken(userId, sessionId);
   }
 
-  async refreshToken(userId: string, refreshToken: string) {
-    console.log('tokens: ', refreshToken);
+  async refreshToken(
+    userId: string,
+    refreshToken: string,
+    claims?: { typ?: string; client?: string },
+  ) {
+    const expired = (message: string) =>
+      new RpcException({ statusCode: 401, message });
+
+    // New refresh tokens carry typ=refresh; an access token can't be used here
+    if (claims?.typ && claims.typ !== 'refresh') {
+      throw expired('Invalid refresh token');
+    }
     const session = await this.authRepository.findSessionByRefreshToken(
       userId,
       refreshToken,
     );
-    console.log('sessions: ', session);
-    if (!session) {
-      throw new RpcException('Invalid refresh token');
-    }
+    if (!session) throw expired('Your session has ended. Please sign in again.');
 
     const user = await this.authRepository.findById(session.userId);
-    if (!user) throw new RpcException('User not found');
+    if (!user) throw expired('User not found');
+    if (user.isActive === false) throw expired('Your account is not active.');
 
-    const tokens = await this.generateTokens(user,'30m','1h');
+    // Same app as the sign-in. Old tokens without the claim: customers and
+    // suppliers use the mobile app, everyone else the admin app.
+    const client: SessionClient =
+      claims?.client === 'admin' || claims?.client === 'app'
+        ? claims.client
+        : ['GUEST', 'HOST'].includes((user as any)?.role?.name)
+          ? 'app'
+          : 'admin';
+
+    // const tokens = await this.generateTokens(user,'30m','1h');
+    const tokens = await this.generateTokens(user, client);
     await this.authRepository.updateRefreshToken(
       user.id,
       tokens.refreshToken,
       session.id,
+      this.refreshExpiry(client),
     );
 
-    return { user: user, tokens };
+    const { password, ...safeUser } = user as any;
+    return { user: safeUser, tokens };
   }
 
   // ----------------- Password Management -----------------
@@ -357,11 +429,28 @@ export class AuthUseCaseImpl {
     // console.log(`Send verification email to ${emaphoneil} for user ${userId}`);
   }
   // ----------------- Helper -----------------
-  private async generateTokens(user: User,time: string,time2): Promise<AuthTokens> {
-    const payload = { sub: user.id, email: user.email };
+  private refreshExpiry(client: SessionClient) {
+    return new Date(Date.now() + SESSION[client].refreshMs);
+  }
 
+  private async generateTokens(
+    user: User,
+    client: SessionClient,
+  ): Promise<AuthTokens> {
+    const payload = { sub: user.id, email: user.email, client };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: SESSION[client].access,
+    });
+    // jti makes every refresh token unique (needed for rotation)
+    const refreshToken = this.jwtService.sign(
+      { ...payload, typ: 'refresh', jti: randomUUID() },
+      { expiresIn: SESSION[client].refresh },
+    );
+    /* Old:
     const accessToken = this.jwtService.sign(payload, { expiresIn:  time });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: time2 });
+    */
  //as
     return { accessToken, refreshToken };
   }

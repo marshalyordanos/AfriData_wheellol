@@ -1,245 +1,263 @@
-import React, { useEffect, useRef } from "react";
+// Notification center (right drawer). Each item opens its page (notification.link).
+// The old list is kept in LegacyNotificationList.jsx.
+import React, { useEffect, useMemo } from "react";
+import { Drawer, Button, Segmented, Spin, Empty, Tooltip } from "antd";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import dayjs from "dayjs";
 import {
-  Drawer,
-  List,
-  Avatar,
-  Button,
-  Spin,
-  Empty,
-  Typography,
-  Tag,
-  Card,
-  Space,
-} from "antd";
+  Bell,
+  CarFront,
+  CheckCheck,
+  CircleDollarSign,
+  ShieldAlert,
+  Info,
+  MessageSquare,
+  ChevronRight,
+} from "lucide-react";
 import {
   fetchNotifications,
-  markNotificationRead,
   markAllNotificationsRead,
+  markNotificationRead,
+  setNotificationFilter,
   selectUnreadCount,
 } from "./NotificationRedux";
-import { useDispatch, useSelector } from "react-redux";
-import { selectCurrentUser } from "../../redux/auth/authSlice";
-import {
-  BellOutlined,
-  CheckCircleOutlined,
-  DollarCircleOutlined,
-  InfoCircleOutlined,
-  WarningOutlined,
-} from "@ant-design/icons";
 
-const { Text } = Typography;
-
-const typeColors = {
-  PAYMENT: "green",
-  BOOKING: "blue",
-  DISPUTE: "orange",
-  SYSTEM: "purple",
-  DEFAULT: "gray",
+export const TYPE_META = {
+  BOOKING: { icon: CarFront, color: "#1d4f91", bg: "rgba(29,79,145,0.12)", label: "Booking" },
+  PAYMENT: { icon: CircleDollarSign, color: "#059669", bg: "rgba(5,150,105,0.12)", label: "Payment" },
+  DISPUTE: { icon: ShieldAlert, color: "#d97706", bg: "rgba(217,119,6,0.12)", label: "Dispute" },
+  ALERT: { icon: ShieldAlert, color: "#dc2626", bg: "rgba(220,38,38,0.12)", label: "Alert" },
+  MESSAGE: { icon: MessageSquare, color: "#7c3aed", bg: "rgba(124,58,237,0.12)", label: "Message" },
+  SYSTEM: { icon: Info, color: "#64748b", bg: "rgba(100,116,139,0.14)", label: "System" },
+  PROMOTION: { icon: Bell, color: "#fc6b38", bg: "rgba(252,107,56,0.12)", label: "Promotion" },
 };
 
-const typeIcons = {
-  PAYMENT: <DollarCircleOutlined />,
-  BOOKING: <BellOutlined />,
-  DISPUTE: <WarningOutlined />,
-  SYSTEM: <InfoCircleOutlined />,
-  DEFAULT: <InfoCircleOutlined />,
+export const timeAgo = (d) => {
+  const t = dayjs(d);
+  const s = dayjs().diff(t, "second");
+  if (s < 45) return "just now";
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} h ago`;
+  if (h < 48) return "yesterday";
+  return t.format("DD MMM, HH:mm");
+};
+
+const groupOf = (d) => {
+  const t = dayjs(d);
+  if (t.isSame(dayjs(), "day")) return "Today";
+  if (t.isSame(dayjs().subtract(1, "day"), "day")) return "Yesterday";
+  return "Earlier";
+};
+
+export const NotificationIcon = ({ type, size = 40 }) => {
+  const meta = TYPE_META[type] || TYPE_META.SYSTEM;
+  const Icon = meta.icon;
+  return (
+    <span
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 12,
+        background: meta.bg,
+        color: meta.color,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <Icon size={size * 0.48} strokeWidth={2} />
+    </span>
+  );
 };
 
 const NotificationsList = ({ open, onClose }) => {
   const dispatch = useDispatch();
-  const notifications = useSelector(
-    (state) => state.notifications?.items || []
-  );
-  const loading = useSelector((state) => state.notifications?.loading);
-  const unreadCount = useSelector((state) => selectUnreadCount(state));
-
-  const authUser = useSelector(selectCurrentUser);
-
-  const currentUserId =
-    authUser?.id ||
-    authUser?.userId ||
-    authUser?.user?.id ||
-    (JSON.parse(localStorage.getItem("user") || "{}") || {}).id ||
-    null;
-
-  const [page, setPage] = React.useState(1);
-  const [isFetchingMore, setIsFetchingMore] = React.useState(false);
-  const [hasMore, setHasMore] = React.useState(true);
-
-  const scrollRef = useRef(null);
+  const navigate = useNavigate();
+  const { items, loading, total, page, filter } = useSelector((s) => s.notifications);
+  const unreadCount = useSelector(selectUnreadCount);
 
   useEffect(() => {
-    if (open && currentUserId) {
-      // reset to page 1 when opening
-      setPage(1);
-      dispatch(fetchNotifications({ userid: currentUserId, page: 1 })).then(
-        (res) => {
-          const data = res.payload?.data || [];
-          const total = res.payload?.pagination?.total ?? data.length;
-          setHasMore((data.length || 0) < total);
-        }
-      );
-    }
-  }, [open, dispatch, currentUserId]);
+    if (open) dispatch(fetchNotifications({ page: 1, unread: filter === "unread" }));
+  }, [open, filter, dispatch]);
 
-  // load next page
-  const loadNextPage = async () => {
-    if (!currentUserId) return;
-    if (!hasMore) return;
-    const next = page + 1;
-    setIsFetchingMore(true);
-    try {
-      const res = await dispatch(
-        fetchNotifications({ userid: currentUserId, page: next })
-      );
-      const data = res.payload?.data || [];
-      const total =
-        res.payload?.pagination?.total ?? notifications.length + data.length;
-      // advance page only if we received items
-      if ((data.length || 0) > 0) setPage(next);
-      // determine if there are more items to fetch
-      setHasMore(notifications.length + (data.length || 0) < total);
-    } catch (err) {
-      console.error("Failed to load more notifications", err);
-    } finally {
-      setIsFetchingMore(false);
-    }
-  };
+  const shown = filter === "unread" ? items.filter((i) => !i.isRead) : items;
+  const groups = useMemo(() => {
+    const out = [];
+    shown.forEach((n) => {
+      const g = groupOf(n.createdAt);
+      const last = out[out.length - 1];
+      if (last && last.title === g) last.items.push(n);
+      else out.push({ title: g, items: [n] });
+    });
+    return out;
+  }, [shown]);
 
-  const handleMarkRead = (id) => {
-    dispatch(markNotificationRead({ id, userId: currentUserId }));
-  };
-
-  const handleScroll = (e) => {
-    try {
-      const target = e?.target;
-      if (!target) return;
-      const { scrollTop, scrollHeight, clientHeight } = target;
-      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-      if (distanceFromBottom < 120 && !isFetchingMore && !loading) {
-        loadNextPage();
-      }
-    } catch (err) {
-      console.error(err);
+  const openItem = (n) => {
+    if (!n.isRead) dispatch(markNotificationRead(n.id));
+    if (n.link) {
+      onClose();
+      navigate(n.link);
     }
   };
 
   return (
     <Drawer
-      title={
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <BellOutlined />
-          <span>Notifications</span>
-          {unreadCount > 0 && (
-            <Tag color="red" style={{ marginLeft: "auto" }}>
-              {unreadCount} Unread
-            </Tag>
-          )}
-        </div>
-      }
-      placement="right"
-      onClose={onClose}
       open={open}
-      width={400}
-      bodyStyle={{ padding: 12 }}
+      onClose={onClose}
+      width={440}
+      closable={false}
+      styles={{ body: { padding: 0, display: "flex", flexDirection: "column" }, header: { display: "none" } }}
     >
-      {loading &&
-      page === 1 &&
-      (!notifications || notifications.length === 0) ? (
-        <div style={{ textAlign: "center", padding: 40 }}>
-          <Spin size="large" />
-        </div>
-      ) : notifications.length === 0 ? (
-        <Empty
-          description="You're all caught up! 🎉"
-          imageStyle={{ height: 100 }}
-          style={{ marginTop: 60 }}
-        />
-      ) : (
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          style={{ maxHeight: "85vh", overflow: "auto", paddingRight: 8 }}
-        >
-          <List
-            itemLayout="vertical"
-            dataSource={notifications}
-            renderItem={(item) => {
-              const color = typeColors[item.type] || typeColors.DEFAULT;
-              const icon = typeIcons[item.type] || typeIcons.DEFAULT;
-              return (
-                <Card
-                  key={item.id}
-                  style={{
-                    marginBottom: 12,
-                    backgroundColor: item.isRead ? "#fafafa" : "#e6f7ff",
-                    borderRadius: 10,
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                  }}
-                  bodyStyle={{ padding: 14 }}
-                >
-                  <Space align="start" style={{ width: "100%" }}>
-                    <Avatar
-                      icon={icon}
-                      style={{
-                        backgroundColor: color,
-                        color: "#fff",
-                        flexShrink: 0,
-                      }}
-                      size="large"
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "start",
-                        }}
-                      >
-                        <Text strong={!item.isRead}>{item.title}</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {new Date(item.createdAt).toLocaleString()}
-                        </Text>
-                      </div>
-                      <Text
-                        type="secondary"
-                        style={{ display: "block", marginTop: 4 }}
-                      >
-                        {item.message}
-                      </Text>
-
-                      <div
-                        style={{
-                          marginTop: 8,
-                          display: "flex",
-                          justifyContent: "flex-end",
-                        }}
-                      >
-                        {!item.isRead && (
-                          <Button
-                            type="link"
-                            size="small"
-                            onClick={() => handleMarkRead(item.id)}
-                            icon={<CheckCircleOutlined />}
-                          >
-                            Mark as read
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </Space>
-                </Card>
-              );
-            }}
-          />
-
-          {isFetchingMore && (
-            <div style={{ textAlign: "center", padding: 12 }}>
-              <Spin />
+      {/* header */}
+      <div style={{ padding: "18px 20px 12px", borderBottom: "1px solid var(--c-border, #eef0f4)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text, #0b1f44)" }}>Notifications</div>
+            <div style={{ fontSize: 12.5, color: "var(--c-text-3, #64748b)", marginTop: 2 }}>
+              {unreadCount ? `${unreadCount} unread` : "You're all caught up"}
             </div>
-          )}
+          </div>
+          <Tooltip title="Mark all as read">
+            <Button
+              icon={<CheckCheck size={16} />}
+              disabled={!unreadCount}
+              onClick={() => dispatch(markAllNotificationsRead())}
+            >
+              Mark all read
+            </Button>
+          </Tooltip>
         </div>
-      )}
+        <Segmented
+          block
+          style={{ marginTop: 14 }}
+          value={filter}
+          onChange={(v) => dispatch(setNotificationFilter(v))}
+          options={[
+            { label: "All", value: "all" },
+            { label: `Unread${unreadCount ? ` (${unreadCount})` : ""}`, value: "unread" },
+          ]}
+        />
+      </div>
+
+      {/* list */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {loading && !items.length ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
+            <Spin />
+          </div>
+        ) : !shown.length ? (
+          <Empty
+            style={{ marginTop: 64 }}
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={filter === "unread" ? "No unread notifications" : "No notifications yet"}
+          />
+        ) : (
+          groups.map((g) => (
+            <div key={g.title}>
+              <div
+                style={{
+                  padding: "12px 20px 6px",
+                  fontSize: 11.5,
+                  fontWeight: 800,
+                  letterSpacing: 0.6,
+                  textTransform: "uppercase",
+                  color: "var(--c-text-3, #64748b)",
+                }}
+              >
+                {g.title}
+              </div>
+              {g.items.map((n) => (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => openItem(n)}
+                  className="notif-row"
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    display: "flex",
+                    gap: 12,
+                    alignItems: "flex-start",
+                    padding: "12px 20px",
+                    border: 0,
+                    cursor: n.link ? "pointer" : "default",
+                    background: n.isRead ? "transparent" : "var(--c-unread, rgba(252,107,56,0.06))",
+                    borderLeft: `3px solid ${n.isRead ? "transparent" : "#fc6b38"}`,
+                  }}
+                >
+                  <NotificationIcon type={n.type} />
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span
+                        style={{
+                          flex: 1,
+                          fontSize: 14,
+                          fontWeight: n.isRead ? 600 : 800,
+                          color: "var(--c-text, #0b1f44)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {n.title}
+                      </span>
+                      {!n.isRead && (
+                        <span style={{ width: 8, height: 8, borderRadius: 4, background: "#fc6b38", flexShrink: 0 }} />
+                      )}
+                    </span>
+                    <span
+                      style={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        fontSize: 13,
+                        lineHeight: "18px",
+                        color: "var(--c-text-2, #475569)",
+                        marginTop: 2,
+                      }}
+                    >
+                      {n.message}
+                    </span>
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginTop: 6,
+                        fontSize: 12,
+                        color: "var(--c-text-3, #94a3b8)",
+                      }}
+                    >
+                      {timeAgo(n.createdAt)}
+                      {n.link && (
+                        <>
+                          <span>·</span>
+                          <span style={{ color: "#fc6b38", fontWeight: 700, display: "inline-flex", alignItems: "center" }}>
+                            Open <ChevronRight size={13} />
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          ))
+        )}
+
+        {items.length > 0 && items.length < total && filter === "all" && (
+          <div style={{ padding: 16, display: "flex", justifyContent: "center" }}>
+            <Button loading={loading} onClick={() => dispatch(fetchNotifications({ page: page + 1 }))}>
+              Load more
+            </Button>
+          </div>
+        )}
+      </div>
     </Drawer>
   );
 };
