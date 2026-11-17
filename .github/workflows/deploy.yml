@@ -1,0 +1,137 @@
+name: Deploy
+
+# Builds Docker images for backend + admin, pushes them to GitHub Container
+# Registry (ghcr.io), then updates the server over SSH.
+#
+# Repository secrets (Settings -> Secrets and variables -> Actions):
+#   SSH_HOST      server IP / hostname
+#   SSH_USER      e.g. root
+#   SSH_KEY       private key whose public key is in the server's authorized_keys
+#   SSH_PORT      optional, defaults to 22
+# Repository variables (optional):
+#   API_DOMAIN     default api.wheellol.com      (baked into the admin build)
+#   SOCKET_DOMAIN  default socket.wheellol.com   (baked into the admin build)
+#   DEPLOY_PATH    default /opt/wheellol
+#
+# Until SSH_HOST is set, the images are still built and pushed, and the
+# server step is skipped.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    outputs:
+      backend_image: ${{ steps.names.outputs.backend }}
+      admin_image: ${{ steps.names.outputs.admin }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: names
+        run: |
+          repo="${GITHUB_REPOSITORY,,}"
+          echo "backend=${REGISTRY}/${repo}-backend" >> "$GITHUB_OUTPUT"
+          echo "admin=${REGISTRY}/${repo}-admin" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: |
+            ${{ steps.names.outputs.backend }}:latest
+            ${{ steps.names.outputs.backend }}:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build & push admin
+        uses: docker/build-push-action@v6
+        with:
+          context: admin
+          push: true
+          build-args: |
+            VITE_API_URL=https://${{ vars.API_DOMAIN || 'api.wheellol.com' }}/
+            VITE_SOCKET_URL=https://${{ vars.SOCKET_DOMAIN || 'socket.wheellol.com' }}
+          tags: |
+            ${{ steps.names.outputs.admin }}:latest
+            ${{ steps.names.outputs.admin }}:${{ github.sha }}
+          cache-from: type=gha,scope=admin
+          cache-to: type=gha,mode=max,scope=admin
+
+  deploy:
+    needs: images
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/wheellol' }}
+    steps:
+      - name: Skip notice
+        if: env.SSH_HOST == ''
+        run: echo "::notice::SSH_HOST secret not set - images pushed, server deploy skipped."
+
+      - uses: actions/checkout@v4
+        if: env.SSH_HOST != ''
+
+      - name: Copy compose files to server
+        if: env.SSH_HOST != ''
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "docker-compose.yml,Caddyfile,.env.example,infra"
+          target: ${{ env.DEPLOY_PATH }}
+
+      - name: Pull & restart
+        if: env.SSH_HOST != ''
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BACKEND_IMAGE: ${{ needs.images.outputs.backend_image }}
+          ADMIN_IMAGE: ${{ needs.images.outputs.admin_image }}
+          IMAGE_TAG: ${{ github.sha }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          envs: GHCR_USER,GHCR_TOKEN,BACKEND_IMAGE,ADMIN_IMAGE,IMAGE_TAG,DEPLOY_PATH
+          script: |
+            set -e
+            cd "$DEPLOY_PATH"
+            if [ ! -f .env ]; then
+              echo "::error::$DEPLOY_PATH/.env is missing. Copy .env.example to .env and fill it in."
+              exit 1
+            fi
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            export BACKEND_IMAGE ADMIN_IMAGE IMAGE_TAG
+            docker compose pull backend admin
+            docker compose up -d --no-build --remove-orphans
+            docker logout ghcr.io
+            docker image prune -f
+            docker compose ps

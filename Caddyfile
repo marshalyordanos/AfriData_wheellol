@@ -1,0 +1,24 @@
+# Caddy gets and renews HTTPS certificates automatically.
+# Point each domain's DNS A record at the server before the first start.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$API_DOMAIN} {
+	encode gzip
+	request_body {
+		max_size 200MB
+	}
+	reverse_proxy backend:3000
+}
+
+# socket.io (notify-hub). Caddy proxies WebSockets automatically.
+{$SOCKET_DOMAIN} {
+	reverse_proxy backend:4004
+}
+
+{$ADMIN_DOMAIN} {
+	encode gzip
+	reverse_proxy admin:80
+}

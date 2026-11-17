@@ -16,7 +16,9 @@ const instance = axios.create({
   // baseURL: "https://vegetarian-pushed-town-pipeline.trycloudflare.com/",
 
   // baseURL: "https://car-back-bemu.onrender.com/",
-  baseURL: "http://localhost:3000/",
+  // baseURL: "http://localhost:3000/",
+  // Set VITE_API_URL at build time (Docker/CI does this). Local dev falls back to localhost.
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/",
 
   headers: {
     "Content-Type": "application/json",

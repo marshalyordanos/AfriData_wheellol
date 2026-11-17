@@ -1,0 +1,6 @@
+# Each app keeps its own .gitignore (backend/, admin/). These are repo-wide.
+.env
+.env.*
+!.env.example
+.DS_Store
+node_modules

@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CarMake, Prisma } from '@prisma/client';
+import { CarType, Prisma } from '@prisma/client';
 
 @Injectable()
 export class CarTypeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createCarMake(data: Prisma.CarTypeCreateInput): Promise<CarMake> {
+  async createCarMake(data: Prisma.CarTypeCreateInput): Promise<CarType> {
     return this.prisma.carType.create({ data });
   }
 
-  async findById(id: string): Promise<CarMake | null> {
+  async findById(id: string): Promise<CarType | null> {
     return this.prisma.carType.findUnique({ where: { id } });
   }
 
@@ -18,7 +18,7 @@ export class CarTypeRepository {
     skip: number,
     take: number,
     where?: any,
-  ): Promise<[CarMake[], number]> {
+  ): Promise<[CarType[], number]> {
     const [makes, total] = await Promise.all([
       this.prisma.carType.findMany({
         skip,
@@ -33,12 +33,12 @@ export class CarTypeRepository {
   async updateCarMake(
     id: string,
     data: Prisma.CarTypeUpdateInput,
-  ): Promise<CarMake> {
+  ): Promise<CarType> {
     console.log('carudpated');
     return this.prisma.carType.update({ where: { id }, data });
   }
 
-  async deleteCarMake(id: string): Promise<CarMake> {
+  async deleteCarMake(id: string): Promise<CarType> {
     return this.prisma.carType.delete({ where: { id } });
   }
 }

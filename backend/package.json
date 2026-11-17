@@ -18,6 +18,8 @@
     "start:operations": "node dist/operations/main.operations.js",
     "start:rental-service": "node dist/rental-service/main.rental-service.js",
     "start:gateway": "node dist/gateway/main.gateway.js",
+    "start:notify-hub": "node dist/notify-hub/main.notify-hub.js",
+    "start:prod": "concurrently --kill-others -n gateway,auth,operations,rental,notify -c green,cyan,magenta,yellow,blue \"npm run start:gateway\" \"npm run start:auth\" \"npm run start:operations\" \"npm run start:rental-service\" \"npm run start:notify-hub\"",
     "start:auth:dev": "nest start --watch --entryFile auth/main.auth",
     "start:message": "nest start --watch --entryFile notify-hub/main.notify-hub",
     "start:user:dev": "nest start --watch --entryFile operations/main.operations",

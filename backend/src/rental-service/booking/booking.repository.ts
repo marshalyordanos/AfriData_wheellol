@@ -501,7 +501,7 @@ export class BookingRepository {
   }
 
   async verifyChapaTransaction(txRef: string) {
-    const chapaSecretKey = 'CHASECK-REDACTED';
+    const chapaSecretKey = process.env.CHAPA_SECRET_KEY; // was hard-coded; key now comes from env
 
     const verifyUrl = `https://api.chapa.co/v1/transaction/verify/${txRef}`;
 
