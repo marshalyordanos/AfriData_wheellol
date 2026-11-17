@@ -40,7 +40,8 @@ async function bootstrap() {
   // ----------------------
 
   const port = Number(process.env.GATEWAY_PORT ?? 3000);
-  await app.listen(port, '0.0.0.0');
+  // await app.listen(port, '0.0.0.0');
+  await app.listen(port, process.env.GATEWAY_HOST ?? '0.0.0.0'); // deploy sets 127.0.0.1
   console.log(`Gateway listening on port ${port}`);
 }
 

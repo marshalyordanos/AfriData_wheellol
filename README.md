@@ -41,59 +41,73 @@ The admin reads `VITE_API_URL` and `VITE_SOCKET_URL`. Without them it uses
 
 ## Production
 
-| Service | URL | Container |
+| Site | URL | Runs as |
 |---|---|---|
-| REST API | `https://API_DOMAIN` | `backend:3000` |
-| Sockets (notify-hub) | `https://SOCKET_DOMAIN` | `backend:4004` |
-| Admin | `https://ADMIN_DOMAIN` | `admin:80` (nginx) |
+| Admin | `https://wheellol.com` | `admin` container (nginx), behind Caddy |
+| REST API | `https://api.wheellol.com` | `backend` container, gateway on 127.0.0.1:3000 |
+| Sockets | `https://socket.wheellol.com` | `backend` container, notify-hub on 127.0.0.1:4004 |
 
-Caddy handles HTTPS: it gets and renews certificates automatically. Postgres and Redis are
-reachable only inside Docker. All five backend services run in one container because the
-gateway reaches the others on `127.0.0.1`.
+- **HTTPS:** Caddy gets the certificates and **renews them automatically**, about 30 days
+  before they expire. No certbot and no cron job needed.
+- **Database:** your **existing Postgres and Redis** are used as they are. The backend runs on
+  the host network, so `localhost:5432` in the old `.env` still works. All backend ports listen
+  on `127.0.0.1` only.
+- **Fresh server:** set `COMPOSE_PROFILES=db,redis` to use the bundled Postgres and Redis.
 
-### One-time server setup
+### Deploy (one command)
 
-1. Create an Ubuntu server and point the three domains' DNS **A records** at it.
-2. Copy `infra/server-setup.sh` to the server and run it as root. It installs Docker, sets up
-   the firewall and swap, and creates `/opt/wheellol`.
-3. Create `/opt/wheellol/.env` from [`.env.example`](.env.example) and fill in the real
-   secrets. Use only letters and numbers in `POSTGRES_PASSWORD`, because it goes inside a URL.
-4. Stop anything else that listens on ports 80/443, such as an old nginx or old node apps.
-5. In GitHub, open **Settings → Secrets and variables → Actions** and add:
-   - Secrets: `SSH_HOST`, `SSH_USER`, `SSH_KEY` (a private key; its public key goes into the
-     server's `~/.ssh/authorized_keys`), and optionally `SSH_PORT`.
-   - Optional variables: `API_DOMAIN`, `SOCKET_DOMAIN`, `DEPLOY_PATH`.
+```bash
+# from your laptop: copies deploy.sh to the server and runs it there
+./deploy.sh root@YOUR_SERVER_IP
 
-### Deploying
+# or on the server
+curl -fsSLO https://raw.githubusercontent.com/marshalyordanos/AfriData_wheellol/main/deploy.sh
+sudo bash deploy.sh
+```
 
-Every push to `main` triggers the **Deploy** workflow. It:
+The first run:
 
-1. builds the `backend` and `admin` Docker images and pushes them to `ghcr.io`, tagged with
-   `latest` and the commit SHA;
-2. copies `docker-compose.yml`, `Caddyfile` and `infra/` to the server;
-3. runs `docker compose pull && docker compose up -d` there.
+1. Installs Docker and git, adds swap, and puts the code in `/opt/wheellol`.
+2. **Finds your production backend `.env` and imports it**: same database, same keys. It asks
+   for anything missing, such as `AFRO_MESSAGE_API_KEY` or a real `JWT_SECRET`.
+3. Checks DNS for `wheellol.com`, `api.` and `socket.`. If `www.` already points at the
+   server, it also adds a redirect from `www.wheellol.com` to `wheellol.com`.
+4. Downloads the images from ghcr.io, or builds them if the download fails.
+5. **Checks the database and pending migrations while the old system is still running.** If
+   anything looks wrong, it stops here and nothing is changed.
+6. **Backs up the database** to `/opt/wheellol/backups/`.
+7. Shows what is using ports 80/443/3000/4001-4004 (old pm2 backend, nginx, certbot timer…),
+   asks you, then stops those services. They are stopped, not deleted.
+8. Starts the new stack. Migrations run, Caddy gets the certificates, then it checks every URL
+   over HTTPS and prints the certificate expiry dates.
+9. Sets up a daily database backup at 02:30. The last 14 backups are kept.
 
-The backend applies pending Prisma migrations (`prisma migrate deploy`) every time it starts.
-Set `RUN_MIGRATIONS=false` in `.env` to turn this off.
+If the new backend does not come up, the script offers to **roll back**. Rollback restarts
+exactly what it stopped.
 
-You can also run the workflow by hand from **Actions → Deploy → Run workflow**.
+Run the script again any time to update: it pulls code and images, checks, backs up and
+restarts.
 
-### Useful commands (on the server, in `/opt/wheellol`)
+```bash
+bash /opt/wheellol/deploy.sh status     # services, certificate days left, last backups, disk
+bash /opt/wheellol/deploy.sh logs       # follow logs (add a service name: logs backend)
+bash /opt/wheellol/deploy.sh backup     # database backup now
+bash /opt/wheellol/deploy.sh rollback   # stop new stack, start the old services again
+```
+
+### Automatic deploys from GitHub
+
+After the first manual run, open **Settings → Secrets and variables → Actions** and add the
+secrets `SSH_HOST`, `SSH_USER` and `SSH_KEY` (optionally `SSH_PORT`). From then on, every push
+to `main` builds the images and runs `deploy.sh` on the server with no questions asked.
+
+If you use domains other than `api.` / `socket.wheellol.com`, also set the repository variables
+`API_DOMAIN` and `SOCKET_DOMAIN`, because the admin is built with them.
+
+### Other useful commands (in `/opt/wheellol`)
 
 ```bash
 docker compose ps
-docker compose logs -f backend
 docker compose exec backend npm run seed:catalog      # car types/makes/models
 docker compose exec backend npx prisma migrate status
-bash infra/backup-db.sh                               # dump DB to ./backups
-```
-
-### Moving the existing database
-
-```bash
-# on the old server
-pg_dump -Fc -U <user> -d wheellol > wheellol.dump
-# on the new server (stack running, RUN_MIGRATIONS=false while restoring)
-docker compose cp wheellol.dump postgres:/tmp/wheellol.dump
-docker compose exec postgres pg_restore -U "$POSTGRES_USER" -d wheellol --clean --if-exists /tmp/wheellol.dump
 ```

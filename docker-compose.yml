@@ -1,53 +1,37 @@
-# Production stack. On the server this file sits next to Caddyfile and .env
-# (copy .env.example -> .env and fill it in). CI copies this file + Caddyfile
-# to the server on every deploy and runs `docker compose pull && up -d`.
+# Production stack. Set up and updated by ./deploy.sh (see README).
+#
+# The backend and Caddy use the HOST network, so the backend reaches your
+# existing Postgres / Redis exactly like before (DATABASE_URL / REDIS_URL in
+# .env, e.g. localhost:5432) with no database changes. All backend ports
+# listen on 127.0.0.1 only; the internet reaches them through Caddy (HTTPS).
+#
+# Optional bundled services for a fresh server (enable in .env):
+#   COMPOSE_PROFILES=db,redis   -> Postgres on 127.0.0.1:5432, Redis on 127.0.0.1:6379
 
 name: wheellol
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-wheellol}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-wheellol}"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redisdata:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
   backend:
     image: ${BACKEND_IMAGE:-wheellol-backend}:${IMAGE_TAG:-latest}
     build: ./backend
     restart: unless-stopped
     init: true
+    network_mode: host
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-wheellol}?schema=public
-      DIRECT_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-wheellol}?schema=public
-      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
       GATEWAY_PORT: "3000"
+      GATEWAY_HOST: 127.0.0.1
+      AUTH_HOST: 127.0.0.1
+      SERVICE_HOST: 127.0.0.1
+      NOTIFY_HOST: 127.0.0.1
     depends_on:
       postgres:
         condition: service_healthy
+        required: false
       redis:
         condition: service_healthy
+        required: false
     logging: &logging
       driver: json-file
       options: { max-size: "10m", max-file: "5" }
@@ -60,28 +44,62 @@ services:
         VITE_API_URL: https://${API_DOMAIN}/
         VITE_SOCKET_URL: https://${SOCKET_DOMAIN}
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:${ADMIN_PORT:-8080}:80"
     logging: *logging
 
+  # HTTPS for all domains. Certificates are issued and RENEWED automatically
+  # (Caddy checks twice a day and renews ~30 days before expiry).
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+    network_mode: host
     environment:
       API_DOMAIN: ${API_DOMAIN}
       SOCKET_DOMAIN: ${SOCKET_DOMAIN}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+      ADMIN_PORT: ${ADMIN_PORT:-8080}
       ACME_EMAIL: ${ACME_EMAIL}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy-extra:/etc/caddy/extra:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on:
-      - backend
-      - admin
     logging: *logging
+
+  # ---- optional, only with COMPOSE_PROFILES=db / redis ----
+  postgres:
+    profiles: ["db"]
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wheellol}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      POSTGRES_DB: ${POSTGRES_DB:-wheellol}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wheellol} -d ${POSTGRES_DB:-wheellol}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    profiles: ["redis"]
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
   pgdata:

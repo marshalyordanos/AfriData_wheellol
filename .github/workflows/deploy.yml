@@ -7,6 +7,7 @@ name: Deploy
 #   SSH_HOST      server IP / hostname
 #   SSH_USER      e.g. root
 #   SSH_KEY       private key whose public key is in the server's authorized_keys
+#   (run deploy.sh by hand once first; after that every push to main deploys)
 #   SSH_PORT      optional, defaults to 22
 # Repository variables (optional):
 #   API_DOMAIN     default api.wheellol.com      (baked into the admin build)
@@ -92,46 +93,29 @@ jobs:
         if: env.SSH_HOST == ''
         run: echo "::notice::SSH_HOST secret not set - images pushed, server deploy skipped."
 
-      - uses: actions/checkout@v4
-        if: env.SSH_HOST != ''
-
-      - name: Copy compose files to server
-        if: env.SSH_HOST != ''
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          source: "docker-compose.yml,Caddyfile,.env.example,infra"
-          target: ${{ env.DEPLOY_PATH }}
-
-      - name: Pull & restart
+      - name: Deploy with deploy.sh
         if: env.SSH_HOST != ''
         uses: appleboy/ssh-action@v1.2.0
         env:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BACKEND_IMAGE: ${{ needs.images.outputs.backend_image }}
-          ADMIN_IMAGE: ${{ needs.images.outputs.admin_image }}
           IMAGE_TAG: ${{ github.sha }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          envs: GHCR_USER,GHCR_TOKEN,BACKEND_IMAGE,ADMIN_IMAGE,IMAGE_TAG,DEPLOY_PATH
+          command_timeout: 30m
+          envs: GHCR_USER,GHCR_TOKEN,IMAGE_TAG,DEPLOY_PATH
           script: |
             set -e
-            cd "$DEPLOY_PATH"
-            if [ ! -f .env ]; then
-              echo "::error::$DEPLOY_PATH/.env is missing. Copy .env.example to .env and fill it in."
+            if [ ! -f "$DEPLOY_PATH/.env" ] || [ ! -f "$DEPLOY_PATH/deploy.sh" ]; then
+              echo "::error::Run deploy.sh once on the server first (see README: Production)."
               exit 1
             fi
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            export BACKEND_IMAGE ADMIN_IMAGE IMAGE_TAG
-            docker compose pull backend admin
-            docker compose up -d --no-build --remove-orphans
-            docker logout ghcr.io
-            docker image prune -f
-            docker compose ps
+            SUDO=""; [ "$(id -u)" = 0 ] || SUDO="sudo -E"
+            # YES=1: no questions. Same steps as by hand: code, images (this commit's tag),
+            # migration check, DB backup, restart, HTTPS check.
+            $SUDO env YES=1 APP_DIR="$DEPLOY_PATH" IMAGE_TAG="$IMAGE_TAG" GHCR_USER="$GHCR_USER" GHCR_TOKEN="$GHCR_TOKEN" \
+              bash "$DEPLOY_PATH/deploy.sh" setup
+            docker logout ghcr.io >/dev/null 2>&1 || true

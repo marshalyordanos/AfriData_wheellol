@@ -11,7 +11,8 @@ async function bootstrap() {
     {
       transport: Transport.TCP,
       options: {
-        host: '0.0.0.0',
+        // host: '0.0.0.0',
+        host: process.env.SERVICE_HOST ?? '0.0.0.0', // deploy sets 127.0.0.1
         port: Number(process.env.USER_PORT ?? 4003),
       },
     },

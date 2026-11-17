@@ -22,7 +22,8 @@ async function bootstrap() {
   app.enableCors({ origin: '*' });
 
   const port = Number(process.env.USER_PORT ?? 4004);
-  await app.listen(port);
+  // await app.listen(port);
+  await app.listen(port, process.env.NOTIFY_HOST ?? '0.0.0.0'); // deploy sets 127.0.0.1
 
   console.log('NotifyHub WebSocket & REST running on port', port);
 }

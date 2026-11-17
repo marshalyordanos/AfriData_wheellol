@@ -1,24 +1,29 @@
-# Caddy gets and renews HTTPS certificates automatically.
-# Point each domain's DNS A record at the server before the first start.
+# Caddy gets AND renews HTTPS certificates automatically (Let's Encrypt).
+# Each domain's DNS A record must point at this server.
 
 {
 	email {$ACME_EMAIL}
 }
 
+# Admin dashboard (https://wheellol.com)
+{$ADMIN_DOMAIN} {
+	encode gzip
+	reverse_proxy 127.0.0.1:{$ADMIN_PORT}
+}
+
+# REST API (gateway)
 {$API_DOMAIN} {
 	encode gzip
 	request_body {
 		max_size 200MB
 	}
-	reverse_proxy backend:3000
+	reverse_proxy 127.0.0.1:3000
 }
 
-# socket.io (notify-hub). Caddy proxies WebSockets automatically.
+# socket.io (notify-hub). WebSockets are proxied automatically.
 {$SOCKET_DOMAIN} {
-	reverse_proxy backend:4004
+	reverse_proxy 127.0.0.1:4004
 }
 
-{$ADMIN_DOMAIN} {
-	encode gzip
-	reverse_proxy admin:80
-}
+# Extra sites written by deploy.sh (e.g. www -> main domain redirect)
+import /etc/caddy/extra/*.caddy

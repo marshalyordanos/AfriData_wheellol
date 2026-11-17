@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# NOTE: deploy.sh (repo root) now does all of this and more — use that.
 # One-time setup for a fresh Ubuntu server (e.g. a DigitalOcean droplet).
 # Run as root:  bash server-setup.sh
 set -euo pipefail
