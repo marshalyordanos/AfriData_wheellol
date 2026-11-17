@@ -17,8 +17,8 @@ interface AfroMessageResponse {
 export async function sendSms(message: string, phone: string): Promise<void> {
   const baseUrl = 'https://api.afromessage.com/api/send';
   //   const token = process.env.AFRO_MESSAGE_API_KEY;
-  const token =
-    'REDACTED';
+  // was hard-coded; token now comes from env
+  const token = process.env.AFRO_MESSAGE_API_KEY;
 
   if (!token) {
     console.error(
