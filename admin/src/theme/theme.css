@@ -1,0 +1,109 @@
+/* ------------------------------------------------------------------
+   Theme variables. Light values here are the first-paint defaults;
+   AppearanceProvider overwrites them on <html> from the user's settings.
+   ------------------------------------------------------------------ */
+:root {
+  --c-bg: #ffffff;
+  --c-surface: #ffffff;
+  --c-elevated: #ffffff;
+  --c-subtle: #f8fafc;
+  --c-muted: #f1f5f9;
+  --c-border: #eceef2;
+  --c-border-strong: #e2e6ec;
+  --c-border-hover: #cbd5e1;
+  --c-text: #0f172a;
+  --c-text-2: #475569;
+  --c-text-3: #64748b;
+  --c-text-4: #94a3b8;
+  --c-glass: rgba(255, 255, 255, 0.92);
+  --c-shadow: rgba(15, 23, 42, 0.08);
+  --c-primary: #fc6b38;
+  --c-primary-strong: #c2410c;
+  --c-primary-hover: #9a3412;
+  --c-primary-text: #c2410c;
+  --c-primary-soft: #fff4ef;
+  --c-primary-soft-2: #fde3d6;
+  --c-primary-ring: rgba(252, 107, 56, 0.15);
+  --c-primary-ring-strong: rgba(252, 107, 56, 0.55);
+  --side-bg: #ffffff;
+  --side-border: #eceef2;
+  --side-text: #475569;
+  --side-text-2: #64748b;
+  --side-hover: #f8fafc;
+  --side-active-bg: #fff4ef;
+  --side-active-text: #c2410c;
+  --side-strong: #0f172a;
+  --side-card: transparent;
+  --side-mark: #09234c;
+}
+
+/* smooth switch between themes (not on first paint) */
+html.theme-ready body,
+html.theme-ready .app-top,
+html.theme-ready .mp-card,
+html.theme-ready .mp-tcard {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+/* ---------------- Dark mode ---------------- */
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+html[data-theme="dark"] ::selection { background: var(--c-primary-ring-strong); }
+html[data-theme="dark"] * { scrollbar-color: var(--c-border-strong) transparent; }
+
+/* status pills: tinted, not pastel */
+[data-theme="dark"] .mp-pill-green { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.28); }
+[data-theme="dark"] .mp-pill-amber { background: rgba(245, 158, 11, 0.14); color: #fcd34d; border-color: rgba(245, 158, 11, 0.28); }
+[data-theme="dark"] .mp-pill-red { background: rgba(240, 68, 56, 0.14); color: #fca5a5; border-color: rgba(240, 68, 56, 0.3); }
+[data-theme="dark"] .mp-pill-blue { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3); }
+[data-theme="dark"] .mp-pill-violet { background: rgba(139, 92, 246, 0.16); color: #c4b5fd; border-color: rgba(139, 92, 246, 0.3); }
+[data-theme="dark"] .mp-pill-gray { background: var(--c-muted); color: var(--c-text-2); border-color: var(--c-border-strong); }
+[data-theme="dark"] .mp-pill-orange { background: var(--c-primary-soft); color: var(--c-primary-text); border-color: var(--c-primary-soft-2); }
+
+/* pastel inline badges (avatars, stat icons, attention rows) */
+[data-theme="dark"] .mp-avatar,
+[data-theme="dark"] .mp-attn .n,
+[data-theme="dark"] .mp-stat-icon,
+[data-theme="dark"] .loc-badge { filter: saturate(1.1) brightness(0.82) contrast(1.15); }
+
+/* hero banner keeps its navy gradient; make it sit on dark */
+[data-theme="dark"] .mp-hero-card { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+
+/* images on dark get a soft frame so white photos don't glare */
+[data-theme="dark"] .mp-thumb img,
+[data-theme="dark"] .mp-carrow img { filter: brightness(0.92); }
+
+/* antd odds and ends */
+[data-theme="dark"] .ant-notification-notice { background: var(--c-elevated) !important; }
+[data-theme="dark"] .ant-skeleton .ant-skeleton-title,
+[data-theme="dark"] .ant-skeleton .ant-skeleton-paragraph > li { background: var(--c-muted) !important; }
+
+/* legacy pages still using Tailwind colour utilities */
+[data-theme="dark"] .bg-white { background-color: var(--c-surface) !important; }
+[data-theme="dark"] .bg-gray-50,
+[data-theme="dark"] .bg-slate-50 { background-color: var(--c-subtle) !important; }
+[data-theme="dark"] .bg-gray-100,
+[data-theme="dark"] .bg-slate-100 { background-color: var(--c-muted) !important; }
+[data-theme="dark"] .bg-gray-200 { background-color: var(--c-border-strong) !important; }
+[data-theme="dark"] .text-black,
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-800 { color: var(--c-text) !important; }
+[data-theme="dark"] .text-gray-700,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-slate-700,
+[data-theme="dark"] .text-slate-600 { color: var(--c-text-2) !important; }
+[data-theme="dark"] .text-gray-500,
+[data-theme="dark"] .text-gray-400 { color: var(--c-text-3) !important; }
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200,
+[data-theme="dark"] .border-gray-300,
+[data-theme="dark"] .border-gray-400 { border-color: var(--c-border-strong) !important; }
+
+/* compact density */
+[data-density="compact"] .mp { padding-top: 20px; padding-bottom: 28px; }
+[data-density="compact"] .mp-btn { height: 38px; }
+[data-density="compact"] .app-nav a { height: 36px; }
+[data-density="compact"] .app-top { height: 60px; }

@@ -1,0 +1,498 @@
+/* ==========================================================
+   Wheellol — form fields (global)
+   One look for every input, select, date picker, number field,
+   text area, upload and checkbox — on pages AND inside modals.
+   Sizes/colours come from the antd theme in main.jsx; this file
+   adds the polish antd tokens can't express.
+   ========================================================== */
+
+:root {
+  --f-border: var(--c-border-strong);
+  --f-border-hover: var(--c-border-hover);
+  --f-focus: var(--c-primary);
+  --f-ring: 0 0 0 4px var(--c-primary-ring);
+  --f-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --f-err: #f04438;
+  --f-err-ring: 0 0 0 4px rgba(240, 68, 56, 0.12);
+  --f-placeholder: var(--c-text-4);
+  --f-icon: var(--c-text-4);
+}
+
+/* ---------- Shared surface for all text-like fields ---------- */
+.ant-input-outlined,
+.ant-input-affix-wrapper.ant-input-outlined,
+.ant-input-number-outlined,
+.ant-picker-outlined,
+.ant-select-outlined:not(.ant-select-customize-input) .ant-select-selector {
+  background: var(--c-surface);
+  border-color: var(--f-border);
+  box-shadow: var(--f-shadow);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.ant-input-outlined:hover,
+.ant-input-affix-wrapper.ant-input-outlined:hover,
+.ant-input-number-outlined:hover,
+.ant-picker-outlined:hover,
+.ant-select-outlined:not(.ant-select-disabled):not(.ant-select-customize-input):hover .ant-select-selector {
+  border-color: var(--f-border-hover);
+}
+
+.ant-input-outlined:focus,
+.ant-input-outlined:focus-within,
+.ant-input-affix-wrapper.ant-input-outlined:focus-within,
+.ant-input-number-outlined:focus-within,
+.ant-picker-outlined.ant-picker-focused,
+.ant-select-outlined.ant-select-focused:not(.ant-select-customize-input) .ant-select-selector {
+  border-color: var(--f-focus) !important;
+  box-shadow: var(--f-ring) !important;
+  background: var(--c-surface);
+}
+
+/* inner input of a wrapper never draws its own frame */
+.ant-input-affix-wrapper > input.ant-input,
+.ant-input-affix-wrapper > textarea.ant-input {
+  box-shadow: none !important;
+  background: transparent;
+}
+
+/* placeholders */
+.ant-input::placeholder,
+.ant-input-number-input::placeholder,
+.ant-picker-input > input::placeholder {
+  color: var(--f-placeholder);
+}
+.ant-select-selection-placeholder {
+  color: var(--f-placeholder) !important;
+}
+
+/* typed text */
+.ant-input,
+.ant-input-number-input,
+.ant-picker-input > input,
+.ant-select-selection-item {
+  font-size: 14px;
+  color: var(--c-text);
+}
+.ant-select-single .ant-select-selection-item {
+  font-weight: 500;
+}
+
+/* prefix / suffix icons: quiet, turning orange on focus */
+.ant-input-prefix,
+.ant-input-suffix,
+.ant-picker-suffix,
+.ant-select-arrow {
+  color: var(--f-icon);
+  transition: color 0.18s ease;
+}
+.ant-input-prefix {
+  margin-inline-end: 10px !important;
+  font-size: 15px;
+}
+.ant-input-affix-wrapper-focused .ant-input-prefix,
+.ant-input-affix-wrapper:focus-within .ant-input-prefix,
+.ant-picker-focused .ant-picker-suffix,
+.ant-select-focused .ant-select-arrow {
+  color: var(--c-primary-text);
+}
+.ant-input-clear-icon,
+.ant-select-clear,
+.ant-picker-clear {
+  color: var(--c-text-4);
+}
+
+/* ---------- Text area ---------- */
+textarea.ant-input {
+  padding: 12px 14px;
+  line-height: 1.55;
+  min-height: 96px;
+  resize: vertical;
+}
+.ant-input-textarea-show-count::after,
+.ant-input-data-count {
+  font-size: 12px;
+  color: var(--c-text-3);
+}
+
+/* ---------- Number input ---------- */
+.ant-input-number,
+.ant-input-number-affix-wrapper {
+  width: 100%;
+}
+.ant-input-number .ant-input-number-handler-wrap {
+  border-radius: 0 12px 12px 0;
+  background: var(--c-subtle);
+}
+
+/* ---------- Addons ("ETB", "+251", https://) ---------- */
+.ant-input-group-addon,
+.ant-input-number-group-addon {
+  background: var(--c-subtle) !important;
+  border-color: var(--f-border) !important;
+  color: var(--c-text-2) !important;
+  font-weight: 600;
+  font-size: 13px;
+  padding-inline: 14px !important;
+}
+
+/* ---------- Select ---------- */
+.ant-select-multiple .ant-select-selection-item {
+  background: var(--c-muted);
+  border: 1px solid var(--c-border-strong);
+  border-radius: 8px;
+  font-weight: 500;
+  color: var(--c-text-2);
+}
+.ant-select-multiple .ant-select-selection-item-remove {
+  color: var(--c-text-3);
+}
+
+/* dropdown panel */
+.ant-select-dropdown,
+.ant-picker-dropdown .ant-picker-panel-container,
+.ant-cascader-dropdown {
+  border-radius: 14px !important;
+  padding: 6px !important;
+  border: 1px solid var(--c-border);
+  box-shadow: 0 20px 44px -18px rgba(15, 23, 42, 0.32), 0 2px 6px rgba(15, 23, 42, 0.05) !important;
+}
+.ant-picker-dropdown .ant-picker-panel-container {
+  padding: 0 !important;
+  overflow: hidden;
+}
+.ant-select-item {
+  border-radius: 9px !important;
+  font-size: 14px;
+  margin-bottom: 1px;
+}
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  font-weight: 600 !important;
+}
+.ant-select-item-option-selected .ant-select-item-option-state {
+  color: var(--c-primary-text);
+}
+.ant-select-item-group {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-3);
+}
+
+/* ---------- Date picker ---------- */
+.ant-picker {
+  width: 100%;
+}
+.ant-picker-range {
+  width: auto;
+}
+.ant-picker-range .ant-picker-active-bar {
+  background: var(--f-focus);
+  height: 2px;
+  border-radius: 2px;
+}
+.ant-picker-header {
+  border-bottom-color: var(--c-border) !important;
+}
+.ant-picker-header-view {
+  font-weight: 700;
+}
+.ant-picker-cell .ant-picker-cell-inner {
+  border-radius: 8px !important;
+}
+.ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before {
+  border-color: var(--f-focus) !important;
+  border-radius: 8px !important;
+}
+.ant-picker-footer,
+.ant-picker-ranges {
+  border-top-color: var(--c-border) !important;
+}
+
+/* ---------- Validation states ---------- */
+.ant-input-status-error.ant-input-outlined,
+.ant-input-affix-wrapper-status-error.ant-input-outlined,
+.ant-input-number-status-error.ant-input-number-outlined,
+.ant-picker-status-error.ant-picker-outlined,
+.ant-select-status-error.ant-select-outlined:not(.ant-select-customize-input) .ant-select-selector {
+  border-color: var(--f-err) !important;
+  background: var(--c-primary-soft) !important;
+}
+.ant-input-status-error:focus-within,
+.ant-input-affix-wrapper-status-error:focus-within,
+.ant-input-number-status-error:focus-within,
+.ant-picker-status-error.ant-picker-focused,
+.ant-select-status-error.ant-select-focused .ant-select-selector {
+  box-shadow: var(--f-err-ring) !important;
+}
+.ant-form-item-explain-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #b42318;
+  padding-top: 4px;
+}
+.ant-form-item-explain-error::before {
+  content: "!";
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  border-radius: 99px;
+  background: #fee4e2;
+  color: #b42318;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.ant-form-item-extra {
+  font-size: 12.5px;
+  color: var(--c-text-3) !important;
+  padding-top: 4px;
+}
+
+/* ---------- Disabled ---------- */
+.ant-input-disabled,
+.ant-input-affix-wrapper-disabled,
+.ant-input-number-disabled,
+.ant-picker-disabled,
+.ant-select-disabled .ant-select-selector {
+  background: var(--c-subtle) !important;
+  color: var(--c-text-4) !important;
+  box-shadow: none !important;
+}
+
+/* ---------- Labels ---------- */
+.ant-form-item-label > label {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+/* required mark: orange star AFTER the label, like the design */
+.ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+  display: none !important;
+}
+.ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::after {
+  content: "*";
+  visibility: visible !important;
+  color: var(--c-primary-text);
+  margin-inline-start: 4px;
+  font-weight: 700;
+  display: inline-block !important;
+}
+.ant-form-item-label > label::after {
+  margin-inline-end: 0;
+}
+.ant-form-vertical .ant-form-item-label,
+.ant-col-24.ant-form-item-label {
+  padding-bottom: 7px !important;
+}
+
+/* ---------- Checkbox / radio / switch ---------- */
+.ant-checkbox .ant-checkbox-inner {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border-color: var(--c-border-hover);
+}
+.ant-checkbox-wrapper,
+.ant-radio-wrapper {
+  font-size: 14px;
+  color: var(--c-text-2);
+}
+.ant-radio .ant-radio-inner {
+  width: 18px;
+  height: 18px;
+  border-color: var(--c-border-hover);
+}
+.ant-radio-button-wrapper {
+  font-weight: 600;
+}
+.ant-radio-button-wrapper:first-child {
+  border-start-start-radius: 10px;
+  border-end-start-radius: 10px;
+}
+.ant-radio-button-wrapper:last-child {
+  border-start-end-radius: 10px;
+  border-end-end-radius: 10px;
+}
+
+/* ---------- Upload ---------- */
+.ant-upload-wrapper .ant-upload-drag {
+  border: 1.5px dashed var(--c-border-hover) !important;
+  border-radius: 14px !important;
+  background: var(--c-subtle) !important;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.ant-upload-wrapper .ant-upload-drag:hover,
+.ant-upload-wrapper .ant-upload-drag.ant-upload-drag-hover {
+  border-color: var(--f-focus) !important;
+  background: var(--c-primary-soft) !important;
+}
+.ant-upload-wrapper .ant-upload-drag .ant-upload-drag-icon .anticon {
+  color: var(--c-primary-text) !important;
+}
+.ant-upload-wrapper .ant-upload-drag p.ant-upload-text {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--c-text);
+}
+.ant-upload-wrapper .ant-upload-drag p.ant-upload-hint {
+  font-size: 12.5px;
+  color: var(--c-text-3);
+}
+.ant-upload-wrapper.ant-upload-picture-card-wrapper .ant-upload.ant-upload-select,
+.ant-upload-wrapper .ant-upload-list-picture-card .ant-upload-list-item-container,
+.ant-upload-wrapper.ant-upload-picture-card-wrapper .ant-upload-list-item {
+  border-radius: 12px !important;
+}
+.ant-upload-wrapper.ant-upload-picture-card-wrapper .ant-upload.ant-upload-select {
+  border: 1.5px dashed var(--c-border-hover) !important;
+  background: var(--c-subtle) !important;
+}
+.ant-upload-wrapper.ant-upload-picture-card-wrapper .ant-upload.ant-upload-select:hover {
+  border-color: var(--f-focus) !important;
+  background: var(--c-primary-soft) !important;
+}
+.ant-upload-list-item {
+  border-radius: 10px !important;
+}
+
+/* ---------- Form layout niceties ---------- */
+.ant-modal .ant-form {
+  margin-top: 8px;
+}
+.ant-modal .ant-modal-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--c-border);
+}
+.ant-modal .ant-modal-footer .ant-btn {
+  min-width: 96px;
+}
+.ant-form-item .ant-form-item-control-input {
+  min-height: 44px;
+}
+/* antd Card used inside old forms → match design cards */
+.ant-card-bordered {
+  border-color: var(--c-border) !important;
+}
+.ant-card .ant-card-head {
+  border-bottom-color: var(--c-border);
+  font-weight: 700;
+}
+.ant-divider-horizontal.ant-divider-with-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text-2);
+}
+
+/* ---------- Form footers (Cancel / Save) ---------- */
+.mp-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid var(--c-border);
+}
+.mp-form-actions .ant-btn,
+.mp-form-actions .mp-btn {
+  min-width: 104px;
+}
+
+/* ---------- Section headings inside long forms (Typography Title) ---------- */
+.ant-modal .ant-form h4.ant-typography,
+.ant-modal .ant-form h5.ant-typography,
+.mp-modal-body h4.ant-typography,
+.mp-modal-body h5.ant-typography {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--c-text) !important;
+  margin: 26px 0 14px !important;
+  padding-top: 18px;
+  border-top: 1px solid var(--c-border);
+}
+.ant-modal .ant-form h4.ant-typography:first-child,
+.ant-modal .ant-form h5.ant-typography:first-child {
+  margin-top: 4px !important;
+  padding-top: 0;
+  border-top: none;
+}
+.ant-modal .ant-form h4.ant-typography::before,
+.ant-modal .ant-form h5.ant-typography::before {
+  content: "";
+  width: 6px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--c-primary);
+}
+
+/* Upload "button" (listType=picture/text) as a soft tile */
+.ant-upload-wrapper .ant-upload-select > .ant-btn {
+  height: 44px;
+  border-style: dashed;
+  background: var(--c-subtle);
+  color: var(--c-text-2);
+}
+.ant-upload-wrapper .ant-upload-select > .ant-btn:hover {
+  border-color: var(--c-primary) !important;
+  background: var(--c-primary-soft);
+  color: var(--c-primary-text) !important;
+}
+
+/* Modal header spacing */
+.ant-modal .ant-modal-header {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--c-border);
+}
+.ant-modal .ant-modal-close {
+  top: 20px;
+  inset-inline-end: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+.ant-modal .ant-modal-close:hover {
+  background: var(--c-muted);
+}
+
+/* ---------- Draw the eye to invalid fields ---------- */
+@keyframes mp-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.ant-form-item-has-error .ant-form-item-control-input-content {
+  animation: mp-shake 0.38s ease-in-out;
+}
+.ant-form-item-has-error .ant-form-item-label > label {
+  color: #b42318;
+}
+
+/* ---------- Toasts ---------- */
+.ant-notification .ant-notification-notice {
+  border-radius: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--c-border);
+  box-shadow: 0 20px 44px -18px rgba(15, 23, 42, 0.35), 0 2px 6px rgba(15, 23, 42, 0.06);
+  font-family: "DM Sans", system-ui, sans-serif;
+}
+.ant-notification .ant-notification-notice-message {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--c-text);
+}
+.ant-notification .ant-notification-notice-description {
+  font-size: 13.5px;
+  color: var(--c-text-2);
+}

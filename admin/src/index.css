@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-optical-sizing: auto;
+}
+
+html,
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.horizontal-dots {
+  transform: rotate(90deg);
+  color: var(--c-text);
+  font-size: 24px !important;
+}
+
+.card-content {
+  font-weight: bold !important;
+}
+
+:root {
+  --color-primary: var(--c-primary);
+  --color-primary-strong: var(--c-primary-strong);
+  --color-secondary: #09234c;
+}
