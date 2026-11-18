@@ -11,7 +11,7 @@
 #      bash deploy.sh [setup|status|backup|logs|rollback]
 #
 #  What "setup" does (safe to run again any time — later runs just update):
-#    1. installs Docker + git (if missing), adds swap
+#    1. installs everything missing (git, curl, Docker + compose, cron, ss/ps...), adds swap
 #    2. gets the code into /opt/wheellol (git; local edits to tracked files are reset)
 #    3. builds /opt/wheellol/.env — first run IMPORTS your existing production
 #       backend .env (same Postgres, same Redis, same keys)
@@ -132,35 +132,102 @@ cert_info() {      # cert_info DOMAIN -> "expires <date> (<n> days)"
 need_root() { [ "$(id -u)" = 0 ] || die "Run as root (or: sudo bash deploy.sh)"; }
 
 # ------------------------------------------------------------------- steps
+# ---- package manager (Ubuntu/Debian = apt; CentOS/Rocky/Alma/Fedora = dnf/yum)
+PKG=""
+pkg_detect() {
+  if command -v apt-get >/dev/null; then PKG=apt
+  elif command -v dnf >/dev/null; then PKG=dnf
+  elif command -v yum >/dev/null; then PKG=yum
+  else die "Unsupported Linux (no apt/dnf/yum). Use Ubuntu 22.04/24.04."; fi
+}
+APT_UPDATED=""
+pkg_install() {   # pkg_install <package>...   (waits if automatic updates hold the lock)
+  [ $# -gt 0 ] || return 0
+  echo "  installing: $*"
+  case $PKG in
+    apt)
+      export DEBIAN_FRONTEND=noninteractive
+      local o=(-o DPkg::Lock::Timeout=600 -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
+      [ -n "$APT_UPDATED" ] || { apt-get "${o[@]}" update -qq >/dev/null; APT_UPDATED=1; }
+      apt-get "${o[@]}" install -y -qq --no-install-recommends "$@" >/dev/null ;;
+    dnf|yum) $PKG install -y -q "$@" >/dev/null ;;
+  esac || die "could not install: $*"
+}
+# command -> package name (apt / rpm)
+pkg_for() {
+  case "$1:$PKG" in
+    ss:apt) echo iproute2 ;;        ss:*) echo iproute ;;
+    ps:apt) echo procps ;;          ps:*) echo procps-ng ;;
+    crontab:apt) echo cron ;;       crontab:*) echo cronie ;;
+    getent:apt) echo libc-bin ;;    getent:*) echo glibc-common ;;
+    fallocate:*|mkswap:*|swapon:*) echo util-linux ;;
+    timeout:*|sort:*|df:*) echo coreutils ;;
+    *) echo "$1" ;;   # git curl openssl perl gzip awk(gawk) sed grep tar
+  esac
+}
+
 install_base() {
-  command -v apt-get >/dev/null || die "This script expects Ubuntu/Debian."
-  export DEBIAN_FRONTEND=noninteractive
-  local missing=""
-  for p in git curl openssl perl; do command -v $p >/dev/null || missing="$missing $p"; done
-  if [ -n "$missing" ]; then apt-get update -qq && apt-get install -y -qq $missing ca-certificates >/dev/null; fi
-  if ! command -v docker >/dev/null; then
-    echo "  installing Docker..."; curl -fsSL https://get.docker.com | sh >/dev/null
+  pkg_detect
+  # 1. every tool this script uses
+  local need="" c
+  for c in git curl openssl perl gzip tar sed grep awk ss ps crontab getent timeout sort df fallocate mkswap swapon; do
+    command -v "$c" >/dev/null || need="$need $(pkg_for "$c")"
+  done
+  [ "$PKG" = apt ] && [ ! -s /etc/ssl/certs/ca-certificates.crt ] && need="$need ca-certificates"
+  # shellcheck disable=SC2086,SC2046
+  [ -z "$need" ] || pkg_install $(echo $need | tr ' ' '\n' | sort -u | sed 's/^awk$/gawk/')
+  ok "tools: git $(git --version | awk '{print $3}'), curl, openssl, ss, ps, cron"
+
+  # cron must run for the daily backup
+  systemctl enable --now cron >/dev/null 2>&1 || systemctl enable --now crond >/dev/null 2>&1 || true
+
+  # 2. disk space (images + build need ~4 GB)
+  local free_gb; free_gb=$(df -Pk / | awk 'NR==2{print int($4/1048576)}')
+  [ "$free_gb" -ge 3 ] || die "Only ${free_gb} GB free on /. Need at least 3 GB. Free some space (e.g. docker system prune -a, old logs) and run again."
+  [ "$free_gb" -ge 6 ] || warn "only ${free_gb} GB free on / — OK for now, but keep an eye on it"
+
+  # 3. Docker Engine + compose plugin
+  if command -v docker >/dev/null && [[ "$(command -v docker)" == /snap/* ]]; then
+    die "Docker is installed as a snap, which cannot use $APP_DIR. Remove it (snap remove docker) and run again — the script installs the official Docker."
   fi
-  systemctl enable --now docker >/dev/null 2>&1 || true
-  docker compose version >/dev/null 2>&1 || apt-get install -y -qq docker-compose-plugin >/dev/null
+  if ! command -v docker >/dev/null; then
+    echo "  installing Docker (official get.docker.com)..."
+    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh || die "cannot download Docker installer (internet/DNS on the server?)"
+    sh /tmp/get-docker.sh >/dev/null 2>&1 || die "Docker install failed. Try by hand: sh /tmp/get-docker.sh"
+    rm -f /tmp/get-docker.sh
+  fi
+  systemctl enable --now docker >/dev/null 2>&1 || service docker start >/dev/null 2>&1 || true
+  local i; for i in 1 2 3 4 5 6 7 8 9 10; do docker info >/dev/null 2>&1 && break; sleep 2; done
+  docker info >/dev/null 2>&1 || die "Docker is installed but not running. Check: systemctl status docker"
+  docker compose version >/dev/null 2>&1 || pkg_install docker-compose-plugin
   # docker-compose.yml needs compose >= 2.20 (depends_on.required)
   local cv; cv=$(docker compose version --short 2>/dev/null | sed 's/^v//')
   if [ "$(printf '%s\n2.20.0\n' "$cv" | sort -V | head -1)" != "2.20.0" ]; then
-    apt-get update -qq && apt-get install -y -qq docker-compose-plugin >/dev/null 2>&1 || true
+    APT_UPDATED=""; pkg_install docker-compose-plugin || true
     cv=$(docker compose version --short 2>/dev/null | sed 's/^v//')
     [ "$(printf '%s\n2.20.0\n' "$cv" | sort -V | head -1)" = "2.20.0" ] \
       || die "Docker Compose $cv is too old (need 2.20+). Update Docker: curl -fsSL https://get.docker.com | sh"
   fi
   ok "Docker $(docker --version | awk '{print $3}' | tr -d ,) / compose $(docker compose version --short)"
-  if ! swapon --show | grep -q .; then
-    fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile
-    grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
-    ok "added 2G swap"
+
+  # 4. swap (small droplets run out of memory while building)
+  if ! swapon --show 2>/dev/null | grep -q .; then
+    if fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none; then
+      chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile \
+        && { grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab; ok "added 2G swap"; } \
+        || { rm -f /swapfile; warn "could not add swap (not critical)"; }
+    fi
   fi
+
+  # 5. firewall: open 80/443 if one is active
   if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then
     ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null; ufw allow 443/udp >/dev/null
-    ok "firewall: 80/443 open"
+    ok "firewall (ufw): 80/443 open"
+  elif command -v firewall-cmd >/dev/null && firewall-cmd --state >/dev/null 2>&1; then
+    firewall-cmd -q --permanent --add-service=http --add-service=https && firewall-cmd -q --reload
+    ok "firewall (firewalld): 80/443 open"
   fi
+  [ "$(uname -m)" = x86_64 ] || warn "server is $(uname -m): ready-made images are x86_64, so they will be built here (slower)"
 }
 
 get_code() {

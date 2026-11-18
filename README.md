@@ -67,7 +67,10 @@ sudo bash deploy.sh
 
 The first run:
 
-1. Installs Docker and git, adds swap, and puts the code in `/opt/wheellol`.
+1. Installs whatever is missing (git, curl, Docker + Compose, cron, `ss`/`ps` tools) and adds
+   swap. It waits if automatic updates are using apt, checks disk space, opens ports 80/443 in
+   the firewall, and puts the code in `/opt/wheellol`. Node, pm2, nginx, certbot and the Postgres
+   client are **not** needed: they run inside the containers.
 2. **Finds your production backend `.env` and imports it**: same database, same keys. It asks
    for anything missing, such as `AFRO_MESSAGE_API_KEY` or a real `JWT_SECRET`.
 3. Checks DNS for `wheellol.com`, `api.` and `socket.`. If `www.` already points at the
