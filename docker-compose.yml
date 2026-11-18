@@ -5,8 +5,9 @@
 # .env, e.g. localhost:5432) with no database changes. All backend ports
 # listen on 127.0.0.1 only; the internet reaches them through Caddy (HTTPS).
 #
-# Optional bundled services for a fresh server (enable in .env):
-#   COMPOSE_PROFILES=db,redis   -> Postgres on 127.0.0.1:5432, Redis on 127.0.0.1:6379
+# Optional services (COMPOSE_PROFILES in .env, deploy.sh sets it):
+#   caddy      -> HTTPS by Caddy (fresh server). Without it, nginx on the host does HTTPS.
+#   db,redis   -> bundled Postgres on 127.0.0.1:5432, Redis on 127.0.0.1:6379
 
 name: wheellol
 
@@ -50,7 +51,10 @@ services:
 
   # HTTPS for all domains. Certificates are issued and RENEWED automatically
   # (Caddy checks twice a day and renews ~30 days before expiry).
+  # Only with COMPOSE_PROFILES containing "caddy" (PROXY=caddy). With PROXY=nginx
+  # the server's existing nginx + certbot do HTTPS instead.
   caddy:
+    profiles: ["caddy"]
     image: caddy:2-alpine
     restart: unless-stopped
     network_mode: host

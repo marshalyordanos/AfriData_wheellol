@@ -43,16 +43,18 @@ The admin reads `VITE_API_URL` and `VITE_SOCKET_URL`. Without them it uses
 
 | Site | URL | Runs as |
 |---|---|---|
-| Admin | `https://wheellol.com` | `admin` container (nginx), behind Caddy |
+| Admin | `https://admin.wheellol.com` (or `wheellol.com` if no website lives there) | `admin` container (nginx) on 127.0.0.1:8080 |
 | REST API | `https://api.wheellol.com` | `backend` container, gateway on 127.0.0.1:3000 |
 | Sockets | `https://socket.wheellol.com` | `backend` container, notify-hub on 127.0.0.1:4004 |
 
-- **HTTPS:** Caddy gets the certificates and **renews them automatically**, about 30 days
-  before they expire. No certbot and no cron job needed.
-- **Database:** your **existing Postgres and Redis** are used as they are. The backend runs on
-  the host network, so `localhost:5432` in the old `.env` still works. All backend ports listen
-  on `127.0.0.1` only.
-- **Fresh server:** set `COMPOSE_PROFILES=db,redis` to use the bundled Postgres and Redis.
+- **HTTPS, two modes** (`PROXY` in `/opt/wheellol/.env`, chosen on the first run):
+  - `nginx`: nginx is already running (a shared server with the website and other apps). nginx stays,
+    and only the Wheellol sites are added or updated, with a config backup and an automatic restore if
+    `nginx -t` fails. certbot issues and **renews** the certificates.
+  - `caddy`: fresh server. Caddy owns ports 80/443 and **renews** certificates itself.
+- **Database:** your **existing Postgres and Redis** are used as they are. The backend runs on the host
+  network, so `localhost:5432` in the old `.env` still works. All backend ports listen on `127.0.0.1` only.
+- **Fresh server:** `COMPOSE_PROFILES=db,redis` uses the bundled Postgres and Redis.
 
 ### Deploy (one command)
 
@@ -79,10 +81,12 @@ The first run:
 5. **Checks the database and pending migrations while the old system is still running.** If
    anything looks wrong, it stops here and nothing is changed.
 6. **Backs up the database** to `/opt/wheellol/backups/`.
-7. Shows what is using ports 80/443/3000/4001-4004 (old pm2 backend, nginx, certbot timer…),
-   asks you, then stops those services. They are stopped, not deleted.
-8. Starts the new stack. Migrations run, Caddy gets the certificates, then it checks every URL
-   over HTTPS and prints the certificate expiry dates.
+7. Shows what is using the backend ports 3000/4001-4004 (the old pm2 backend), asks you, then
+   stops it. It is stopped, not deleted. Other pm2 apps, the website and nginx are not touched. In
+   `caddy` mode it also frees 80/443.
+8. Starts the new stack and runs the migrations. In `nginx` mode it adds the admin site and gets
+   its certificate with certbot. Then it checks every URL through this server and prints the
+   certificate expiry dates.
 9. Sets up a daily database backup at 02:30. The last 14 backups are kept.
 
 If the new backend does not come up, the script offers to **roll back**. Rollback restarts
@@ -92,6 +96,7 @@ Run the script again any time to update: it pulls code and images, checks, backs
 restarts.
 
 ```bash
+bash /opt/wheellol/deploy.sh check      # steps 1-6 only (install, .env, images, DB check, backup) — switches nothing
 bash /opt/wheellol/deploy.sh status     # services, certificate days left, last backups, disk
 bash /opt/wheellol/deploy.sh logs       # follow logs (add a service name: logs backend)
 bash /opt/wheellol/deploy.sh backup     # database backup now

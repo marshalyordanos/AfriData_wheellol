@@ -15,17 +15,21 @@
 #    2. gets the code into /opt/wheellol (git; local edits to tracked files are reset)
 #    3. builds /opt/wheellol/.env — first run IMPORTS your existing production
 #       backend .env (same Postgres, same Redis, same keys)
-#    4. checks DNS for wheellol.com / api. / socket.
+#    4. checks DNS for the admin / api. / socket. domains
 #    5. downloads (or builds) the Docker images
 #    6. checks the database + pending migrations   (old system still running)
 #    7. BACKS UP the database to /opt/wheellol/backups
-#    8. stops the old backend (pm2 / systemd / docker / process) and old nginx
-#       on ports 80/443 — after asking — and remembers them for `rollback`
-#    9. starts the new stack; Caddy gets HTTPS certificates and RENEWS them
-#       automatically from now on
+#    8. stops the old backend (pm2 / systemd / docker / process) — after asking —
+#       and remembers it for `rollback`
+#    9. starts the new stack. HTTPS, two modes (PROXY in .env):
+#         nginx  nginx is already running (shared server): it stays, only the
+#                Wheellol sites are added/updated; certbot renews certificates
+#         caddy  fresh server: Caddy owns 80/443 and renews certificates itself
 #   10. verifies HTTPS, prints certificate expiry, installs a daily DB backup
 #
 #  Non-interactive (accept every default):  YES=1 bash deploy.sh
+#  Check only (steps 1-7, nothing switched): bash deploy.sh check
+#  Optional overrides: OLD_ENV=/path/.env  PROXY=nginx|caddy  WL_ADMIN_DOMAIN=admin.x.com
 # =============================================================================
 set -Eeu
 
@@ -40,7 +44,8 @@ if [[ "${1:-}" == *@* ]]; then
   target="$1"; shift
   scp -q "$0" "$target:/tmp/wheellol-deploy.sh"
   args=$(printf '%q ' "$@")
-  exec ssh -t "$target" "if [ \"\$(id -u)\" = 0 ]; then YES='${YES:-}' bash /tmp/wheellol-deploy.sh $args; else sudo YES='${YES:-}' bash /tmp/wheellol-deploy.sh $args; fi"
+  envs=""; for v in YES OLD_ENV PROXY WL_ADMIN_DOMAIN; do [ -z "${!v:-}" ] || envs="$envs $v=$(printf '%q' "${!v}")"; done
+  exec ssh -t "$target" "if [ \"\$(id -u)\" = 0 ]; then env $envs bash /tmp/wheellol-deploy.sh $args; else sudo env $envs bash /tmp/wheellol-deploy.sh $args; fi"
 fi
 
 # Running from $APP_DIR? Re-run from a copy: `git reset` would rewrite this file mid-run.
@@ -101,9 +106,16 @@ dc() { docker compose --project-directory "$APP_DIR" "$@"; }
 
 # libpq-safe URL: drop Prisma-only params (?schema=, pgbouncer=...), keep sslmode
 pg_url() {
-  local u="$1" base q ssl
+  local u="$1" base q ssl scheme rest ui host user pass
   base="${u%%\?*}"; q=""; [[ "$u" == *\?* ]] && q="${u#*\?}"
   ssl=$(printf '%s' "$q" | tr '&' '\n' | grep -E '^sslmode=' | head -1 || true)
+  scheme="${base%%://*}"; rest="${base#*://}"
+  if [[ "$rest" == *@* ]]; then      # user:pa@ss@host -> split at the LAST @
+    ui="${rest%@*}"; host="${rest##*@}"; user="${ui%%:*}"; pass=""
+    [[ "$ui" == *:* ]] && pass="${ui#*:}"
+    pass="${pass//@/%40}"; pass="${pass//#/%23}"; pass="${pass//\//%2F}"; pass="${pass//\?/%3F}"
+    base="$scheme://$user${pass:+:$pass}@$host"
+  fi
   echo "${base}${ssl:+?$ssl}"
 }
 db_url() { local u; u="$(envv DIRECT_URL)"; [ -n "$u" ] || u="$(envv DATABASE_URL)"; pg_url "$u"; }
@@ -122,9 +134,11 @@ resolve() { getent ahostsv4 "$1" 2>/dev/null | awk '{print $1}' | sort -u | tr '
 
 cert_info() {      # cert_info DOMAIN -> "expires <date> (<n> days)"
   local exp days
-  exp=$(echo | timeout 10 openssl s_client -servername "$1" -connect "$1:443" 2>/dev/null \
-        | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2) || true
-  [ -n "$exp" ] || { echo "no certificate yet"; return; }
+  local pem; pem=$(echo | timeout 10 openssl s_client -servername "$1" -connect 127.0.0.1:443 2>/dev/null \
+        | openssl x509 2>/dev/null) || true
+  [ -n "$pem" ] && echo "$pem" | openssl x509 -noout -checkhost "$1" 2>/dev/null | grep -q "does match" \
+    || { echo "no certificate for this name yet"; return; }
+  exp=$(echo "$pem" | openssl x509 -noout -enddate | cut -d= -f2)
   days=$(( ( $(date -d "$exp" +%s) - $(date +%s) ) / 86400 ))
   echo "expires $(date -d "$exp" +%Y-%m-%d) ($days days left)"
 }
@@ -193,13 +207,18 @@ install_base() {
   if ! command -v docker >/dev/null; then
     echo "  installing Docker (official get.docker.com)..."
     curl -fsSL https://get.docker.com -o /tmp/get-docker.sh || die "cannot download Docker installer (internet/DNS on the server?)"
-    sh /tmp/get-docker.sh >/dev/null 2>&1 || die "Docker install failed. Try by hand: sh /tmp/get-docker.sh"
+    if ! sh /tmp/get-docker.sh >/dev/null 2>&1; then
+      [ "$PKG" = apt ] || die "Docker install failed. Try by hand: sh /tmp/get-docker.sh"
+      warn "Docker's installer does not support this release yet — using Ubuntu's own Docker packages"
+      pkg_install docker.io
+      pkg_install docker-compose-v2 2>/dev/null || pkg_install docker-compose-plugin
+    fi
     rm -f /tmp/get-docker.sh
   fi
   systemctl enable --now docker >/dev/null 2>&1 || service docker start >/dev/null 2>&1 || true
   local i; for i in 1 2 3 4 5 6 7 8 9 10; do docker info >/dev/null 2>&1 && break; sleep 2; done
   docker info >/dev/null 2>&1 || die "Docker is installed but not running. Check: systemctl status docker"
-  docker compose version >/dev/null 2>&1 || pkg_install docker-compose-plugin
+  docker compose version >/dev/null 2>&1 || pkg_install docker-compose-plugin 2>/dev/null || pkg_install docker-compose-v2
   # docker-compose.yml needs compose >= 2.20 (depends_on.required)
   local cv; cv=$(docker compose version --short 2>/dev/null | sed 's/^v//')
   if [ "$(printf '%s\n2.20.0\n' "$cv" | sort -V | head -1)" != "2.20.0" ]; then
@@ -259,18 +278,32 @@ make_env() {
   if [ "${#cands[@]}" -gt 0 ]; then
     echo "  Found existing backend settings:"
     for f in "${cands[@]}"; do i=$((i + 1)); echo "    $i) $f  ($(stat -c %y "$f" | cut -d. -f1))"; done
-    pick=$(ask "Import which one? (number, a path, or 0 = none)" "1")
+    pick="${OLD_ENV:-$(ask "Import which one? (number, a path, or 0 = none)" "1")}"
     if [[ "$pick" =~ ^[0-9]+$ ]]; then [ "$pick" -ge 1 ] && old="${cands[$((pick - 1))]:-}"; else old="$pick"; fi
   else
-    old=$(ask "Path to your production backend .env (Enter = none)" "")
+    old="${OLD_ENV:-$(ask "Path to your production backend .env (Enter = none)" "")}"
   fi
   [ -z "$old" ] || [ -f "$old" ] || die "File not found: $old"
 
-  local admin api socket email
-  admin=$(ask "Admin website domain" "$DEFAULT_DOMAIN")
-  api=$(ask "API domain" "api.$admin")
-  socket=$(ask "Socket domain" "socket.$admin")
-  email=$(ask "Email for certificate notices" "admin@$admin")
+  # ---- HTTPS mode: keep a running nginx (shared server) or let Caddy own 80/443
+  local proxy="${PROXY:-}"
+  if [ -z "$proxy" ]; then
+    if systemctl is-active -q nginx 2>/dev/null; then
+      warn "nginx is already running here (sites: $(nginx_names | cut -c1-100))"
+      if ask_yes "Keep nginx + certbot and only add/update the Wheellol sites in it?" Y; then proxy=nginx; else proxy=caddy; fi
+    else proxy=caddy; fi
+  fi
+  ok "HTTPS by: $proxy"
+
+  local admin api socket email def_admin="$DEFAULT_DOMAIN"
+  if [ "$proxy" = nginx ] && [ -n "$(nginx_site_for "$DEFAULT_DOMAIN")" ]; then
+    def_admin="admin.$DEFAULT_DOMAIN"
+    ok "$DEFAULT_DOMAIN is already a site in nginx (your website) — admin goes on $def_admin"
+  fi
+  admin="${WL_ADMIN_DOMAIN:-$(ask "Admin website domain" "$def_admin")}"
+  api=$(ask "API domain" "api.$DEFAULT_DOMAIN")
+  socket=$(ask "Socket domain" "socket.$DEFAULT_DOMAIN")
+  email=$(ask "Email for certificate notices" "admin@$DEFAULT_DOMAIN")
   local owner_repo; owner_repo=$(echo "$REPO_URL" | sed -E 's#.*github.com[:/]##; s#\.git$##' | tr 'A-Z' 'a-z')
 
   umask 077
@@ -280,6 +313,7 @@ make_env() {
     echo "API_DOMAIN=$api"
     echo "SOCKET_DOMAIN=$socket"
     echo "ACME_EMAIL=$email"
+    echo "PROXY=$proxy"
     local ap=8080; while ss -ltnH "sport = :$ap" | grep -q .; do ap=$((ap + 1)); done
     echo "ADMIN_PORT=$ap"
     echo "BACKEND_IMAGE=ghcr.io/$owner_repo-backend"
@@ -292,7 +326,7 @@ make_env() {
   chmod 600 "$envf"
 
   if [ -n "$old" ]; then
-    local skip='^(ADMIN_DOMAIN|API_DOMAIN|SOCKET_DOMAIN|ACME_EMAIL|ADMIN_PORT|BACKEND_IMAGE|ADMIN_IMAGE|COMPOSE_PROFILES|RUN_MIGRATIONS|IMAGE_TAG|NODE_ENV|USER_PORT|GATEWAY_HOST|AUTH_HOST|SERVICE_HOST|NOTIFY_HOST)$'
+    local skip='^(PROXY|ADMIN_DOMAIN|API_DOMAIN|SOCKET_DOMAIN|ACME_EMAIL|ADMIN_PORT|BACKEND_IMAGE|ADMIN_IMAGE|COMPOSE_PROFILES|RUN_MIGRATIONS|IMAGE_TAG|NODE_ENV|USER_PORT|GATEWAY_HOST|AUTH_HOST|SERVICE_HOST|NOTIFY_HOST)$'
     grep -E '^[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=' "$old" \
       | sed -E 's/^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=.*/\2/' | awk '!seen[$0]++' \
       | while read -r k; do
@@ -300,6 +334,13 @@ make_env() {
           set_env "$k" "$(env_get "$old" "$k")"
         done
     ok "imported $(grep -cE '^[A-Z]' "$envf") settings from $old"
+    # the old code had the AfroMessage key written in the source; the new code reads the env
+    if [ -z "$(envv AFRO_MESSAGE_API_KEY)" ]; then
+      local od tok; od=$(dirname "$old")
+      tok=$(cat "$od/src/utils/sendSms.ts" "$od/dist/utils/sendSms.js" 2>/dev/null | grep -vE '^[[:space:]]*//' \
+            | grep -oE 'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+' | head -1 || true)
+      [ -z "$tok" ] || { set_env AFRO_MESSAGE_API_KEY "$tok"; ok "AFRO_MESSAGE_API_KEY taken from the old code ($od/src/utils/sendSms.ts)"; }
+    fi
   fi
 
   # ---- database
@@ -317,6 +358,7 @@ make_env() {
   if [[ "$ru" =~ (localhost|127\.0\.0\.1):6379 ]] && ! ss -ltnH 'sport = :6379' | grep -q .; then
     PROFILES="${PROFILES:+$PROFILES,}redis"; ok "no Redis running on this server — bundling one"
   fi
+  [ "$proxy" = caddy ] && PROFILES="${PROFILES:+$PROFILES,}caddy"
   set_env COMPOSE_PROFILES "${PROFILES:-}"
 
   # ---- secrets the new code needs
@@ -345,13 +387,13 @@ check_dns() {
   for d in "$(envv ADMIN_DOMAIN)" "$(envv API_DOMAIN)" "$(envv SOCKET_DOMAIN)"; do
     local r; r=$(resolve "$d")
     if [ -z "$r" ]; then warn "$d has no DNS record — add an A record → $ip"
-    elif [ -n "$ip" ] && [[ " $r " != *" $ip "* ]]; then warn "$d points to $r, not $ip (certificate will wait until DNS is fixed)"
+    elif [ -n "$ip" ] && [[ " $r " != *" $ip "* ]]; then warn "$d points to $r, not this server ($ip). People cannot reach it until the DNS A record is $ip."
     else ok "$d → $r"; fi
   done
   # www → main domain redirect, only if www already points here
   local admin www; admin="$(envv ADMIN_DOMAIN)"; www="www.$admin"
   rm -f "$APP_DIR/caddy-extra/www.caddy"
-  if [[ "$admin" != www.* ]] && [ -n "$ip" ] && [[ " $(resolve "$www") " == *" $ip "* ]]; then
+  if [ "$(envv PROXY)" = caddy ] && [[ "$admin" != www.* ]] && [ -n "$ip" ] && [[ " $(resolve "$www") " == *" $ip "* ]]; then
     printf '%s {\n\tredir https://%s{uri} permanent\n}\n' "$www" "$admin" > "$APP_DIR/caddy-extra/www.caddy"
     ok "$www → redirects to https://$admin"
   fi
@@ -366,8 +408,8 @@ get_images() {
   else warn "could not download backend image — building on this server (5–15 min)"; dc build -q backend; ok "backend image built"; fi
   if [ $build_admin = 0 ] && dc pull -q admin >/dev/null 2>&1; then ok "admin image downloaded"
   else echo "  building admin image..."; dc build -q admin; ok "admin image built"; fi
-  dc pull -q caddy >/dev/null 2>&1 || true
-  [ -z "$(envv COMPOSE_PROFILES)" ] || dc pull -q postgres redis >/dev/null 2>&1 || true
+  [[ "$(envv COMPOSE_PROFILES)" != *caddy* ]] || dc pull -q caddy >/dev/null 2>&1 || true
+  [[ "$(envv COMPOSE_PROFILES)" != *db* && "$(envv COMPOSE_PROFILES)" != *redis* ]] || dc pull -q postgres redis >/dev/null 2>&1 || true
 }
 
 preflight_db() {
@@ -465,12 +507,15 @@ scan_port() {      # scan_port PORT  -> adds what owns it to PLAN (skips our own
 
 switch_over() {
   PLAN=()
-  for p in 80 443 $OLD_PORTS; do scan_port "$p"; done
-  local t
-  for t in certbot.timer snap.certbot.renew.timer; do
-    systemctl is-enabled "$t" >/dev/null 2>&1 && plan_add timer "$t" "old certificate renewal ($t) — Caddy renews now"
-  done
-  if [ "${#PLAN[@]}" -eq 0 ]; then ok "ports 80/443/3000/4001-4004 are free (or already ours)"; return; fi
+  local ports="$OLD_PORTS" t
+  [ "$(envv PROXY)" = nginx ] || ports="80 443 $OLD_PORTS"
+  for p in $ports; do scan_port "$p"; done
+  if [ "$(envv PROXY)" != nginx ]; then
+    for t in certbot.timer snap.certbot.renew.timer; do
+      systemctl is-enabled "$t" >/dev/null 2>&1 && plan_add timer "$t" "old certificate renewal ($t) — Caddy renews now"
+    done
+  fi
+  if [ "${#PLAN[@]}" -eq 0 ]; then ok "ports $(echo $ports | tr ' ' '/') are free (or already ours)"; return; fi
 
   echo "  These old services use the ports the new setup needs:"
   for l in "${PLAN[@]}"; do echo "    • $(echo "$l" | cut -d'|' -f3-)"; done
@@ -502,7 +547,7 @@ switch_over() {
     ok "stopped: $(echo "$l" | cut -d'|' -f3- | cut -c1-90)"
   done
   sleep 2
-  for p in 80 443 $OLD_PORTS; do
+  for p in $ports; do
     ss -ltnpH "sport = :$p" | grep -v docker-proxy | grep -q . && warn "port $p is still in use: $(ss -ltnpH "sport = :$p" | head -1)"
   done
   return 0
@@ -545,22 +590,106 @@ start_stack() {
 }
 
 verify() {
-  local d code i path
+  local d code i path ip; ip=$(public_ip)
   for d in "$(envv ADMIN_DOMAIN)" "$(envv API_DOMAIN)" "$(envv SOCKET_DOMAIN)"; do
     path="/"; [ "$d" = "$(envv SOCKET_DOMAIN)" ] && path="/socket.io/?EIO=4&transport=polling"
     code=000
-    for i in $(seq 1 24); do
-      code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "https://$d$path" || true)
+    for i in $(seq 1 12); do
+      code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 --resolve "$d:443:127.0.0.1" "https://$d$path" || true)
       [ "$code" != 000 ] && break; sleep 5
     done
-    if [ "$code" = 000 ]; then warn "https://$d not reachable yet — check DNS, then: docker compose -f $APP_DIR/docker-compose.yml logs caddy"
-    else ok "https://$d  (HTTP $code, certificate $(cert_info "$d"))"; fi
+    if [ "$code" != 000 ]; then ok "https://$d  (HTTP $code, certificate $(cert_info "$d"))"
+    else
+      code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 --resolve "$d:80:127.0.0.1" "http://$d$path" || true)
+      if [ "$code" != 000 ]; then warn "$d works over http (HTTP $code); HTTPS comes once its DNS points to ${ip:-this server} — then run deploy.sh again"
+      else warn "$d does not answer — check: bash $APP_DIR/deploy.sh logs"; fi
+    fi
+    [ -z "$ip" ] || [[ " $(resolve "$d") " == *" $ip "* ]] || warn "  outside users cannot reach $d yet (DNS → $(resolve "$d"))"
   done
+}
+
+# --- nginx mode: add/update only the Wheellol sites, certbot does certificates ----
+nginx_names() { grep -RhsE '^[[:space:]]*server_name[^;]+' /etc/nginx/sites-enabled /etc/nginx/conf.d | sed -E 's/^[[:space:]]*server_name//; s/;.*//' | tr -s ' \t' '\n' | grep -v '^_\?$' | sort -u | tr '\n' ' '; }
+nginx_site_for() {  # file that has "server_name ... DOMAIN"
+  local re="${1//./\\.}"
+  grep -RlsE "^[[:space:]]*server_name([^;]*[[:space:]])?$re([[:space:];]|\$)" /etc/nginx/sites-enabled /etc/nginx/conf.d | head -1 || true
+}
+nginx_setup() {
+  command -v nginx >/dev/null || die "PROXY=nginx in $APP_DIR/.env but nginx is not installed."
+  local f d up w ip bk="$APP_DIR/backups/nginx-$(date +%Y%m%d-%H%M%S).tgz"; ip=$(public_ip)
+  local -a created=()
+  tar czf "$bk" -C / etc/nginx && ok "nginx config backed up: $bk"
+  ls -1t "$APP_DIR"/backups/nginx-*.tgz 2>/dev/null | tail -n +6 | xargs -r rm -- 2>/dev/null || true
+
+  # the backend now listens on 127.0.0.1 only; "localhost" can mean ::1 first
+  for f in $(grep -RlsE 'proxy_pass[[:space:]]+http://localhost:(3000|4004)\b' /etc/nginx/sites-enabled /etc/nginx/conf.d); do
+    f=$(readlink -f "$f")
+    sed -i -E 's#(proxy_pass[[:space:]]+http://)localhost:(3000|4004)\b#\1127.0.0.1:\2#g' "$f"
+    ok "nginx: $f → 127.0.0.1:3000/4004 (was localhost)"
+  done
+
+  local -a nocert=()
+  for w in "$(envv ADMIN_DOMAIN)|127.0.0.1:$(envv ADMIN_PORT)" "$(envv API_DOMAIN)|127.0.0.1:3000" "$(envv SOCKET_DOMAIN)|127.0.0.1:4004"; do
+    d="${w%%|*}"; up="${w#*|}"
+    f=$(nginx_site_for "$d")
+    if [ -z "$f" ]; then
+      local dir=/etc/nginx/conf.d; [ -d /etc/nginx/sites-enabled ] && dir=/etc/nginx/sites-available
+      f="$dir/wheellol-$d.conf"
+      cat > "$f" <<EOF
+# Added by Wheellol deploy.sh. certbot adds the HTTPS part.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $d;
+    client_max_body_size 50m;
+    location / {
+        proxy_pass http://$up;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 3600s;
+    }
+}
+EOF
+      created+=("$f")
+      [ "$dir" = /etc/nginx/sites-available ] && { ln -sf "$f" "/etc/nginx/sites-enabled/wheellol-$d.conf"; created+=("/etc/nginx/sites-enabled/wheellol-$d.conf"); }
+      ok "nginx: new site $d → $up"
+    fi
+    [ "$(cert_info "$d")" != "no certificate for this name yet" ] || nocert+=("$d")
+  done
+
+  if ! nginx -t >/dev/null 2>&1; then
+    nginx -t 2>&1 | tail -3 | sed 's/^/    /'
+    rm -f "${created[@]}"; tar xzf "$bk" -C /
+    systemctl reload nginx || true
+    die "nginx config test failed — restored the previous nginx config."
+  fi
+  systemctl reload nginx; ok "nginx reloaded (other sites unchanged)"
+
+  for d in "${nocert[@]}"; do
+    if [ -n "$ip" ] && [[ " $(resolve "$d") " == *" $ip "* ]]; then
+      command -v certbot >/dev/null || pkg_install certbot python3-certbot-nginx
+      if certbot --nginx -d "$d" --non-interactive --agree-tos -m "$(envv ACME_EMAIL)" --redirect --keep-until-expiring >/dev/null 2>&1; then
+        ok "certificate for $d issued (certbot)"
+      else warn "certbot could not get a certificate for $d — see /var/log/letsencrypt/letsencrypt.log"; fi
+    else
+      warn "no HTTPS certificate for $d yet: its DNS must point to ${ip:-this server} first, then run deploy.sh again"
+    fi
+  done
+  if systemctl is-enabled -q certbot.timer 2>/dev/null || systemctl is-enabled -q snap.certbot.renew.timer 2>/dev/null; then
+    ok "certificates renew automatically (certbot timer)"
+  elif command -v certbot >/dev/null; then
+    systemctl enable --now certbot.timer >/dev/null 2>&1 && ok "certbot renewal timer switched on" || warn "certbot renewal timer missing — add: certbot renew (daily cron)"
+  fi
 }
 
 install_cron() {
   cat > /etc/cron.d/wheellol <<EOF
-# Wheellol: daily database backup (keeps 14). Certificates renew inside Caddy.
+# Wheellol: daily database backup (keeps 14). Certificates renew via Caddy or certbot.
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 30 2 * * * root bash $APP_DIR/deploy.sh backup >> $APP_DIR/backups/backup.log 2>&1
 EOF
@@ -570,10 +699,10 @@ EOF
 status() {
   [ -f "$APP_DIR/.env" ] || die "Not set up yet ($APP_DIR/.env missing)."
   step "Services"; dc ps --format 'table {{.Service}}\t{{.State}}\t{{.Status}}'
-  step "HTTPS certificates (renewed automatically ~30 days before expiry)"
+  step "HTTPS certificates ($(envv PROXY) renews them ~30 days before expiry)"
   for d in "$(envv ADMIN_DOMAIN)" "$(envv API_DOMAIN)" "$(envv SOCKET_DOMAIN)"; do
     local info; info=$(cert_info "$d"); echo "  $d: $info"
-    [[ "$info" =~ \(([0-9-]+)\ days ]] && [ "${BASH_REMATCH[1]}" -lt 20 ] && warn "renewal is late — check: docker compose logs caddy"
+    [[ "$info" =~ \(([0-9-]+)\ days ]] && [ "${BASH_REMATCH[1]}" -lt 20 ] && warn "renewal is late — check: $([ "$(envv PROXY)" = nginx ] && echo 'certbot renew --dry-run' || echo 'docker compose logs caddy')"
   done
   step "Backups"; ls -1t "$APP_DIR"/backups/*.sql.gz 2>/dev/null | head -3 | sed 's/^/  /' || echo "  none yet"
   step "Disk"; df -h / | tail -1 | awk '{print "  used "$3" of "$2" ("$5")"}'
@@ -586,13 +715,21 @@ setup() {
   step "Code";             get_code
   step "Settings (.env)"
   if [ -f "$APP_DIR/.env" ]; then ok "using existing $APP_DIR/.env"; else make_env; fi
+  if [ -z "$(envv PROXY)" ]; then
+    set_env PROXY caddy; [[ "$(envv COMPOSE_PROFILES)" == *caddy* ]] || set_env COMPOSE_PROFILES "$(envv COMPOSE_PROFILES | sed 's/^$/caddy/; t; s/$/,caddy/')"
+  fi
   step "DNS";              check_dns
   step "Docker images";    get_images
   step "Database check";   preflight_db
   step "Database backup";  if [[ "$(envv COMPOSE_PROFILES)" == *db* ]] && ! dc ps -q postgres | grep -q .; then ok "new database — nothing to back up yet"; else do_backup predeploy; fi
+  if [ "${1:-}" = check ]; then
+    echo; echo "${G}${B}Check finished — nothing was switched.${N} The old setup is still running."
+    echo "  Switch over with:  bash $APP_DIR/deploy.sh"; return 0
+  fi
   step "Switch over";      switch_over
   step "Start";            start_stack
-  step "Verify HTTPS";     verify
+  [ "$(envv PROXY)" != nginx ] || { step "nginx sites";  nginx_setup; }
+  step "Verify";           verify
   install_cron
   docker image prune -f >/dev/null 2>&1 || true
 
@@ -613,9 +750,10 @@ setup() {
 cd /
 case "${1:-setup}" in
   setup|update) setup ;;
+  check)        setup check ;;
   status)       status ;;
   backup)       need_root; do_backup daily ;;
   logs)         dc logs -f --tail 100 "${@:2}" ;;
   rollback)     rollback ;;
-  *) echo "usage: deploy.sh [user@host] [setup|status|backup|logs|rollback]"; exit 1 ;;
+  *) echo "usage: deploy.sh [user@host] [setup|check|status|backup|logs|rollback]"; exit 1 ;;
 esac
