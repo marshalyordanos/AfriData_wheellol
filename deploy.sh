@@ -3,7 +3,10 @@
 #  Wheellol — one-command production deploy
 # =============================================================================
 #
-#  From your laptop (copies this file to the server and runs it there):
+#  From your Mac (copies this file to the server and runs it there):
+#      ./deploy.sh                               # update: pull code, build/download, migrate, restart
+#                                                #   (asks the server once, saved in .deploy-target)
+#      ./deploy.sh status                        # same server, show status
 #      ./deploy.sh root@SERVER_IP                # full setup / update
 #      ./deploy.sh root@SERVER_IP status         # services + certificate expiry
 #
@@ -38,6 +41,34 @@ BRANCH="${BRANCH:-main}"
 APP_DIR="${APP_DIR:-/opt/wheellol}"
 DEFAULT_DOMAIN="${DEFAULT_DOMAIN:-wheellol.com}"
 OLD_PORTS="3000 4001 4002 4003 4004"
+
+# ------------------------------------------- from the Mac: plain `./deploy.sh`
+# Remembers the server in .deploy-target (not in git) and warns about code that
+# is not on GitHub yet — the server deploys what is pushed to $BRANCH, nothing else.
+if [ "$(uname -s)" = Darwin ] && [[ "${1:-}" != *@* ]] && [ "${WL_SOURCE_ONLY:-}" != 1 ]; then
+  here="$(cd "$(dirname "$0")" && pwd)"
+  target="${DEPLOY_TARGET:-$(cat "$here/.deploy-target" 2>/dev/null || true)}"
+  if [ -z "$target" ]; then
+    read -rp "Server to deploy to (user@host, e.g. root@1.2.3.4): " target
+    [[ "$target" == *@* ]] || { echo "Need user@host"; exit 1; }
+    echo "$target" > "$here/.deploy-target"
+  fi
+  if git -C "$here" rev-parse -q --git-dir >/dev/null 2>&1; then
+    git -C "$here" fetch -q origin "$BRANCH" 2>/dev/null || true
+    local_branch=$(git -C "$here" rev-parse --abbrev-ref HEAD)
+    dirty=$(git -C "$here" status --porcelain | wc -l | tr -d ' ')
+    ahead=$(git -C "$here" rev-list --count "origin/$BRANCH..HEAD" 2>/dev/null || echo 0)
+    if [ "$local_branch" != "$BRANCH" ] || [ "$dirty" != 0 ] || [ "$ahead" != 0 ]; then
+      echo "The server deploys GitHub '$BRANCH' ($(git -C "$here" log -1 --format='%h %s' "origin/$BRANCH" | cut -c1-60))."
+      [ "$local_branch" = "$BRANCH" ] || echo "  ! you are on branch '$local_branch'"
+      [ "$dirty" = 0 ] || echo "  ! $dirty changed file(s) not committed — NOT deployed"
+      [ "$ahead" = 0 ] || echo "  ! $ahead commit(s) not pushed — NOT deployed (run: git push)"
+      read -rp "Deploy anyway? [y/N] " a; [[ "$a" =~ ^[Yy] ]] || exit 1
+    fi
+  fi
+  echo "Deploying to $target ..."
+  set -- "$target" "$@"
+fi
 
 # ---------------------------------------------------------------- remote mode
 if [[ "${1:-}" == *@* ]]; then
@@ -401,6 +432,11 @@ check_dns() {
 
 get_images() {
   if [ -n "${GHCR_TOKEN:-}" ]; then echo "$GHCR_TOKEN" | docker login ghcr.io -u "${GHCR_USER:-token}" --password-stdin >/dev/null; fi
+  # Images of exactly the code just pulled (CI tags each commit). Not on ghcr.io
+  # yet (CI still running / failed / private)? → built here from that code.
+  IMAGE_TAG="${IMAGE_TAG:-$(git -C "$APP_DIR" rev-parse HEAD)}"; export IMAGE_TAG
+  set_env IMAGE_TAG "$IMAGE_TAG"
+  ok "deploying commit ${IMAGE_TAG:0:7}"
   local build_admin=0
   # CI images have api./socket.wheellol.com baked in; other domains need a local admin build
   [ "$(envv API_DOMAIN)" = "api.wheellol.com" ] && [ "$(envv SOCKET_DOMAIN)" = "socket.wheellol.com" ] || build_admin=1
@@ -589,6 +625,24 @@ start_stack() {
   die "Fix the problem above, then run deploy.sh again."
 }
 
+migrations_report() {
+  local out; out=$(dc exec -T backend npx prisma migrate status 2>&1 || true)
+  if echo "$out" | grep -q "Database schema is up to date"; then
+    ok "migrations: all applied ($(echo "$out" | grep -oE '[0-9]+ migrations? found' | head -1))"
+  else
+    warn "migrations are not fully applied:"; echo "$out" | tail -12 | sed 's/^/    /'
+  fi
+}
+
+prune_old_images() {  # keep the running tag + the one before it (for a quick manual rollback)
+  local r
+  for r in "$(envv BACKEND_IMAGE)" "$(envv ADMIN_IMAGE)"; do
+    [ -n "$r" ] || continue
+    docker images "$r" --format '{{.Tag}}' | grep -vxE "${IMAGE_TAG:-latest}|latest|<none>" | tail -n +2 \
+      | while read -r t; do docker rmi "$r:$t" >/dev/null 2>&1 || true; done
+  done
+}
+
 verify() {
   local d code i path ip; ip=$(public_ip)
   code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://127.0.0.1:$(envv ADMIN_PORT)/" || true)
@@ -760,9 +814,11 @@ setup() {
   fi
   step "Switch over";      switch_over
   step "Start";            start_stack
+  migrations_report
   [ "$(envv PROXY)" != nginx ] || { step "nginx sites";  nginx_setup; }
   step "Verify";           verify
   install_cron
+  prune_old_images
   docker image prune -f >/dev/null 2>&1 || true
 
   echo
