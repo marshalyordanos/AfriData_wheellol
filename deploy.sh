@@ -327,10 +327,12 @@ make_env() {
   ok "HTTPS by: $proxy"
 
   local admin api socket email def_admin="$DEFAULT_DOMAIN"
-  if [ "$proxy" = nginx ] && [ -n "$(nginx_site_for "$DEFAULT_DOMAIN")" ]; then
-    def_admin="admin.$DEFAULT_DOMAIN"
-    ok "$DEFAULT_DOMAIN is already a site in nginx (your website) — admin goes on $def_admin"
-  fi
+  # The admin lives on the main domain (wheellol.com). An existing nginx site for it
+  # is pointed at the admin container by nginx_setup.
+  # if [ "$proxy" = nginx ] && [ -n "$(nginx_site_for "$DEFAULT_DOMAIN")" ]; then
+  #   def_admin="admin.$DEFAULT_DOMAIN"
+  #   ok "$DEFAULT_DOMAIN is already a site in nginx (your website) — admin goes on $def_admin"
+  # fi
   admin="${WL_ADMIN_DOMAIN:-$(ask "Admin website domain" "$def_admin")}"
   api=$(ask "API domain" "api.$DEFAULT_DOMAIN")
   socket=$(ask "Socket domain" "socket.$DEFAULT_DOMAIN")
@@ -801,6 +803,10 @@ setup() {
   step "Code";             get_code
   step "Settings (.env)"
   if [ -f "$APP_DIR/.env" ]; then ok "using existing $APP_DIR/.env"; else make_env; fi
+  # move the admin to another domain:  WL_ADMIN_DOMAIN=wheellol.com bash deploy.sh
+  if [ -n "${WL_ADMIN_DOMAIN:-}" ] && [ "$(envv ADMIN_DOMAIN)" != "$WL_ADMIN_DOMAIN" ]; then
+    ok "admin domain: $(envv ADMIN_DOMAIN) → $WL_ADMIN_DOMAIN"; set_env ADMIN_DOMAIN "$WL_ADMIN_DOMAIN"
+  fi
   if [ -z "$(envv PROXY)" ]; then
     set_env PROXY caddy; [[ "$(envv COMPOSE_PROFILES)" == *caddy* ]] || set_env COMPOSE_PROFILES "$(envv COMPOSE_PROFILES | sed 's/^$/caddy/; t; s/$/,caddy/')"
   fi
