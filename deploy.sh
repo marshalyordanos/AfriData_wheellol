@@ -591,6 +591,9 @@ start_stack() {
 
 verify() {
   local d code i path ip; ip=$(public_ip)
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://127.0.0.1:$(envv ADMIN_PORT)/" || true)
+  if [ "$code" = 200 ]; then ok "admin container answers on 127.0.0.1:$(envv ADMIN_PORT)"
+  else warn "admin container does not answer on 127.0.0.1:$(envv ADMIN_PORT) (HTTP $code) — check: bash $APP_DIR/deploy.sh logs admin"; fi
   for d in "$(envv ADMIN_DOMAIN)" "$(envv API_DOMAIN)" "$(envv SOCKET_DOMAIN)"; do
     path="/"; [ "$d" = "$(envv SOCKET_DOMAIN)" ] && path="/socket.io/?EIO=4&transport=polling"
     code=000
@@ -598,7 +601,9 @@ verify() {
       code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 --resolve "$d:443:127.0.0.1" "https://$d$path" || true)
       [ "$code" != 000 ] && break; sleep 5
     done
-    if [ "$code" != 000 ]; then ok "https://$d  (HTTP $code, certificate $(cert_info "$d"))"
+    # if [ "$code" != 000 ]; then ok "https://$d  (HTTP $code, certificate $(cert_info "$d"))"
+    if [ "${code:0:1}" = 5 ]; then warn "https://$d answers HTTP $code — nginx/Caddy cannot reach the app behind it (check: bash $APP_DIR/deploy.sh logs)"
+    elif [ "$code" != 000 ]; then ok "https://$d  (HTTP $code, certificate $(cert_info "$d"))"
     else
       code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 --resolve "$d:80:127.0.0.1" "http://$d$path" || true)
       if [ "$code" != 000 ]; then warn "$d works over http (HTTP $code); HTTPS comes once its DNS points to ${ip:-this server} — then run deploy.sh again"
@@ -614,6 +619,30 @@ nginx_site_for() {  # file that has "server_name ... DOMAIN"
   local re="${1//./\\.}"
   grep -RlsE "^[[:space:]]*server_name([^;]*[[:space:]])?$re([[:space:];]|\$)" /etc/nginx/sites-enabled /etc/nginx/conf.d | head -1 || true
 }
+nginx_point_site() {  # nginx_point_site FILE DOMAIN UPSTREAM -> proxy_pass in DOMAIN's server blocks goes to UPSTREAM
+  local f d="$2" up="$3" tmp; f=$(readlink -f "$1"); tmp=$(mktemp)
+  awk -v dom="${d//./[.]}" -v up="$up" '
+    function flush(   i, hit) {
+      hit = 0
+      for (i = 1; i <= n; i++) if (buf[i] ~ /^[[:space:]]*server_name/ && (buf[i] " ") ~ ("[[:space:]]" dom "[[:space:];]")) hit = 1
+      for (i = 1; i <= n; i++) {
+        if (hit && buf[i] ~ /^[[:space:]]*proxy_pass[[:space:]]/) sub(/proxy_pass[[:space:]]+[^;]+;/, "proxy_pass http://" up ";", buf[i])
+        print buf[i]
+      }
+      n = 0
+    }
+    {
+      if (depth == 0 && $0 ~ /^[[:space:]]*server[[:space:]]*\{/) inblk = 1
+      if (inblk) buf[++n] = $0; else print
+      o = gsub(/\{/, "{"); c = gsub(/\}/, "}"); depth += o - c
+      if (inblk && depth == 0) { flush(); inblk = 0 }
+    }
+    END { if (n) flush() }
+  ' "$f" > "$tmp"
+  if [ -s "$tmp" ] && ! cmp -s "$tmp" "$f"; then cat "$tmp" > "$f"; ok "nginx: $d → $up (updated existing site $f)"; fi
+  rm -f "$tmp"
+}
+
 nginx_setup() {
   command -v nginx >/dev/null || die "PROXY=nginx in $APP_DIR/.env but nginx is not installed."
   local f d up w ip bk="$APP_DIR/backups/nginx-$(date +%Y%m%d-%H%M%S).tgz"; ip=$(public_ip)
@@ -658,6 +687,9 @@ EOF
       created+=("$f")
       [ "$dir" = /etc/nginx/sites-available ] && { ln -sf "$f" "/etc/nginx/sites-enabled/wheellol-$d.conf"; created+=("/etc/nginx/sites-enabled/wheellol-$d.conf"); }
       ok "nginx: new site $d → $up"
+    elif [ "$d" = "$(envv ADMIN_DOMAIN)" ]; then
+      # an admin site from the old setup still points at the old admin app (→ 502); send it to the admin container
+      nginx_point_site "$f" "$d" "$up"
     fi
     [ "$(cert_info "$d")" != "no certificate for this name yet" ] || nocert+=("$d")
   done
