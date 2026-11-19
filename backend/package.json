@@ -32,7 +32,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:catalog": "node scripts/seed-car-catalog.js"
+    "seed:catalog": "node scripts/seed-car-catalog.js",
+    "seed:woredas": "node scripts/import-woredas.js",
+    "seed:cars": "node scripts/add-supplier-cars.js",
+    "db:clear": "node scripts/clear-data.js",
+    "seed:starter": "node scripts/seed-starter-data.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.933.0",
@@ -67,7 +71,8 @@
     "socket.io-client": "^4.8.1",
     "speakeasy": "^2.0.0",
     "swagger-ui-express": "^5.0.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
